@@ -3,7 +3,6 @@ apply plugin: 'com.android.library'
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
 
-
 ext {
     bintrayName = 'componentlib'
     artifact = bintrayName
@@ -20,7 +19,7 @@ android {
     buildToolsVersion "26.0.0"
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 21
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -34,6 +33,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
@@ -45,9 +49,4 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile project(':router-annotation')
     compile 'com.google.code.gson:gson:2.8.2'
-
 }
-
-
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'

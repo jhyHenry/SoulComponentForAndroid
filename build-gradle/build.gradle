@@ -1,20 +1,8 @@
 apply plugin: 'groovy'
-
-ext {
-    bintrayName = 'build-gradle'
-    artifact = bintrayName
-    libraryName = 'component build'
-    libraryDescription = 'gradle plugin for buid component'
-    libraryVersion = "1.2.0"
-    licenseName = 'The Apache Software License, Version 2.0'
-    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-    allLicenses = ["Apache-2.0"]
-}
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+apply plugin: 'com.novoda.bintray-release'
 
 dependencies {
-    compile 'com.android.tools.build:gradle:2.3.2'
+    compile 'com.android.tools.build:gradle:3.2.1'
     compile group: 'org.javassist', name: 'javassist', version: '3.20.0-GA'
     //gradle sdk
     compile gradleApi()
@@ -22,3 +10,12 @@ dependencies {
     compile localGroovy()
 }
 
+//添加
+publish {
+    userOrg = 'walid1992'//bintray.com用户名
+    groupId = 'com.walid'//jcenter上的路径
+    artifactId = 'soul-component-build-gradle'//项目名称
+    publishVersion = '0.0.1'//版本号
+    desc = ' Soul 组件化开发框架'//描述
+    website = 'https://github.com/walid1992/SoulComponentForAndroid'//网站
+}

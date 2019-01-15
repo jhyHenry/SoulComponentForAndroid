@@ -3,11 +3,11 @@ apply plugin: 'com.dd.comgradle'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 14
+        minSdkVersion 21
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
 
@@ -26,6 +26,11 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     resourcePrefix "share_"

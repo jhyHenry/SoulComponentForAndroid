@@ -26,9 +26,9 @@ class ComCodeTransform extends Transform {
         }
         def box = ConvertUtils.toCtClasses(transformInvocation.getInputs(), classPool)
 
-        //要收集的application，一般情况下只有一个
+        // 要收集的application，一般情况下只有一个
         List<CtClass> applications = new ArrayList<>()
-        //要收集的applicationlikes，一般情况下有几个组件就有几个applicationlike
+        // 要收集的applicationlikes，一般情况下有几个组件就有几个applicationlike
         List<CtClass> activators = new ArrayList<>()
 
         for (CtClass ctClass : box) {
@@ -60,11 +60,10 @@ class ComCodeTransform extends Transform {
                 //生成输出路径
                 def dest = transformInvocation.outputProvider.getContentLocation(jarName + md5Name,
                         jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                //将输入内容复制到输出
+                // 将输入内容复制到输出
                 FileUtils.copyFile(jarInput.file, dest)
-
             }
-            //对类型为“文件夹”的input进行遍历
+            // 对类型为“文件夹”的input进行遍历
             input.directoryInputs.each { DirectoryInput directoryInput ->
                 boolean isRegisterCompoAuto = project.extensions.combuild.isRegisterCompoAuto
                 if (isRegisterCompoAuto) {
@@ -92,14 +91,12 @@ class ComCodeTransform extends Transform {
         }
     }
 
-
     private void getRealApplicationName(Collection<TransformInput> inputs) {
         applicationName = project.extensions.combuild.applicationName
         if (applicationName == null || applicationName.isEmpty()) {
             throw new RuntimeException("you should set applicationName in combuild")
         }
     }
-
 
     private void injectApplicationCode(CtClass ctClassApplication, List<CtClass> activators, String patch) {
         System.out.println("injectApplicationCode begin")
@@ -111,12 +108,10 @@ class ComCodeTransform extends Transform {
             StringBuilder methodBody = new StringBuilder()
             methodBody.append("protected void onCreate() {")
             methodBody.append("super.onCreate();")
-            methodBody.
-                    append(getAutoLoadComCode(activators))
+            methodBody.append(getAutoLoadComCode(activators))
             methodBody.append("}")
             ctClassApplication.addMethod(CtMethod.make(methodBody.toString(), ctClassApplication))
         } catch (Exception e) {
-
         }
         ctClassApplication.writeFile(patch)
         ctClassApplication.detach()
@@ -129,10 +124,8 @@ class ComCodeTransform extends Transform {
         for (CtClass ctClass : activators) {
             autoLoadComCode.append("new " + ctClass.getName() + "()" + ".onCreate();")
         }
-
         return autoLoadComCode.toString()
     }
-
 
     private boolean isApplication(CtClass ctClass) {
         try {

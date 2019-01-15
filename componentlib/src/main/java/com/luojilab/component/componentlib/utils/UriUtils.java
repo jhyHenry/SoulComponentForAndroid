@@ -22,7 +22,7 @@ public class UriUtils {
 
     public static HashMap<String, String> parseParams(Uri uri) {
         if (uri == null) {
-            return new HashMap<String, String>();
+            return new HashMap<>();
         }
         HashMap<String, String> temp = new HashMap<String, String>();
         Set<String> keys = getQueryParameterNames(uri);
@@ -130,4 +130,5 @@ public class UriUtils {
         } catch (Throwable ex) {
         }
     }
+
 }

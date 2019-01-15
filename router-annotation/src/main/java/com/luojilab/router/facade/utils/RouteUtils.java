@@ -21,15 +21,11 @@ public class RouteUtils {
     }
 
     public static String genHostUIRouterClass(String host) {
-        String claName = ROUTERIMPL_OUTPUT_PKG + DOT + firstCharUpperCase(host) + UIROUTER;
-        return new String(claName);
+        return ROUTERIMPL_OUTPUT_PKG + DOT + firstCharUpperCase(host) + UIROUTER;
     }
-
 
     public static String genRouterTable(String host) {
-        String claName = "./UIRouterTable/" + firstCharUpperCase(host) + ROUTERTABLE + ".txt";
-        return new String(claName);
+        return "./UIRouterTable/" + firstCharUpperCase(host) + ROUTERTABLE + ".txt";
     }
-
 
 }

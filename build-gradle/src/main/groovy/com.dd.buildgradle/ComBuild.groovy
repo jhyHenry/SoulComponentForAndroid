@@ -6,7 +6,7 @@ import org.gradle.api.Project
 
 class ComBuild implements Plugin<Project> {
 
-    //默认是app，直接运行assembleRelease的时候，等同于运行app:assembleRelease
+    // 默认是app，直接运行assembleRelease的时候，等同于运行app:assembleRelease
     String compilemodule = "app"
 
     void apply(Project project) {
@@ -42,7 +42,7 @@ class ComBuild implements Plugin<Project> {
         }
         project.setProperty("isRunAlone", isRunAlone)
 
-        //根据配置添加各种组件依赖，并且自动化生成组件加载代码
+        // 根据配置添加各种组件依赖，并且自动化生成组件加载代码
         if (isRunAlone) {
             project.apply plugin: 'com.android.application'
             if (!module.equals(mainmodulename)) {
