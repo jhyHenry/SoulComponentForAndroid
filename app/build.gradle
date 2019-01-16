@@ -4,7 +4,7 @@ android {
     compileSdkVersion 26
     buildToolsVersion '28.0.3'
     defaultConfig {
-        applicationId "com.luojilab.androidcomponent"
+        applicationId "com.soul.androidcomponent"
         minSdkVersion 21
         targetSdkVersion 26
         versionCode 1
@@ -51,6 +51,6 @@ dependencies {
 }
 
 combuild {
-    applicationName = 'com.luojilab.componentdemo.application.AppApplication'
+    applicationName = 'com.soul.componentdemo.application.AppApplication'
     isRegisterCompoAuto = true
 }

@@ -1,7 +1,7 @@
 ## DDComponent
 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/luojilab/DDComponentForAndroid/pulls)
-[![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg)](https://github.com/luojilab/DDComponentForAndroid/blob/master/LICENSE) 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/soul/DDComponentForAndroid/pulls)
+[![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg)](https://github.com/soul/DDComponentForAndroid/blob/master/LICENSE) 
 
 ### 实现功能：
 - 组件可以单独调试
@@ -27,7 +27,7 @@ mainmodulename=app
 ```gradle
 buildscript {
     dependencies {
-        classpath 'com.luojilab.ddcomponent:build-gradle:1.2.0'
+        classpath 'com.soul.ddcomponent:build-gradle:1.2.0'
     }
 }
 ```
@@ -35,7 +35,7 @@ buildscript {
 为每个组件引入依赖库，如果项目中存在basiclib等基础库，可以统一交给basiclib引入
 
 ```gradle
-compile 'com.luojilab.ddcomponent:componentlib:1.3.0'
+compile 'com.soul.ddcomponent:componentlib:1.3.0'
 ```
 
 #### 2、拆分组件为module工程
@@ -61,7 +61,7 @@ apply plugin: 'com.dd.comgradle'
 
 ```gradle
 combuild {
-    applicationName = 'com.luojilab.reader.runalone.application.ReaderApplication'
+    applicationName = 'com.soul.reader.runalone.application.ReaderApplication'
     isRegisterCompoAuto = true
 }
 ```
@@ -73,14 +73,14 @@ combuild {
 -keep interface * {
   <methods>;
 }
--keep class com.luojilab.component.componentlib.** {*;}
--keep class com.luojilab.router.** {*;}
--keep class com.luojilab.gen.** {*;}
--keep class * implements com.luojilab.component.componentlib.router.ISyringe {*;}
--keep class * implements com.luojilab.component.componentlib.applicationlike.IApplicationLike {*;}
+-keep class com.soul.component.componentlib.** {*;}
+-keep class com.soul.router.** {*;}
+-keep class com.soul.gen.** {*;}
+-keep class * implements com.soul.component.componentlib.router.ISyringe {*;}
+-keep class * implements com.soul.component.componentlib.applicationlike.IApplicationLike {*;}
 ```
 
-关于如何进行组件之间数据交互和UI跳转，请参看 [Wiki](https://github.com/luojilab/DDComponentForAndroid/wiki)
+关于如何进行组件之间数据交互和UI跳转，请参看 [Wiki](https://github.com/soul/DDComponentForAndroid/wiki)
 
 
 ### 组件化讨论群
@@ -90,7 +90,7 @@ DDComponent的讨论群，群号693097923，欢迎大家加入：
 
 ### License
 
-   Copyright 2017  Luojilab
+   Copyright 2017  soul
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

@@ -20,12 +20,13 @@ class ComCodeTransform extends Transform {
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         getRealApplicationName(transformInvocation.getInputs())
+        System.out.println("box.size() is   ")
         classPool = new ClassPool()
         project.android.bootClasspath.each {
             classPool.appendClassPath((String) it.absolutePath)
         }
         def box = ConvertUtils.toCtClasses(transformInvocation.getInputs(), classPool)
-
+//        System.out.println("box.size() is   " + box.size())
         // 要收集的application，一般情况下只有一个
         List<CtClass> applications = new ArrayList<>()
         // 要收集的applicationlikes，一般情况下有几个组件就有几个applicationlike
@@ -139,9 +140,10 @@ class ComCodeTransform extends Transform {
     }
 
     private boolean isActivator(CtClass ctClass) {
+        System.out.println("ctClass is   " + ctClass.getName())
         try {
             for (CtClass ctClassInter : ctClass.getInterfaces()) {
-                if ("com.luojilab.component.componentlib.applicationlike.IApplicationLike".equals(ctClassInter.name)) {
+                if ("com.soul.component.componentlib.applicationlike.IApplicationLike".equals(ctClassInter.name)) {
                     return true
                 }
             }

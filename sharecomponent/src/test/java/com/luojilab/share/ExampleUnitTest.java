@@ -1,4 +1,4 @@
-package com.luojilab.share;
+package com.soul.share;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.luojilab.componentservice;
+package com.soul.componentservice;
 
 import org.junit.Test;
 

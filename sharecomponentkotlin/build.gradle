@@ -42,11 +42,12 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':componentservice')
-    kapt 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
+    kapt project(':router-anno-compiler')
+//    kapt 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 }
 
 combuild {
-    applicationName = 'com.luojilab.share.runalone.application.KotlinApplication'
+    applicationName = 'com.soul.share.runalone.application.KotlinApplication'
     isRegisterCompoAuto = true
 }

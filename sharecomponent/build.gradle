@@ -39,7 +39,8 @@ android {
 
 dependencies {
     compile project(':componentservice')
-    annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
+    annotationProcessor project(':router-anno-compiler')
+//    annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
@@ -48,7 +49,7 @@ dependencies {
 }
 
 combuild {
-    applicationName = 'com.luojilab.share.runalone.application.ShareApplication'
+    applicationName = 'com.soul.share.runalone.application.ShareApplication'
     isRegisterCompoAuto = true
 }
 repositories {

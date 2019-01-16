@@ -46,11 +46,11 @@
 -keep interface * {
   <methods>;
 }
--keep class com.luojilab.component.componentlib.** {*;}
--keep class com.luojilab.router.** {*;}
--keep class com.luojilab.gen.** {*;}
--keep class * implements com.luojilab.component.componentlib.router.ISyringe {*;}
--keep class * implements com.luojilab.component.componentlib.applicationlike.IApplicationLike {*;}
+-keep class com.soul.component.componentlib.** {*;}
+-keep class com.soul.router.** {*;}
+-keep class com.soul.gen.** {*;}
+-keep class * implements com.soul.component.componentlib.router.ISyringe {*;}
+-keep class * implements com.soul.component.componentlib.applicationlike.IApplicationLike {*;}
 -dontwarn okio.**
 -dontwarn okhttp3.**
 -dontwarn com.squareup.**

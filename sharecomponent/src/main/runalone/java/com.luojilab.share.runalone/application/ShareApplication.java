@@ -1,6 +1,6 @@
-package com.luojilab.share.runalone.application;
+package com.soul.share.runalone.application;
 
-import com.luojilab.component.basicres.BaseApplication;
+import com.soul.component.basicres.BaseApplication;
 
 /**
  * Created by mrzhang on 2017/8/16.

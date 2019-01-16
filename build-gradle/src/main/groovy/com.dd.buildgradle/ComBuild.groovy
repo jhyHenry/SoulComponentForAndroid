@@ -30,6 +30,7 @@ class ComBuild implements Plugin<Project> {
         //对于isRunAlone==true的情况需要根据实际情况修改其值，
         // 但如果是false，则不用修改
         boolean isRunAlone = Boolean.parseBoolean((project.properties.get("isRunAlone")))
+        System.out.println("isRunAlone : " + isRunAlone)
         String mainmodulename = project.rootProject.property("mainmodulename")
         if (isRunAlone && assembleTask.isAssemble) {
             //对于要编译的组件和主项目，isRunAlone修改为true，其他组件都强制修改为false
@@ -41,7 +42,6 @@ class ComBuild implements Plugin<Project> {
             }
         }
         project.setProperty("isRunAlone", isRunAlone)
-
         // 根据配置添加各种组件依赖，并且自动化生成组件加载代码
         if (isRunAlone) {
             project.apply plugin: 'com.android.application'
@@ -59,6 +59,7 @@ class ComBuild implements Plugin<Project> {
             System.out.println("apply plugin is " + 'com.android.application')
             if (assembleTask.isAssemble && module.equals(compilemodule)) {
                 compileComponents(assembleTask, project)
+
                 project.android.registerTransform(new ComCodeTransform(project))
             }
         } else {
@@ -139,7 +140,7 @@ class ComBuild implements Plugin<Project> {
             if (str.contains(":")) {
                 /**
                  * 示例语法:groupId:artifactId:version(@aar)
-                 * compileComponent=com.luojilab.reader:readercomponent:1.0.0
+                 * compileComponent=com.soul.reader:readercomponent:1.0.0
                  * 注意，前提是已经将组件aar文件发布到maven上，并配置了相应的repositories
                  */
                 project.dependencies.add("compile", str)
