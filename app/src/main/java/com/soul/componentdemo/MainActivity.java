@@ -55,11 +55,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         switch (v.getId()) {
             case R.id.install_share:
                 Router.registerComponent("com.soul.share.applike.ShareApplike");
-                Router.registerComponent("com.soul.share.kotlin.applike.KotlinApplike");
                 break;
             case R.id.uninstall_share:
                 Router.unregisterComponent("com.soul.share.applike.ShareApplike");
-                Router.unregisterComponent("com.soul.share.kotlin.applike.KotlinApplike");
                 break;
         }
     }

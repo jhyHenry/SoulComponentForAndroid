@@ -52,7 +52,7 @@ compileComponent=sharecomponent
 在组件和host的build.gradle都增加配置：
 
 ```gradle
-apply plugin: 'com.dd.comgradle'
+apply plugin: 'com.soul.comgradle'
 ```
 
 注意：不需要在引用com.android.application或者com.android.library

@@ -1,4 +1,4 @@
-package com.dd.buildgradle.exten
+package com.soul.buildgradle.exten
 
 public class ComExtension {
 

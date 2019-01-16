@@ -1,4 +1,4 @@
-apply plugin: 'com.dd.comgradle'
+apply plugin: 'com.soul.comgradle'
 apply plugin: 'kotlin-android'
 
 android {
@@ -57,6 +57,7 @@ combuild {
     applicationName = 'com.soul.reader.runalone.application.ReaderApplication'
     isRegisterCompoAuto = false
 }
+
 repositories {
     mavenCentral()
 }

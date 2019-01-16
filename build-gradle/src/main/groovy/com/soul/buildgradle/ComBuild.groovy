@@ -1,6 +1,6 @@
-package com.dd.buildgradle
+package com.soul.buildgradle
 
-import com.dd.buildgradle.exten.ComExtension
+import com.soul.buildgradle.exten.ComExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
