@@ -35,7 +35,7 @@ buildscript {
 为每个组件引入依赖库，如果项目中存在basiclib等基础库，可以统一交给basiclib引入
 
 ```gradle
-compile 'com.soul.ddcomponent:componentlib:1.3.0'
+compile 'com.soul.ddcomponent:componentlib:0.0.4'
 ```
 
 #### 2、拆分组件为module工程
@@ -79,14 +79,6 @@ combuild {
 -keep class * implements com.soul.component.componentlib.router.ISyringe {*;}
 -keep class * implements com.soul.component.componentlib.applicationlike.IApplicationLike {*;}
 ```
-
-关于如何进行组件之间数据交互和UI跳转，请参看 [Wiki](https://github.com/soul/DDComponentForAndroid/wiki)
-
-
-### 组件化讨论群
-DDComponent的讨论群，群号693097923，欢迎大家加入：
-
-![进群请扫码](http://upload-images.jianshu.io/upload_images/6650461-45da9dd9dc2a79b2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 ### License
 

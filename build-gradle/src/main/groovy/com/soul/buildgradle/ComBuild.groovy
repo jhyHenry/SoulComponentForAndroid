@@ -18,11 +18,13 @@ class ComBuild implements Plugin<Project> {
         System.out.println("current module is " + module)
         AssembleTask assembleTask = getTaskInfo(project.gradle.startParameter.taskNames)
 
+        // 设置 assemble 任务未主工程
         if (assembleTask.isAssemble) {
             fetchMainModulename(project, assembleTask)
             System.out.println("compilemodule  is " + compilemodule)
         }
 
+        // 单独运行
         if (!project.hasProperty("isRunAlone")) {
             throw new RuntimeException("you should set isRunAlone in " + module + "'s gradle.properties")
         }
@@ -33,8 +35,8 @@ class ComBuild implements Plugin<Project> {
         System.out.println("isRunAlone : " + isRunAlone)
         String mainmodulename = project.rootProject.property("mainmodulename")
         if (isRunAlone && assembleTask.isAssemble) {
-            //对于要编译的组件和主项目，isRunAlone修改为true，其他组件都强制修改为false
-            //这就意味着组件不能引用主项目，这在层级结构里面也是这么规定的
+            // 对于要编译的组件和主项目，isRunAlone修改为true，其他组件都强制修改为false
+            // 这就意味着组件不能引用主项目，这在层级结构里面也是这么规定的
             if (module.equals(compilemodule) || module.equals(mainmodulename)) {
                 isRunAlone = true
             } else {

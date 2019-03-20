@@ -7,6 +7,9 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
 
+/**
+ *
+ */
 class ComCodeTransform extends Transform {
 
     private Project project
@@ -103,6 +106,7 @@ class ComCodeTransform extends Transform {
         System.out.println("injectApplicationCode begin")
         ctClassApplication.defrost()
         try {
+            // 是否有 onCreate 方法
             CtMethod attachBaseContextMethod = ctClassApplication.getDeclaredMethod("onCreate", null)
             attachBaseContextMethod.insertAfter(getAutoLoadComCode(activators))
         } catch (CannotCompileException | NotFoundException e) {
