@@ -67,7 +67,7 @@ class ComCodeTransform extends Transform {
                 // 将输入内容复制到输出
                 FileUtils.copyFile(jarInput.file, dest)
             }
-            // 对类型为“文件夹”的input进行遍历
+            // 对类型为“文件夹”的input进行遍历, 自动注册
             input.directoryInputs.each { DirectoryInput directoryInput ->
                 boolean isRegisterCompoAuto = project.extensions.combuild.isRegisterCompoAuto
                 if (isRegisterCompoAuto) {
