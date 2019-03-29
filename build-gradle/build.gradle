@@ -3,7 +3,7 @@ apply plugin: 'com.novoda.bintray-release'
 
 dependencies {
     compile 'com.android.tools.build:gradle:3.2.1'
-    compile group: 'org.javassist', name: 'javassist', version: '3.20.0-GA'
+    compile 'org.javassist:javassist:3.20.0-GA'
     //gradle sdk
     compile gradleApi()
     //groovy sdk
@@ -15,7 +15,7 @@ publish {
     userOrg = 'walid1992'//bintray.com用户名
     groupId = 'com.walid'//jcenter上的路径
     artifactId = 'soul-component-build-gradle'//项目名称
-    publishVersion = '0.0.4'//版本号
+    publishVersion = '0.0.5'//版本号
     desc = ' Soul 组件化开发框架'//描述
     website = 'https://github.com/walid1992/SoulComponentForAndroid'//网站
 }
