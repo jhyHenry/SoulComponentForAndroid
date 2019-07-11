@@ -2,12 +2,12 @@ apply plugin: 'groovy'
 apply plugin: 'com.novoda.bintray-release'
 
 dependencies {
-    compile 'com.android.tools.build:gradle:3.2.1'
-    compile 'org.javassist:javassist:3.20.0-GA'
+    implementation 'com.android.tools.build:gradle:3.2.1'
+    implementation 'org.javassist:javassist:3.20.0-GA'
     //gradle sdk
-    compile gradleApi()
+    implementation gradleApi()
     //groovy sdk
-    compile localGroovy()
+    implementation localGroovy()
 }
 
 //添加

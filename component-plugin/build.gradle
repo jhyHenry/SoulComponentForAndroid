@@ -1,0 +1,11 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+
+
+dependencies {
+    implementation 'com.android.tools.build:gradle:3.2.1'
+    implementation 'org.javassist:javassist:3.20.0-GA'
+    //gradle sdk
+    implementation gradleApi()
+}
+
