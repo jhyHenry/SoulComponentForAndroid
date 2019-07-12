@@ -1,31 +1,41 @@
 package cn.soul.android.plugin.component
 
+import com.android.SdkConstants.FD_MERGED
+import com.android.SdkConstants.FD_RES
+import com.android.annotations.NonNull
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.scope.BuildArtifactsHolder
 import com.android.build.gradle.internal.scope.GlobalScope
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.BaseVariantData
-import org.gradle.internal.impldep.org.junit.experimental.theories.internal.BooleanSupplier
-import sun.jvm.hotspot.debugger.posix.elf.ELFFileParser.getParser
+import com.android.builder.core.DefaultManifestParser
+import com.android.builder.core.ManifestAttributeSupplier
+import com.android.builder.core.VariantTypeImpl
+import com.android.utils.FileUtils
+import com.android.utils.StringHelper
+import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.file.FileCollection
 import java.io.File
+import java.util.*
 
 /**
  * @author panxinghai
  *
  * date : 2019-07-11 15:33
  */
-class PluginVariantScopeImpl(private val scope: VariantScope) : PluginVariantScope {
+class PluginVariantScopeImpl(private val scope: VariantScope, private val globalScope: GlobalScope, private val extensions: BaseExtension) : PluginVariantScope {
     private val taskContainer = PluginTaskContainer(scope.taskContainer)
-
-    override fun getScope(): GlobalScope {
-        return scope.globalScope
-    }
 
     override fun getTaskContainer(): PluginTaskContainer {
         return taskContainer
     }
 
     override fun getTaskName(prefix: String, suffix: String): String {
-        return scope.getTaskName("${prefix}Component", suffix)
+        return scope.getTaskName("component${prefix.capitalize()}", suffix)
     }
 
     override fun getVariantData(): BaseVariantData {
@@ -33,31 +43,71 @@ class PluginVariantScopeImpl(private val scope: VariantScope) : PluginVariantSco
     }
 
     override fun getGlobalScope(): GlobalScope {
-        return scope.globalScope
+        return globalScope
     }
 
     override fun getVariantConfiguration(): GradleVariantConfiguration {
         val realConfig = scope.variantData.variantConfiguration
-//        val variantConfig = GradleVariantConfiguration.getBuilderForExtension()
-//            .create(
-//                scope.globalScope.projectOptions,
-//                defaultConfigData.getProductFlavor(),
-//                sourceSet,
-//                getParser(sourceSet.getManifestFile()),
-//                buildTypeData.getBuildType(),
-//                buildTypeData.getSourceSet(),
-//                variantType,
-//                signingOverride,
-//                globalScope.getErrorHandler(),
-//                false)
-//        val configuration = GradleVariantConfiguration(
-//            realConfig.project
-//        )
-        return scope.variantData.variantConfiguration
+        val variantConfig = GradleVariantConfiguration.getBuilderForExtension(extensions)
+                .create(
+                        globalScope.projectOptions,
+                        realConfig.defaultConfig,
+                        realConfig.defaultSourceSet,
+                        getParser(realConfig.defaultSourceSet.manifestFile, globalScope),
+                        realConfig.buildType,
+                        realConfig.buildTypeSourceSet,
+                        VariantTypeImpl.LIBRARY,
+                        realConfig.signingConfig,
+                        globalScope.errorHandler,
+                        this::canParseManifest)
+        return variantConfig
     }
 
     override fun getAidlSourceOutputDir(): File {
         return File(getGeneratedDir(), "source/aidl/${getVariantConfiguration().dirName}")
+    }
+
+    override fun getArtifactFileCollection(configType: AndroidArtifacts.ConsumedConfigType, artifactScope: AndroidArtifacts.ArtifactScope, artifactType: AndroidArtifacts.ArtifactType, attributeMap: Map<Attribute<String>, String>?): FileCollection {
+        return scope.getArtifactFileCollection(configType, artifactScope, artifactType, attributeMap)
+    }
+
+    override fun getArtifactFileCollection(configType: AndroidArtifacts.ConsumedConfigType, artifactScope: AndroidArtifacts.ArtifactScope, artifactType: AndroidArtifacts.ArtifactType): FileCollection {
+        return getArtifactFileCollection(configType, artifactScope, artifactType, null)
+    }
+
+    override fun getArtifactCollection(configType: AndroidArtifacts.ConsumedConfigType, artifactScope: AndroidArtifacts.ArtifactScope, artifactType: AndroidArtifacts.ArtifactType): ArtifactCollection {
+        return scope.getArtifactCollection(configType, artifactScope, artifactType)
+    }
+
+    override fun getArtifacts(): BuildArtifactsHolder {
+        return scope.artifacts
+    }
+
+    override fun getDefaultMergeResourcesOutputDir(): File {
+        return FileUtils.join(getIntermediatesDir(),
+                FD_RES,
+                FD_MERGED,
+                getVariantConfiguration().dirName)
+    }
+
+    override fun getIntermediateDir(type: InternalArtifactType): File {
+        return File(getIntermediatesDir(), "${type.name.toLowerCase(Locale.US)}/${getVariantConfiguration().dirName}")
+    }
+
+    override fun getResourceBlameLogDir(): File {
+        return FileUtils.join(getIntermediatesDir(),
+                StringHelper.toStrings(
+                        "blame",
+                        "res",
+                        getVariantConfiguration().directorySegments))
+    }
+
+    override fun isCrunchPngs(): Boolean {
+        return scope.isCrunchPngs
+    }
+
+    override fun useResourceShrinker(): Boolean {
+        return scope.useResourceShrinker()
     }
 
     override fun getGeneratedDir(): File {
@@ -68,15 +118,50 @@ class PluginVariantScopeImpl(private val scope: VariantScope) : PluginVariantSco
         return File(getGeneratedDir(), "outputs")
     }
 
+    override fun getRenderscriptResOutputDir(): File {
+        return getGeneratedResourcesDir("rs")
+    }
+
+    override fun getGeneratedResOutputDir(): File {
+        return getGeneratedResourcesDir("resValues")
+    }
+
+    override fun getGeneratedPngsOutputDir(): File {
+        return getGeneratedResourcesDir("pngs")
+    }
+
     override fun getScopeBuildDir(): File {
-        return File(scope.globalScope.buildDir, "soul")
+        return File(globalScope.buildDir, Constants.BUILD_FOLDER_NAME)
     }
 
     override fun getIntermediatesDir(): File {
-        return File(scope.globalScope.buildDir, "soul/intermediates")
+        return File(getScopeBuildDir(), "intermediates")
     }
 
     override fun getIncrementalDir(name: String): File {
-        return File(getIntermediatesDir(), "incremental")
+        return File(getIntermediatesDir(), "incremental/$name")
     }
+
+    private fun getGeneratedResourcesDir(name: String): File {
+        return FileUtils.join(
+                getGeneratedDir(),
+                StringHelper.toStrings(
+                        "res",
+                        name,
+                        getVariantConfiguration().directorySegments))
+    }
+
+    private val manifestParserMap = mutableMapOf<File, ManifestAttributeSupplier>()
+    private fun getParser(@NonNull file: File, globalScope: GlobalScope): ManifestAttributeSupplier {
+        return (manifestParserMap).computeIfAbsent(
+                file
+        ) { f ->
+            DefaultManifestParser(
+                    f,
+                    this::canParseManifest,
+                    globalScope.androidBuilder.issueReporter)
+        }
+    }
+
+    private fun canParseManifest(): Boolean = false
 }

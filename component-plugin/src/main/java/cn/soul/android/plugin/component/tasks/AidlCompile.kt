@@ -3,6 +3,10 @@ package cn.soul.android.plugin.component.tasks
 import cn.soul.android.plugin.component.PluginVariantScope
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.AIDL
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.builder.compiling.DependencyFileProcessor
@@ -64,7 +68,7 @@ open class AidlCompile : IncrementalTask() {
 
     private class DepFileProcessor : DependencyFileProcessor {
         internal var dependencyDataList: MutableList<DependencyData> =
-            Collections.synchronizedList(Lists.newArrayList())
+                Collections.synchronizedList(Lists.newArrayList())
 
 
         @Throws(IOException::class)
@@ -95,13 +99,13 @@ open class AidlCompile : IncrementalTask() {
     @Throws(InterruptedException::class, ProcessException::class, IOException::class)
     private fun compileAllFiles(dependencyFileProcessor: DependencyFileProcessor) {
         builder.compileAllAidlFiles(
-            sourceDirs!!.get(),
-            getSourceOutputDir()!!,
-            getPackagedDir(),
-            getPackageWhitelist(),
-            getImportDirs()!!.files,
-            dependencyFileProcessor,
-            LoggedProcessOutputHandler(iLogger)
+                sourceDirs!!.get(),
+                getSourceOutputDir()!!,
+                getPackagedDir(),
+                getPackageWhitelist(),
+                getImportDirs()!!.files,
+                dependencyFileProcessor,
+                LoggedProcessOutputHandler(iLogger)
         )
     }
 
@@ -122,21 +126,21 @@ open class AidlCompile : IncrementalTask() {
      */
     @Throws(InterruptedException::class, ProcessException::class, IOException::class)
     private fun compileSingleFile(
-        @NonNull sourceFolder: File,
-        @NonNull file: File,
-        @Nullable importFolders: Iterable<File>,
-        @NonNull dependencyFileProcessor: DependencyFileProcessor,
-        @NonNull processOutputHandler: ProcessOutputHandler
+            @NonNull sourceFolder: File,
+            @NonNull file: File,
+            @Nullable importFolders: Iterable<File>,
+            @NonNull dependencyFileProcessor: DependencyFileProcessor,
+            @NonNull processOutputHandler: ProcessOutputHandler
     ) {
         builder.compileAidlFile(
-            sourceFolder,
-            file,
-            getSourceOutputDir()!!,
-            getPackagedDir(),
-            getPackageWhitelist(),
-            Preconditions.checkNotNull(importFolders),
-            dependencyFileProcessor,
-            processOutputHandler
+                sourceFolder,
+                file,
+                getSourceOutputDir()!!,
+                getPackagedDir(),
+                getPackageWhitelist(),
+                Preconditions.checkNotNull(importFolders),
+                dependencyFileProcessor,
+                processOutputHandler
         )
     }
 
@@ -181,7 +185,7 @@ open class AidlCompile : IncrementalTask() {
         } catch (ignored: Exception) {
             FileUtils.delete(incrementalData)
             project.logger.info(
-                "Failed to read dependency store: full task run!"
+                    "Failed to read dependency store: full task run!"
             )
             doFullTaskAction()
             return
@@ -201,8 +205,8 @@ open class AidlCompile : IncrementalTask() {
             when (status) {
                 FileStatus.NEW -> executor.execute<Any> {
                     compileSingleFile(
-                        getSourceFolder(file), file, importFolders,
-                        processor, processOutputHandler
+                            getSourceFolder(file), file, importFolders,
+                            processor, processOutputHandler
                     )
                     null
                 }
@@ -213,8 +217,8 @@ open class AidlCompile : IncrementalTask() {
                             executor.execute<Any> {
                                 val file = File(data.mainFile)
                                 compileSingleFile(
-                                    getSourceFolder(file), file,
-                                    importFolders, processor, processOutputHandler
+                                        getSourceFolder(file), file,
+                                        importFolders, processor, processOutputHandler
                                 )
                                 null
                             }
@@ -312,7 +316,7 @@ open class AidlCompile : IncrementalTask() {
     }
 
     class ConfigAction(
-        private val scope: PluginVariantScope
+            private val scope: PluginVariantScope
     ) : TaskConfigAction<AidlCompile> {
 
         @NonNull
@@ -335,19 +339,19 @@ open class AidlCompile : IncrementalTask() {
             aidlTask.incrementalFolder = scope.getIncrementalDir(name)
 
             aidlTask.sourceDirs = Supplier { variantConfiguration.aidlSourceList }
-//            aidlTask.importDirs = scope.getArtifactFileCollection(
-//                COMPILE_CLASSPATH, ALL, AIDL
-//            )
-//
-//            aidlTask.sourceOutputDir = scope.getAidlSourceOutputDir()
-//
-//            if (variantConfiguration.type.isAar) {
-//                aidlTask.packagedDir = scope.artifacts
-//                    .appendArtifact(
-//                        InternalArtifactType.AIDL_PARCELABLE, aidlTask, "out"
-//                    )
-//                aidlTask.packageWhitelist = scope.getGlobalScope().extension.aidlPackageWhiteList
-//            }
+            aidlTask.importDirs = scope.getArtifactFileCollection(
+                    COMPILE_CLASSPATH, ALL, AIDL
+            )
+
+            aidlTask.sourceOutputDir = scope.getAidlSourceOutputDir()
+
+            if (variantConfiguration.type.isAar) {
+                aidlTask.packagedDir = scope.getArtifacts()
+                        .appendArtifact(
+                                InternalArtifactType.AIDL_PARCELABLE, aidlTask, "out"
+                        )
+                aidlTask.packageWhitelist = scope.getGlobalScope().extension.aidlPackageWhiteList
+            }
         }
     }
 }

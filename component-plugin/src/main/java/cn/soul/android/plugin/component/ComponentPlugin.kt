@@ -1,8 +1,11 @@
 package cn.soul.android.plugin.component
 
-import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.*
+import com.android.build.gradle.internal.ExtraModelInfo
+import com.android.build.gradle.internal.dependency.SourceSetManager
+import com.android.build.gradle.internal.scope.DelayedActionsExecutor
+import com.android.build.gradle.internal.scope.GlobalScope
+import com.android.build.gradle.internal.variant2.DslScopeImpl
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
@@ -21,6 +24,7 @@ class ComponentPlugin : Plugin<Project> {
     private lateinit var projectOptions: ProjectOptions
     private lateinit var threadRecorder: Recorder
     private lateinit var taskManager: TaskManager
+    private var globalScope: GlobalScope? = null
 
     companion object {
         val ANDROID_PLUGIN_VERSION = "3.2.1"
@@ -33,16 +37,16 @@ class ComponentPlugin : Plugin<Project> {
         taskManager = TaskManager(p)
         project.afterEvaluate {
             threadRecorder.record(
-                GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
-                project.path,
-                null,
-                this::configureProject
+                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
+                    project.path,
+                    null,
+                    this::configureProject
             )
             threadRecorder.record(
-                GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
-                project.path,
-                null,
-                this::configureExtension
+                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
+                    project.path,
+                    null,
+                    this::configureExtension
             )
         }
     }
@@ -53,19 +57,62 @@ class ComponentPlugin : Plugin<Project> {
     }
 
     private fun configureExtension() {
-        extension = project.extensions.getByName("android") as BaseExtension
+        val appExtension = project.extensions.getByName("android") as AppExtension
+
         val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
-        println(appPlugin)
         val variantManager = appPlugin.variantManager
-        println(variantManager)
         variantManager.variantScopes.forEach {
             val variantType = it.variantData.type
             if (variantType.isTestComponent) {
                 //这里是continue
                 return@forEach
             }
-            val pluginVariantScope = PluginVariantScopeImpl(it)
+            if (globalScope == null) {
+                val realScope = it.globalScope
+                globalScope = GlobalScope(
+                        realScope.project,
+                        realScope.filesProvider,
+                        realScope.projectOptions,
+                        realScope.dslScope,
+                        realScope.androidBuilder,
+                        realScope.sdkHandler,
+                        realScope.toolingRegistry,
+                        realScope.buildCache
+                )
+                val extraModelInfo = ExtraModelInfo(project.path, projectOptions, project.logger)
+                extension = LibraryExtension(project, projectOptions,
+                        globalScope,
+                        globalScope?.sdkHandler,
+                        appExtension.buildTypes,
+                        appExtension.productFlavors,
+                        appExtension.signingConfigs,
+                        appExtension.buildOutputs,
+                        createSourceSetManager(extraModelInfo),
+                        extraModelInfo)
+
+                globalScope?.extension = extension
+            }
+            val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension)
+
+            taskManager.createAnchorTasks(pluginVariantScope)
+
             taskManager.createCheckManifestTask(pluginVariantScope)
+
+            taskManager.createAidlTask(pluginVariantScope)
+
+            taskManager.createMergeResourcesTask(pluginVariantScope)
         }
+    }
+
+    private fun createSourceSetManager(extraModelInfo: ExtraModelInfo): SourceSetManager {
+        return SourceSetManager(
+                project,
+                //library为true
+                true,
+                DslScopeImpl(
+                        extraModelInfo.getSyncIssueHandler(),
+                        extraModelInfo.getDeprecationReporter(),
+                        project.objects),
+                DelayedActionsExecutor())
     }
 }
