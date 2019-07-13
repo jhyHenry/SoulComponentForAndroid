@@ -66,13 +66,8 @@ import javax.xml.bind.JAXBException
  *
  * date : 2019-07-11 17:31
  */
-open class MergeResources() : IncrementalTask() {
-    private lateinit var workerExecutorFacade: WorkerExecutorFacade
-
-    @Inject
-    constructor(executor: WorkerExecutor) : this() {
-        workerExecutorFacade = Workers.getWorker(executor)
-    }
+open class MergeResources @Inject constructor(executor:WorkerExecutor) : IncrementalTask() {
+    private val workerExecutorFacade: WorkerExecutorFacade = Workers.getWorker(executor)
 
     // ----- PUBLIC TASK API -----
 
@@ -751,12 +746,12 @@ open class MergeResources() : IncrementalTask() {
 
         override fun execute(@NonNull task: MergeResources) {
             val variantData = scope.getVariantData()
-            variantData.androidResources.forEach {
-                println("component: ${it.key}:${it.value}")
-                it.value.files.forEach {file->
-                    println("\t\t${file.absolutePath}")
-                }
-            }
+//            variantData.androidResources.forEach {
+//                println("component: ${it.key}:${it.value}")
+//                it.value.files.forEach {file->
+//                    println("\t\t${file.absolutePath}")
+//                }
+//            }
             val project = scope.getGlobalScope().project
 
             task.filesProvider = scope.getGlobalScope().filesProvider

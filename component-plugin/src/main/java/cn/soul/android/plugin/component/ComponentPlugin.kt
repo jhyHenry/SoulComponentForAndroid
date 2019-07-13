@@ -64,7 +64,7 @@ class ComponentPlugin : Plugin<Project> {
         variantManager.variantScopes.forEach {
             val variantType = it.variantData.type
             if (variantType.isTestComponent) {
-                //这里是continue
+                //这里是continue,不给test的variant创建task
                 return@forEach
             }
             if (globalScope == null) {
@@ -101,6 +101,10 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.createAidlTask(pluginVariantScope)
 
             taskManager.createMergeResourcesTask(pluginVariantScope)
+
+            taskManager.createBundleTask(pluginVariantScope)
+
+            project.tasks.getByName("assembleDebug").dependsOn(pluginVariantScope.getTaskContainer().pluginBundleAarTask)
         }
     }
 

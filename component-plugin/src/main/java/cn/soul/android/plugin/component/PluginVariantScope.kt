@@ -7,6 +7,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.BuildArtifactsHolder
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.OutputScope
 import com.android.build.gradle.internal.variant.BaseVariantData
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.attributes.Attribute
@@ -51,6 +52,8 @@ interface PluginVariantScope {
     fun getRenderscriptResOutputDir():File
     fun getGeneratedResOutputDir():File
     fun getGeneratedPngsOutputDir():File
+    fun getAarLocation():File
+    fun getOutputScope():OutputScope
 
     fun isCrunchPngs(): Boolean
     fun useResourceShrinker():Boolean

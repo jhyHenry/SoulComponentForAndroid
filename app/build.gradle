@@ -1,10 +1,12 @@
-apply plugin: 'com.soul.comgradle'
+//apply plugin: 'com.soul.comgradle'
+//apply plugin: 'cn.soul.component'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
     defaultConfig {
-        applicationId "com.soul.androidcomponent"
+//        applicationId "com.soul.androidcomponent"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
@@ -56,7 +58,7 @@ dependencies {
     implementation project(path: ':router-annotation')
 }
 
-combuild {
-    applicationName = 'com.soul.componentdemo.application.AppApplication'
-    isRegisterCompoAuto = true
-}
+//combuild {
+//    applicationName = 'com.soul.componentdemo.application.AppApplication'
+//    isRegisterCompoAuto = true
+//}

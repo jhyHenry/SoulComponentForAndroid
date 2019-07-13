@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.tasks.AidlCompile
+import cn.soul.android.plugin.component.tasks.BundleAar
 import cn.soul.android.plugin.component.tasks.CheckManifest
 import cn.soul.android.plugin.component.tasks.MergeResources
 import com.android.SdkConstants.FN_PUBLIC_TXT
@@ -75,6 +76,10 @@ class TaskManager(private val project: Project) {
         createMergeResourcesTask(scope, processResources = false, flags = ImmutableSet.of())
     }
 
+    fun createBundleTask(scope: PluginVariantScope) {
+        val task = taskFactory.create(BundleAar.ConfigAction(scope.getGlobalScope().extension, scope))
+    }
+
     private fun createMergeResourcesTask(
             scope: PluginVariantScope,
             processResources: Boolean,
@@ -125,8 +130,8 @@ class TaskManager(private val project: Project) {
                         processResources,
                         flags))
 
-        scope.getArtifacts().appendArtifact(mergeType.outputType,
-                ImmutableList.of(mergedOutputDir), mergeResourcesTask)
+//        scope.getArtifacts().appendArtifact(mergeType.outputType,
+//                ImmutableList.of(mergedOutputDir), mergeResourcesTask)
 
         if (alsoOutputNotCompiledResources) {
             scope.getArtifacts().appendArtifact(
@@ -137,9 +142,9 @@ class TaskManager(private val project: Project) {
 
         mergeResourcesTask.dependsOn(scope.getTaskContainer().resourceGenTask!!)
 
-        if (scope.getGlobalScope().extension.testOptions.unitTests.isIncludeAndroidResources) {
-            scope.getTaskContainer().compileTask.dependsOn(mergeResourcesTask)
-        }
+//        if (scope.getGlobalScope().extension.testOptions.unitTests.isIncludeAndroidResources) {
+//            scope.getTaskContainer().compileTask.dependsOn(mergeResourcesTask)
+//        }
 
         return mergeResourcesTask
     }

@@ -4,16 +4,16 @@ import com.android.SdkConstants.FD_MERGED
 import com.android.SdkConstants.FD_RES
 import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.scope.BuildArtifactsHolder
-import com.android.build.gradle.internal.scope.GlobalScope
-import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.builder.core.DefaultManifestParser
 import com.android.builder.core.ManifestAttributeSupplier
 import com.android.builder.core.VariantTypeImpl
+import com.android.builder.profile.ThreadRecorder
 import com.android.utils.FileUtils
 import com.android.utils.StringHelper
 import org.gradle.api.artifacts.ArtifactCollection
@@ -39,6 +39,20 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
     }
 
     override fun getVariantData(): BaseVariantData {
+        val realData = scope.variantData
+//        val libraryData = LibraryVariantData(
+//                getGlobalScope(),
+//                extensions,
+//                TaskManager(),
+//                getVariantConfiguration(),
+//                ThreadRecorder.get()
+//        )
+//        libraryData.variantDependency = realData.variantDependency
+//        libraryData.variantOutputFactory = realData.variantOutputFactory
+//
+//        libraryData.addJavaSourceFoldersToModel(realData.extraGeneratedSourceFolders)
+//        libraryData.
+//
         return scope.variantData
     }
 
@@ -128,6 +142,14 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
 
     override fun getGeneratedPngsOutputDir(): File {
         return getGeneratedResourcesDir("pngs")
+    }
+
+    override fun getAarLocation(): File {
+        return FileUtils.join(getGeneratedDir(), "aar")
+    }
+
+    override fun getOutputScope(): OutputScope {
+        return scope.outputScope
     }
 
     override fun getScopeBuildDir(): File {

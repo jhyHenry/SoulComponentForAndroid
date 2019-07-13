@@ -20,3 +20,5 @@ uploadArchives {
         pom.version = '1.0.0'
     }
 }
+
+//        ./gradlew assembleDebug -Dorg.gradle.daemon=false -Dorg.gradle.debug=true
