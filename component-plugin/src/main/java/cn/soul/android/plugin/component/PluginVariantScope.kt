@@ -4,10 +4,7 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.scope.BuildArtifactsHolder
-import com.android.build.gradle.internal.scope.GlobalScope
-import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.OutputScope
+import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.attributes.Attribute
@@ -22,41 +19,57 @@ import java.io.File
 interface PluginVariantScope {
     fun getTaskContainer(): PluginTaskContainer
     fun getTaskName(prefix: String, suffix: String): String
+    fun getTaskName(@NonNull prefix: String): String
+    fun getFullName():String
     fun getVariantData(): BaseVariantData
     fun getGlobalScope(): GlobalScope
     fun getVariantConfiguration(): GradleVariantConfiguration
     fun getAidlSourceOutputDir(): File
-    @NonNull
-    fun getArtifactFileCollection(
-            @NonNull configType: AndroidArtifacts.ConsumedConfigType,
-            @NonNull artifactScope: AndroidArtifacts.ArtifactScope,
-            @NonNull artifactType: AndroidArtifacts.ArtifactType,
-            @Nullable attributeMap: Map<Attribute<String>, String>?): FileCollection
+    fun getAnnotationProcessorOutputDir():File
+    fun getBundleArtifactFolderForDataBinding():File
 
-    @NonNull
-    fun getArtifactFileCollection(
-            @NonNull configType: AndroidArtifacts.ConsumedConfigType,
-            @NonNull artifactScope: AndroidArtifacts.ArtifactScope,
-            @NonNull artifactType: AndroidArtifacts.ArtifactType): FileCollection
+    fun keepDefaultBootstrap():Boolean
 
-    @NonNull
+    fun getJava8LangSupportType():VariantScope.Java8LangSupport
+
+    fun getArtifactFileCollection(
+            configType: AndroidArtifacts.ConsumedConfigType,
+            artifactScope: AndroidArtifacts.ArtifactScope,
+            artifactType: AndroidArtifacts.ArtifactType,
+            attributeMap: Map<Attribute<String>, String>?): FileCollection
+
+    fun getArtifactFileCollection(
+            configType: AndroidArtifacts.ConsumedConfigType,
+            artifactScope: AndroidArtifacts.ArtifactScope,
+            artifactType: AndroidArtifacts.ArtifactType): FileCollection
+
     fun getArtifactCollection(
-            @NonNull configType: AndroidArtifacts.ConsumedConfigType,
-            @NonNull artifactScope: AndroidArtifacts.ArtifactScope,
-            @NonNull artifactType: AndroidArtifacts.ArtifactType): ArtifactCollection
+            configType: AndroidArtifacts.ConsumedConfigType,
+            artifactScope: AndroidArtifacts.ArtifactScope,
+            artifactType: AndroidArtifacts.ArtifactType): ArtifactCollection
+
+    fun getBootClasspath():FileCollection
+
+    fun getJavaClasspath(configType: AndroidArtifacts.ConsumedConfigType,
+                         classesType: AndroidArtifacts.ArtifactType):FileCollection
 
     fun getArtifacts(): BuildArtifactsHolder
     fun getDefaultMergeResourcesOutputDir(): File
     fun getIntermediateDir(type: InternalArtifactType): File
-    fun getResourceBlameLogDir():File
-    fun getRenderscriptResOutputDir():File
-    fun getGeneratedResOutputDir():File
-    fun getGeneratedPngsOutputDir():File
-    fun getAarLocation():File
-    fun getOutputScope():OutputScope
+    fun getResourceBlameLogDir(): File
+    fun getRenderscriptResOutputDir(): File
+    fun getGeneratedResOutputDir(): File
+    fun getGeneratedPngsOutputDir(): File
+    fun getAarLocation(): File
+    fun getOutputScope(): OutputScope
+
+    fun getJavaClasspathArtifacts(
+            configType: AndroidArtifacts.ConsumedConfigType,
+            classesType: AndroidArtifacts.ArtifactType,
+            generatedBytecodeKey: Any?): ArtifactCollection
 
     fun isCrunchPngs(): Boolean
-    fun useResourceShrinker():Boolean
+    fun useResourceShrinker(): Boolean
 
     fun getGeneratedDir(): File
     fun getOutputsDir(): File

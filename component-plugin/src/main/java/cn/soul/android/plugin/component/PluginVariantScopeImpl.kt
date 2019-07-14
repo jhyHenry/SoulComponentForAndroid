@@ -4,16 +4,13 @@ import com.android.SdkConstants.FD_MERGED
 import com.android.SdkConstants.FD_RES
 import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.builder.core.DefaultManifestParser
 import com.android.builder.core.ManifestAttributeSupplier
 import com.android.builder.core.VariantTypeImpl
-import com.android.builder.profile.ThreadRecorder
 import com.android.utils.FileUtils
 import com.android.utils.StringHelper
 import org.gradle.api.artifacts.ArtifactCollection
@@ -38,26 +35,40 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return scope.getTaskName("component${prefix.capitalize()}", suffix)
     }
 
+    override fun getTaskName(prefix: String): String {
+        return getTaskName(prefix, "")
+    }
+
+    override fun getFullName(): String {
+        return getVariantConfiguration().fullName
+    }
+
     override fun getVariantData(): BaseVariantData {
-        val realData = scope.variantData
-//        val libraryData = LibraryVariantData(
-//                getGlobalScope(),
-//                extensions,
-//                TaskManager(),
-//                getVariantConfiguration(),
-//                ThreadRecorder.get()
-//        )
-//        libraryData.variantDependency = realData.variantDependency
-//        libraryData.variantOutputFactory = realData.variantOutputFactory
-//
-//        libraryData.addJavaSourceFoldersToModel(realData.extraGeneratedSourceFolders)
-//        libraryData.
-//
         return scope.variantData
     }
 
     override fun getGlobalScope(): GlobalScope {
         return globalScope
+    }
+
+    override fun getAnnotationProcessorOutputDir(): File {
+        return FileUtils.join(
+                getGeneratedDir(),
+                "source",
+                "apt",
+                getVariantConfiguration().dirName)
+    }
+
+    override fun getBundleArtifactFolderForDataBinding(): File {
+        return dataBindingIntermediate("bundle-bin")
+    }
+
+    override fun keepDefaultBootstrap(): Boolean {
+        return scope.keepDefaultBootstrap()
+    }
+
+    override fun getJava8LangSupportType(): VariantScope.Java8LangSupport {
+        return scope.java8LangSupportType
     }
 
     override fun getVariantConfiguration(): GradleVariantConfiguration {
@@ -91,6 +102,14 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
 
     override fun getArtifactCollection(configType: AndroidArtifacts.ConsumedConfigType, artifactScope: AndroidArtifacts.ArtifactScope, artifactType: AndroidArtifacts.ArtifactType): ArtifactCollection {
         return scope.getArtifactCollection(configType, artifactScope, artifactType)
+    }
+
+    override fun getBootClasspath(): FileCollection {
+        return scope.bootClasspath
+    }
+
+    override fun getJavaClasspath(configType: AndroidArtifacts.ConsumedConfigType, classesType: AndroidArtifacts.ArtifactType): FileCollection {
+        return scope.getJavaClasspath(configType, classesType)
     }
 
     override fun getArtifacts(): BuildArtifactsHolder {
@@ -152,6 +171,10 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return scope.outputScope
     }
 
+    override fun getJavaClasspathArtifacts(configType: AndroidArtifacts.ConsumedConfigType, classesType: AndroidArtifacts.ArtifactType, generatedBytecodeKey: Any?): ArtifactCollection {
+        return scope.getJavaClasspathArtifacts(configType, classesType, generatedBytecodeKey)
+    }
+
     override fun getScopeBuildDir(): File {
         return File(globalScope.buildDir, Constants.BUILD_FOLDER_NAME)
     }
@@ -174,7 +197,7 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
     }
 
     private val manifestParserMap = mutableMapOf<File, ManifestAttributeSupplier>()
-    private fun getParser(@NonNull file: File, globalScope: GlobalScope): ManifestAttributeSupplier {
+    private fun getParser(file: File, globalScope: GlobalScope): ManifestAttributeSupplier {
         return (manifestParserMap).computeIfAbsent(
                 file
         ) { f ->
@@ -186,4 +209,16 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
     }
 
     private fun canParseManifest(): Boolean = false
+
+    private fun intermediate(directoryName: String, fileName: String): File {
+        return FileUtils.join(
+                getIntermediatesDir(),
+                directoryName,
+                getVariantConfiguration().dirName,
+                fileName)
+    }
+
+    private fun dataBindingIntermediate(name: String): File {
+        return intermediate("data-binding", name)
+    }
 }

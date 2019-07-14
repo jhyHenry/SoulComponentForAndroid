@@ -100,11 +100,11 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.createAidlTask(pluginVariantScope)
 
+            taskManager.createJavacTask(pluginVariantScope)
+
             taskManager.createMergeResourcesTask(pluginVariantScope)
 
             taskManager.createBundleTask(pluginVariantScope)
-
-            project.tasks.getByName("assembleDebug").dependsOn(pluginVariantScope.getTaskContainer().pluginBundleAarTask)
         }
     }
 
@@ -114,8 +114,8 @@ class ComponentPlugin : Plugin<Project> {
                 //library为true
                 true,
                 DslScopeImpl(
-                        extraModelInfo.getSyncIssueHandler(),
-                        extraModelInfo.getDeprecationReporter(),
+                        extraModelInfo.syncIssueHandler,
+                        extraModelInfo.deprecationReporter,
                         project.objects),
                 DelayedActionsExecutor())
     }

@@ -1,14 +1,12 @@
 package cn.soul.android.plugin.component
 
-import cn.soul.android.plugin.component.tasks.AidlCompile
-import cn.soul.android.plugin.component.tasks.BundleAar
-import cn.soul.android.plugin.component.tasks.CheckManifest
-import cn.soul.android.plugin.component.tasks.MergeResources
+import cn.soul.android.plugin.component.tasks.*
 import com.android.SdkConstants.FN_PUBLIC_TXT
 import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.TaskFactoryImpl
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.base.MoreObjects
 import com.google.common.collect.ImmutableList
@@ -46,6 +44,18 @@ class TaskManager(private val project: Project) {
         task.dependsOn(scope.getTaskContainer().preBuildTask)
     }
 
+    fun createJavacTask(scope: PluginVariantScope) {
+        val preCompileTask = taskFactory.create(JavaPreCompileTask.ConfigAction(scope))
+        preCompileTask.dependsOn(scope.getTaskContainer().preBuildTask)
+
+        val javacTask = taskFactory.create(AndroidJavaCompile.JavaCompileConfigAction(scope))
+        scope.getTaskContainer().pluginJavacTask = javacTask
+
+//        if (scope.getTaskContainer().sourceGenTask != null) {
+//            compileTask.dependsOn(scope.getTaskContainer().sourceGenTask!!)
+//        }
+    }
+
     fun createMergeResourcesTask(scope: PluginVariantScope) {
         val flags: ImmutableSet<MergeResources.Flag>
         if (java.lang.Boolean.TRUE == scope.getGlobalScope().extension.aaptOptions.namespaced) {
@@ -73,11 +83,13 @@ class TaskManager(private val project: Project) {
                                 InternalArtifactType.PUBLIC_RES,
                                 packageResourcesTask,
                                 FN_PUBLIC_TXT))
-        createMergeResourcesTask(scope, processResources = false, flags = ImmutableSet.of())
+        scope.getTaskContainer().pluginMergeResourcesTask = packageResourcesTask
+//        createMergeResourcesTask(scope, processResources = false, flags = ImmutableSet.of())
     }
 
     fun createBundleTask(scope: PluginVariantScope) {
         val task = taskFactory.create(BundleAar.ConfigAction(scope.getGlobalScope().extension, scope))
+        task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask)
     }
 
     private fun createMergeResourcesTask(
