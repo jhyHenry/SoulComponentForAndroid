@@ -3,6 +3,7 @@ package cn.soul.android.plugin.component
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -82,4 +83,5 @@ interface PluginVariantScope {
 
     //custom
     fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File
+    fun getTransformManager(): TransformManager
 }

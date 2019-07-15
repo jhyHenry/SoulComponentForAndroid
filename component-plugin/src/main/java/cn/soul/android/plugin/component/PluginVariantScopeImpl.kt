@@ -3,6 +3,7 @@ package cn.soul.android.plugin.component
 import com.android.SdkConstants.*
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -196,6 +197,10 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
 
     override fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File {
         return File(getIntermediateDir(type), "${task.name}/$fileName")
+    }
+
+    override fun getTransformManager(): TransformManager {
+        return scope.transformManager
     }
 
     private fun getGeneratedResourcesDir(name: String): File {

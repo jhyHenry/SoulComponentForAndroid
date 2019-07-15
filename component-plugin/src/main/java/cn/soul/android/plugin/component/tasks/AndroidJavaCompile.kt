@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
+import cn.soul.android.plugin.component.PluginArtifactsHolder
 import cn.soul.android.plugin.component.PluginVariantScope
 import com.android.annotations.VisibleForTesting
 import com.android.build.api.artifact.BuildableArtifact
@@ -136,19 +137,19 @@ open class AndroidJavaCompile : JavaCompile() {
             // compile doesn't work recursively currently, so every ConfigurableFileTree needs to be
             // directly in the source array.
             for (fileTree in scope.getVariantData().javaSources) {
-                println("source file tree: ${fileTree.dir}")
+//                println("source file tree: ${fileTree.dir}")
                 javacTask.source(fileTree)
             }
 
             javacTask.options.bootstrapClasspath = scope.getBootClasspath()
-            scope.getBootClasspath().files.forEach {
-                println("boot class path: ${it.absolutePath}")
-            }
+//            scope.getBootClasspath().files.forEach {
+//                println("boot class path: ${it.absolutePath}")
+//            }
 
             var classpath = scope.getJavaClasspath(COMPILE_CLASSPATH, CLASSES)
-            classpath.files.forEach {
-                println("class path: ${it.absolutePath}")
-            }
+//            classpath.files.forEach {
+//                println("class path: ${it.absolutePath}")
+//            }
             if (!globalScope.projectOptions.get(BooleanOption.ENABLE_CORE_LAMBDA_STUBS) && scope.keepDefaultBootstrap()) {
                 // adding android.jar to classpath, as it is not in the bootclasspath
                 classpath = classpath.plus(
@@ -156,11 +157,10 @@ open class AndroidJavaCompile : JavaCompile() {
             }
             javacTask.classpath = classpath
 
-            javacTask.destinationDir = scope.getInternalArtifactTypeOutputFile(
+            javacTask.destinationDir = PluginArtifactsHolder.appendArtifact(scope,
                     InternalArtifactType.JAVAC,
                     javacTask,
                     "classes")
-            println("dest dir:${javacTask.destinationDir.absolutePath}")
 
             val compileOptions = globalScope.extension.compileOptions
 
@@ -169,7 +169,6 @@ open class AndroidJavaCompile : JavaCompile() {
                     compileOptions,
                     globalScope.extension.compileSdkVersion,
                     scope.getJava8LangSupportType())
-
             javacTask.options.encoding = compileOptions.encoding
 
             val includeCompileClasspath = scope.getVariantConfiguration()
@@ -178,9 +177,9 @@ open class AndroidJavaCompile : JavaCompile() {
                     .includeCompileClasspath
 
             var processorPath = scope.getArtifactFileCollection(ANNOTATION_PROCESSOR, ALL, PROCESSED_JAR)
-            processorPath.files.forEach {
-                println("processorPath: ${it.absolutePath}")
-            }
+//            processorPath.files.forEach {
+//                println("processorPath: ${it.absolutePath}")
+//            }
             if (java.lang.Boolean.TRUE == includeCompileClasspath) {
                 // We need the jar files because annotation processors require the resources.
                 processorPath = processorPath.plus(scope.getJavaClasspath(COMPILE_CLASSPATH, PROCESSED_JAR))
@@ -227,7 +226,7 @@ open class AndroidJavaCompile : JavaCompile() {
             javacTask
                     .options.annotationProcessorGeneratedSourcesDirectory = scope.getAnnotationProcessorOutputDir()
             javacTask.annotationProcessorOutputFolder = scope.getAnnotationProcessorOutputDir()
-            println("annotation processDir:${scope.getAnnotationProcessorOutputDir()}")
+//            println("annotation processDir:${scope.getAnnotationProcessorOutputDir()}")
 
             if (isDataBindingEnabled) {
                 // The data binding artifact is created through annotation processing, which is invoked
@@ -239,10 +238,11 @@ open class AndroidJavaCompile : JavaCompile() {
             }
 
             javacTask.processorListFile = artifacts.getFinalArtifactFiles(ANNOTATION_PROCESSOR_LIST)
-            javacTask.processorListFile?.files?.forEach {
-                println("processorListFile: ${it.absolutePath}")
-            }
+//            javacTask.processorListFile?.files?.forEach {
+//                println("processorListFile: ${it.absolutePath}")
+//            }
             javacTask.variantName = scope.getFullName()
+
         }
 
         private fun isIncremental(

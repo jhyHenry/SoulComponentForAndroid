@@ -2,11 +2,14 @@ package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.tasks.*
 import com.android.SdkConstants.FN_PUBLIC_TXT
+import com.android.build.api.transform.QualifiedContent
 import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.TaskFactoryImpl
 import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.pipeline.OriginalStream
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.google.common.base.MoreObjects
+import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
@@ -50,12 +53,6 @@ class TaskManager(private val project: Project) {
         val javacTask = taskFactory.create(AndroidJavaCompile.JavaCompileConfigAction(scope))
         scope.getTaskContainer().pluginJavacTask = javacTask
 //        javacTask.dependsOn(preCompileTask)
-
-        javacTask.taskDependencies.getDependencies(javacTask).forEach { innerTask ->
-            println("first dependency:$innerTask")
-        }
-
-
         return javacTask
     }
 
@@ -93,6 +90,66 @@ class TaskManager(private val project: Project) {
     fun createBundleTask(scope: PluginVariantScope) {
         val task = taskFactory.create(BundleAar.ConfigAction(scope.getGlobalScope().extension, scope))
         task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask)
+    }
+
+    fun addJavacClassesStream(scope: PluginVariantScope) {
+        val artifacts = scope.getArtifacts()
+        val javaOutputs = project.files(PluginArtifactsHolder.getArtifactFile(InternalArtifactType.JAVAC))
+
+        Preconditions.checkNotNull(javaOutputs)
+        // create separate streams for the output of JAVAC and for the pre/post javac
+        // bytecode hooks
+        scope.getVariantData().allPreJavacGeneratedBytecode.files.forEach {
+            println("pre:${it.absolutePath}")
+        }
+        scope.getVariantData().allPostJavacGeneratedBytecode.files.forEach {
+            println("post:${it.absolutePath}")
+        }
+        scope.getTransformManager()
+                .addStream(
+                        OriginalStream.builder(project, "javac-output")
+                                // Need both classes and resources because some annotation
+                                // processors generate resources
+                                .addContentTypes(
+                                        QualifiedContent.DefaultContentType.CLASSES, QualifiedContent.DefaultContentType.RESOURCES)
+                                .addScope(QualifiedContent.Scope.PROJECT)
+                                .setFileCollection(javaOutputs)
+                                .build())
+
+        scope.getTransformManager()
+                .addStream(
+                        OriginalStream.builder(project, "pre-javac-generated-bytecode")
+                                .addContentTypes(
+                                        QualifiedContent.DefaultContentType.CLASSES, QualifiedContent.DefaultContentType.RESOURCES)
+                                .addScope(QualifiedContent.Scope.PROJECT)
+                                .setFileCollection(
+                                        scope.getVariantData().allPreJavacGeneratedBytecode)
+                                .build())
+
+        scope.getTransformManager()
+                .addStream(
+                        OriginalStream.builder(project, "post-javac-generated-bytecode")
+                                .addContentTypes(
+                                        QualifiedContent.DefaultContentType.CLASSES, QualifiedContent.DefaultContentType.RESOURCES)
+                                .addScope(QualifiedContent.Scope.PROJECT)
+                                .setFileCollection(
+                                        scope.getVariantData().allPostJavacGeneratedBytecode)
+                                .build())
+
+        if (artifacts.hasArtifact(InternalArtifactType.RUNTIME_R_CLASS_CLASSES)) {
+            scope.getTransformManager()
+                    .addStream(
+                            OriginalStream.builder(project, "final-r-classes")
+                                    .addContentTypes(
+                                            QualifiedContent.DefaultContentType.CLASSES,
+                                            QualifiedContent.DefaultContentType.RESOURCES)
+                                    .addScope(QualifiedContent.Scope.PROJECT)
+                                    .setFileCollection(
+                                            artifacts.getFinalArtifactFiles(
+                                                    InternalArtifactType.RUNTIME_R_CLASS_CLASSES)
+                                                    .get())
+                                    .build())
+        }
     }
 
     private fun createMergeResourcesTask(

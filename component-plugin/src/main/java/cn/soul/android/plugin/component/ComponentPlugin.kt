@@ -102,7 +102,7 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.createMergeResourcesTask(pluginVariantScope)
 
             taskManager.createBundleTask(pluginVariantScope)
-
+            taskManager.addJavacClassesStream(pluginVariantScope)
 
             val transformManager = it.transformManager
 
