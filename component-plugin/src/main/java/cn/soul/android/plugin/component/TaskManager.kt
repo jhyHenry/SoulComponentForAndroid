@@ -6,13 +6,12 @@ import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.TaskFactoryImpl
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.options.BooleanOption
 import com.google.common.base.MoreObjects
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
 import org.gradle.api.Project
+import org.gradle.api.Task
 import java.io.File
 import java.util.*
 
@@ -44,16 +43,20 @@ class TaskManager(private val project: Project) {
         task.dependsOn(scope.getTaskContainer().preBuildTask)
     }
 
-    fun createJavacTask(scope: PluginVariantScope) {
+    fun createJavacTask(scope: PluginVariantScope): Task {
         val preCompileTask = taskFactory.create(JavaPreCompileTask.ConfigAction(scope))
         preCompileTask.dependsOn(scope.getTaskContainer().preBuildTask)
 
         val javacTask = taskFactory.create(AndroidJavaCompile.JavaCompileConfigAction(scope))
         scope.getTaskContainer().pluginJavacTask = javacTask
+//        javacTask.dependsOn(preCompileTask)
 
-//        if (scope.getTaskContainer().sourceGenTask != null) {
-//            compileTask.dependsOn(scope.getTaskContainer().sourceGenTask!!)
-//        }
+        javacTask.taskDependencies.getDependencies(javacTask).forEach { innerTask ->
+            println("first dependency:$innerTask")
+        }
+
+
+        return javacTask
     }
 
     fun createMergeResourcesTask(scope: PluginVariantScope) {

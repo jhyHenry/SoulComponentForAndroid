@@ -50,7 +50,7 @@ open class BundleAar : Zip() {
             bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
 
             //bundle format: name|type|path
-            //bundle f:aidl/AIDL_PARCELABLE/
+            //bundle f:aidl|AIDL_PARCELABLE|
 
             //bundle consumer_proguard_file|intermediates/consumer_proguard_file/debug/mergeDebugConsumerProguardFiles/proguard.txt
 
@@ -85,6 +85,7 @@ open class BundleAar : Zip() {
             //bundle annotations.zip|ANNOTATIONS_ZIP|intermediates/annotations_zip/debug/extractDebugAnnotations/annotations.zip
 
             //bundle class.jar|AAR_MAIN_JAR|intermediates/packaged-classes/debug/classes.jar
+            bundle.from()
 
             //bundle f:libs|AAR_LIBS_DIRECTORY|intermediates/packaged-classes/debug/libs
 

@@ -96,7 +96,7 @@ open class JavaPreCompileTask : AndroidBuilderTask() {
                     .stream()
                     .filter { artifact -> !annotationProcessors.contains(artifact.file) }
                     .collect(Collectors.toList())
-            if (!compileProcessors!!.isEmpty()) {
+            if (compileProcessors!!.isNotEmpty()) {
                 val message = ("Annotation processors must be explicitly declared now.  The following "
                         + "dependencies on the compile classpath are found to contain "
                         + "annotation processor.  Please add them to the "
@@ -112,7 +112,7 @@ open class JavaPreCompileTask : AndroidBuilderTask() {
                         + "https://developer.android.com/r/tools/annotation-processor-error-message.html "
                         + "for more details.")
                 if (isTestComponent) {
-                    getLogger().warn(message)
+                    logger.warn(message)
                 } else {
                     throw RuntimeException(message)
                 }
@@ -208,11 +208,9 @@ open class JavaPreCompileTask : AndroidBuilderTask() {
 
         override fun execute(@NonNull task: JavaPreCompileTask) {
             task.init(
-                    scope.getArtifacts()
-                            .appendArtifact(
-                                    InternalArtifactType.ANNOTATION_PROCESSOR_LIST,
-                                    task,
-                                    "annotationProcessors.json"),
+                    scope.getInternalArtifactTypeOutputFile(InternalArtifactType.ANNOTATION_PROCESSOR_LIST,
+                            task,
+                            "annotationProcessors.json"),
                     if (scope.getVariantData().type.isTestComponent)
                         scope.getVariantData().type.prefix + "AnnotationProcessor"
                     else

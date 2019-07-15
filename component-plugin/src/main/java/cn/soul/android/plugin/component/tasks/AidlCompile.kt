@@ -350,7 +350,8 @@ open class AidlCompile : IncrementalTask() {
                         .appendArtifact(
                                 InternalArtifactType.AIDL_PARCELABLE, aidlTask, "out"
                         )
-                aidlTask.packageWhitelist = scope.getGlobalScope().extension.aidlPackageWhiteList
+                //todo: add packageWhiteList support
+//                aidlTask.packageWhitelist = scope.getGlobalScope().extension.aidlPackageWhiteList
             }
         }
     }

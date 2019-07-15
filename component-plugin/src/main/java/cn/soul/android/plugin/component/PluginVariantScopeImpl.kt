@@ -1,8 +1,6 @@
 package cn.soul.android.plugin.component
 
-import com.android.SdkConstants.FD_MERGED
-import com.android.SdkConstants.FD_RES
-import com.android.annotations.NonNull
+import com.android.SdkConstants.*
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -13,6 +11,7 @@ import com.android.builder.core.ManifestAttributeSupplier
 import com.android.builder.core.VariantTypeImpl
 import com.android.utils.FileUtils
 import com.android.utils.StringHelper
+import org.gradle.api.Task
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.FileCollection
@@ -61,6 +60,14 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
 
     override fun getBundleArtifactFolderForDataBinding(): File {
         return dataBindingIntermediate("bundle-bin")
+    }
+
+    override fun getAarClassesJar(): File {
+        return intermediate("packaged-classes", FN_CLASSES_JAR)
+    }
+
+    override fun getIntermediateJarOutputFolder(): File {
+        return File(getIntermediatesDir(), "/intermediate-jars/${getFullName()}")
     }
 
     override fun keepDefaultBootstrap(): Boolean {
@@ -185,6 +192,10 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
 
     override fun getIncrementalDir(name: String): File {
         return File(getIntermediatesDir(), "incremental/$name")
+    }
+
+    override fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File {
+        return File(getIntermediateDir(type), "${task.name}/$fileName")
     }
 
     private fun getGeneratedResourcesDir(name: String): File {

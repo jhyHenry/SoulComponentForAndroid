@@ -6,6 +6,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
+import org.gradle.api.Task
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.FileCollection
@@ -20,17 +21,19 @@ interface PluginVariantScope {
     fun getTaskContainer(): PluginTaskContainer
     fun getTaskName(prefix: String, suffix: String): String
     fun getTaskName(@NonNull prefix: String): String
-    fun getFullName():String
+    fun getFullName(): String
     fun getVariantData(): BaseVariantData
     fun getGlobalScope(): GlobalScope
     fun getVariantConfiguration(): GradleVariantConfiguration
     fun getAidlSourceOutputDir(): File
-    fun getAnnotationProcessorOutputDir():File
-    fun getBundleArtifactFolderForDataBinding():File
+    fun getAnnotationProcessorOutputDir(): File
+    fun getBundleArtifactFolderForDataBinding(): File
+    fun getAarClassesJar(): File
+    fun getIntermediateJarOutputFolder(): File
 
-    fun keepDefaultBootstrap():Boolean
+    fun keepDefaultBootstrap(): Boolean
 
-    fun getJava8LangSupportType():VariantScope.Java8LangSupport
+    fun getJava8LangSupportType(): VariantScope.Java8LangSupport
 
     fun getArtifactFileCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
@@ -48,10 +51,10 @@ interface PluginVariantScope {
             artifactScope: AndroidArtifacts.ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType): ArtifactCollection
 
-    fun getBootClasspath():FileCollection
+    fun getBootClasspath(): FileCollection
 
     fun getJavaClasspath(configType: AndroidArtifacts.ConsumedConfigType,
-                         classesType: AndroidArtifacts.ArtifactType):FileCollection
+                         classesType: AndroidArtifacts.ArtifactType): FileCollection
 
     fun getArtifacts(): BuildArtifactsHolder
     fun getDefaultMergeResourcesOutputDir(): File
@@ -77,4 +80,6 @@ interface PluginVariantScope {
     fun getScopeBuildDir(): File
     fun getIncrementalDir(name: String): File
 
+    //custom
+    fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File
 }

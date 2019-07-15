@@ -1,5 +1,7 @@
 package cn.soul.android.plugin.component
 
+import com.android.SdkConstants.FN_CLASSES_JAR
+import com.android.SdkConstants.FN_INTERMEDIATE_RES_JAR
 import com.android.build.gradle.*
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.dependency.SourceSetManager
@@ -12,6 +14,7 @@ import com.android.builder.profile.ThreadRecorder
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
 
 /**
  * @author panxinghai
@@ -26,10 +29,6 @@ class ComponentPlugin : Plugin<Project> {
     private lateinit var taskManager: TaskManager
     private var globalScope: GlobalScope? = null
 
-    companion object {
-        val ANDROID_PLUGIN_VERSION = "3.2.1"
-    }
-
     override fun apply(p: Project) {
         project = p
         projectOptions = ProjectOptions(p)
@@ -43,10 +42,16 @@ class ComponentPlugin : Plugin<Project> {
                     this::configureProject
             )
             threadRecorder.record(
-                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
+                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSION_CREATION,
                     project.path,
                     null,
                     this::configureExtension
+            )
+            threadRecorder.record(
+                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_TASKS_CREATION,
+                    project.path,
+                    null,
+                    this::createTasks
             )
         }
     }
@@ -57,8 +62,25 @@ class ComponentPlugin : Plugin<Project> {
     }
 
     private fun configureExtension() {
-        val appExtension = project.extensions.getByName("android") as AppExtension
+        val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
+        val variantManager = appPlugin.variantManager
+        val scope = variantManager.variantScopes[0]
+        val realScope = scope.globalScope
+        globalScope = GlobalScope(
+                realScope.project,
+                realScope.filesProvider,
+                realScope.projectOptions,
+                realScope.dslScope,
+                realScope.androidBuilder,
+                realScope.sdkHandler,
+                realScope.toolingRegistry,
+                realScope.buildCache
+        )
+        extension = scope.globalScope.extension as BaseExtension
+        globalScope?.extension = extension
+    }
 
+    private fun createTasks() {
         val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
         val variantManager = appPlugin.variantManager
         variantManager.variantScopes.forEach {
@@ -66,31 +88,6 @@ class ComponentPlugin : Plugin<Project> {
             if (variantType.isTestComponent) {
                 //这里是continue,不给test的variant创建task
                 return@forEach
-            }
-            if (globalScope == null) {
-                val realScope = it.globalScope
-                globalScope = GlobalScope(
-                        realScope.project,
-                        realScope.filesProvider,
-                        realScope.projectOptions,
-                        realScope.dslScope,
-                        realScope.androidBuilder,
-                        realScope.sdkHandler,
-                        realScope.toolingRegistry,
-                        realScope.buildCache
-                )
-                val extraModelInfo = ExtraModelInfo(project.path, projectOptions, project.logger)
-                extension = LibraryExtension(project, projectOptions,
-                        globalScope,
-                        globalScope?.sdkHandler,
-                        appExtension.buildTypes,
-                        appExtension.productFlavors,
-                        appExtension.signingConfigs,
-                        appExtension.buildOutputs,
-                        createSourceSetManager(extraModelInfo),
-                        extraModelInfo)
-
-                globalScope?.extension = extension
             }
             val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension)
 
@@ -105,6 +102,16 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.createMergeResourcesTask(pluginVariantScope)
 
             taskManager.createBundleTask(pluginVariantScope)
+
+
+            val transformManager = it.transformManager
+
+
+            val jarOutputFolder = pluginVariantScope.getIntermediateJarOutputFolder()
+            val mainClassJar = File(jarOutputFolder, FN_CLASSES_JAR)
+            val mainResJar = File(jarOutputFolder, FN_INTERMEDIATE_RES_JAR)
+
+
         }
     }
 
