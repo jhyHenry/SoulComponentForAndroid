@@ -1,6 +1,5 @@
 package cn.soul.android.plugin.component
 
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import org.gradle.api.Task
 import java.io.File
