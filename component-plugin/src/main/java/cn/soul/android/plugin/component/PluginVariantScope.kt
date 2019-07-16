@@ -1,7 +1,5 @@
 package cn.soul.android.plugin.component
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -18,13 +16,14 @@ import java.io.File
  *
  * date : 2019-07-11 15:32
  */
-interface PluginVariantScope {
+interface PluginVariantScope : TransformVariantScope {
+
+    //transformVariantScope
+    override fun getGlobalScope(): GlobalScope
+
     fun getTaskContainer(): PluginTaskContainer
-    fun getTaskName(prefix: String, suffix: String): String
-    fun getTaskName(@NonNull prefix: String): String
     fun getFullName(): String
     fun getVariantData(): BaseVariantData
-    fun getGlobalScope(): GlobalScope
     fun getVariantConfiguration(): GradleVariantConfiguration
     fun getAidlSourceOutputDir(): File
     fun getAnnotationProcessorOutputDir(): File
@@ -65,7 +64,6 @@ interface PluginVariantScope {
     fun getGeneratedResOutputDir(): File
     fun getGeneratedPngsOutputDir(): File
     fun getAarLocation(): File
-    fun getOutputScope(): OutputScope
 
     fun getJavaClasspathArtifacts(
             configType: AndroidArtifacts.ConsumedConfigType,
@@ -83,5 +81,6 @@ interface PluginVariantScope {
 
     //custom
     fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File
+
     fun getTransformManager(): TransformManager
 }

@@ -24,11 +24,25 @@ import java.util.*
  *
  * date : 2019-07-11 15:33
  */
-class PluginVariantScopeImpl(private val scope: VariantScope, private val globalScope: GlobalScope, private val extensions: BaseExtension) : PluginVariantScope {
-    private val taskContainer = PluginTaskContainer(scope.taskContainer)
+@Suppress("UnstableApiUsage")
+class PluginVariantScopeImpl(private val scope: VariantScope, private val globalScope: GlobalScope, extensions: BaseExtension, private val transformManager: TransformManager) : PluginVariantScope {
+    private var variantConfiguration: GradleVariantConfiguration
+    private val manifestParserMap = mutableMapOf<File, ManifestAttributeSupplier>()
 
-    override fun getTaskContainer(): PluginTaskContainer {
-        return taskContainer
+    init {
+        val realConfig = scope.variantData.variantConfiguration
+        variantConfiguration = GradleVariantConfiguration.getBuilderForExtension(extensions)
+                .create(
+                        globalScope.projectOptions,
+                        realConfig.defaultConfig,
+                        realConfig.defaultSourceSet,
+                        getParser(realConfig.defaultSourceSet.manifestFile, globalScope),
+                        realConfig.buildType,
+                        realConfig.buildTypeSourceSet,
+                        VariantTypeImpl.LIBRARY,
+                        realConfig.signingConfig,
+                        globalScope.errorHandler,
+                        this::canParseManifest)
     }
 
     override fun getTaskName(prefix: String, suffix: String): String {
@@ -39,6 +53,33 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return getTaskName(prefix, "")
     }
 
+    override fun getGlobalScope(): GlobalScope {
+        return globalScope
+    }
+
+    override fun getOutputScope(): OutputScope {
+        return scope.outputScope
+    }
+
+    override fun getDirName(): String {
+        return getVariantConfiguration().dirName
+    }
+
+    override fun getDirectorySegments(): MutableCollection<String> {
+        return getVariantConfiguration().directorySegments
+    }
+
+    override fun getFullVariantName(): String {
+        return getVariantConfiguration().fullName
+    }
+
+    private val taskContainer = PluginTaskContainer(scope.taskContainer)
+
+    override fun getTaskContainer(): PluginTaskContainer {
+        return taskContainer
+    }
+
+
     override fun getFullName(): String {
         return getVariantConfiguration().fullName
     }
@@ -47,9 +88,6 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return scope.variantData
     }
 
-    override fun getGlobalScope(): GlobalScope {
-        return globalScope
-    }
 
     override fun getAnnotationProcessorOutputDir(): File {
         return FileUtils.join(
@@ -80,20 +118,7 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
     }
 
     override fun getVariantConfiguration(): GradleVariantConfiguration {
-        val realConfig = scope.variantData.variantConfiguration
-        val variantConfig = GradleVariantConfiguration.getBuilderForExtension(extensions)
-                .create(
-                        globalScope.projectOptions,
-                        realConfig.defaultConfig,
-                        realConfig.defaultSourceSet,
-                        getParser(realConfig.defaultSourceSet.manifestFile, globalScope),
-                        realConfig.buildType,
-                        realConfig.buildTypeSourceSet,
-                        VariantTypeImpl.LIBRARY,
-                        realConfig.signingConfig,
-                        globalScope.errorHandler,
-                        this::canParseManifest)
-        return variantConfig
+        return variantConfiguration
     }
 
     override fun getAidlSourceOutputDir(): File {
@@ -175,10 +200,6 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return FileUtils.join(getGeneratedDir(), "aar")
     }
 
-    override fun getOutputScope(): OutputScope {
-        return scope.outputScope
-    }
-
     override fun getJavaClasspathArtifacts(configType: AndroidArtifacts.ConsumedConfigType, classesType: AndroidArtifacts.ArtifactType, generatedBytecodeKey: Any?): ArtifactCollection {
         return scope.getJavaClasspathArtifacts(configType, classesType, generatedBytecodeKey)
     }
@@ -200,7 +221,7 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
     }
 
     override fun getTransformManager(): TransformManager {
-        return scope.transformManager
+        return transformManager
     }
 
     private fun getGeneratedResourcesDir(name: String): File {
@@ -212,11 +233,8 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
                         getVariantConfiguration().directorySegments))
     }
 
-    private val manifestParserMap = mutableMapOf<File, ManifestAttributeSupplier>()
     private fun getParser(file: File, globalScope: GlobalScope): ManifestAttributeSupplier {
-        return (manifestParserMap).computeIfAbsent(
-                file
-        ) { f ->
+        return (manifestParserMap).computeIfAbsent(file) { f ->
             DefaultManifestParser(
                     f,
                     this::canParseManifest,
@@ -224,7 +242,7 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         }
     }
 
-    private fun canParseManifest(): Boolean = false
+    private fun canParseManifest(): Boolean = true
 
     private fun intermediate(directoryName: String, fileName: String): File {
         return FileUtils.join(

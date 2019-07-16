@@ -19,6 +19,10 @@ object PluginArtifactsHolder {
         }
     }
 
+    fun appendArtifact(type: InternalArtifactType, file: File) {
+        artifactsMap[type] = file
+    }
+
     fun getArtifactFile(type: InternalArtifactType): File? {
         return artifactsMap[type]
     }

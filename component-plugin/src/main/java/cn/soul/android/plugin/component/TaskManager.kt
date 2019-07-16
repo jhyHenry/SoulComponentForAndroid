@@ -1,13 +1,19 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.tasks.*
-import com.android.SdkConstants.FN_PUBLIC_TXT
+import com.android.SdkConstants.*
 import com.android.build.api.transform.QualifiedContent
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.TaskFactoryImpl
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.pipeline.OriginalStream
+import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.transforms.LibraryIntermediateJarsTransform
+import com.android.build.gradle.internal.transforms.LibraryJniLibsTransform
+import com.android.builder.errors.EvalIssueException
+import com.android.builder.errors.EvalIssueReporter
 import com.google.common.base.MoreObjects
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
@@ -57,13 +63,12 @@ class TaskManager(private val project: Project) {
     }
 
     fun createMergeResourcesTask(scope: PluginVariantScope) {
-        val flags: ImmutableSet<MergeResources.Flag>
-        if (java.lang.Boolean.TRUE == scope.getGlobalScope().extension.aaptOptions.namespaced) {
-            flags = Sets.immutableEnumSet(
+        val flags: ImmutableSet<MergeResources.Flag> = if (java.lang.Boolean.TRUE == scope.globalScope.extension.aaptOptions.namespaced) {
+            Sets.immutableEnumSet(
                     MergeResources.Flag.REMOVE_RESOURCE_NAMESPACES,
                     MergeResources.Flag.PROCESS_VECTOR_DRAWABLES)
         } else {
-            flags = Sets.immutableEnumSet(MergeResources.Flag.PROCESS_VECTOR_DRAWABLES)
+            Sets.immutableEnumSet(MergeResources.Flag.PROCESS_VECTOR_DRAWABLES)
         }
 
         // Create a merge task to only merge the resources from this library and not
@@ -88,7 +93,7 @@ class TaskManager(private val project: Project) {
     }
 
     fun createBundleTask(scope: PluginVariantScope) {
-        val task = taskFactory.create(BundleAar.ConfigAction(scope.getGlobalScope().extension, scope))
+        val task = taskFactory.create(BundleAar.ConfigAction(scope.globalScope.extension, scope))
         task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask)
     }
 
@@ -150,6 +155,73 @@ class TaskManager(private val project: Project) {
                                                     .get())
                                     .build())
         }
+    }
+
+    fun transform(scope: PluginVariantScope, extension: BaseExtension) {
+        val transformManager = scope.getTransformManager()
+
+        val customTransforms = extension.transforms
+        val customTransformsDependencies = extension.transformsDependencies
+
+        //add customTransform
+        for (i in 0 until customTransforms.size) {
+            val transform = customTransforms[i]
+            val difference = Sets.difference(transform.scopes as Set<*>?, TransformManager.PROJECT_ONLY)
+            if (difference.isNotEmpty()) {
+                val scopes = difference.toString()
+                scope.globalScope.androidBuilder?.issueReporter?.reportError(
+                        EvalIssueReporter.Type.GENERIC,
+                        EvalIssueException("Transforms with scopes '$scopes' cannot be applied to library projects")
+                )
+            }
+            val deps = customTransformsDependencies[i]
+            transformManager.addTransform(taskFactory, scope, transform)
+                    .ifPresent {
+                        if (deps.isNotEmpty()) {
+                            it.dependsOn(deps)
+                        }
+                        if (transform.scopes.isEmpty()) {
+                            scope.getTaskContainer().assembleTask.dependsOn(it)
+                        }
+                    }
+
+        }
+
+        val jarOutputFolder = scope.getIntermediateJarOutputFolder()
+        val mainClassJar = File(jarOutputFolder, FN_CLASSES_JAR)
+        val mainResJar = File(jarOutputFolder, FN_INTERMEDIATE_RES_JAR)
+        val intermediateTransform = LibraryIntermediateJarsTransform(mainClassJar,
+                mainResJar,
+                scope.getVariantConfiguration()::getPackageFromManifest,
+                true)
+        //add class file transform to jar file Task
+        transformManager.addTransform(
+                taskFactory,
+                scope,
+                intermediateTransform)
+                .ifPresent {
+                    PluginArtifactsHolder.appendArtifact(
+                            InternalArtifactType.LIBRARY_CLASSES,
+                            mainClassJar)
+                    PluginArtifactsHolder.appendArtifact(
+                            InternalArtifactType.LIBRARY_JAVA_RES,
+                            mainResJar)
+                }
+
+        val jniLibsFolder = File(jarOutputFolder, FD_JNI)
+        val intermediateJniTransform = LibraryJniLibsTransform("intermediateJniLibs",
+                jniLibsFolder,
+                TransformManager.PROJECT_ONLY)
+        transformManager.addTransform(taskFactory,
+                scope,
+                intermediateJniTransform)
+                .ifPresent {
+                    PluginArtifactsHolder.appendArtifact(
+                            InternalArtifactType.LIBRARY_JNI,
+                            jniLibsFolder)
+                }
+
+
     }
 
     private fun createMergeResourcesTask(

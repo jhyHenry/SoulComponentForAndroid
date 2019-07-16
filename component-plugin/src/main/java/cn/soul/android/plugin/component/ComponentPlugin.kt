@@ -1,9 +1,5 @@
 package cn.soul.android.plugin.component
 
-import com.android.SdkConstants.FN_CLASSES_JAR
-import com.android.SdkConstants.FN_INTERMEDIATE_RES_JAR
-import com.android.build.api.transform.QualifiedContent
-import com.android.build.api.transform.Transform
 import com.android.build.gradle.*
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.dependency.SourceSetManager
@@ -12,15 +8,11 @@ import com.android.build.gradle.internal.scope.DelayedActionsExecutor
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.build.gradle.internal.variant2.DslScopeImpl
 import com.android.build.gradle.options.ProjectOptions
-import com.android.builder.errors.EvalIssueException
-import com.android.builder.errors.EvalIssueReporter
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
-import com.google.common.collect.Sets
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import java.io.File
 
 /**
  * @author panxinghai
@@ -95,7 +87,8 @@ class ComponentPlugin : Plugin<Project> {
                 //这里是continue,不给test的variant创建task
                 return@forEach
             }
-            val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension)
+            val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
+            val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager)
 
             taskManager.createAnchorTasks(pluginVariantScope)
 
@@ -110,26 +103,8 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.createBundleTask(pluginVariantScope)
             taskManager.addJavacClassesStream(pluginVariantScope)
 
-            val transformManager = it.transformManager
+            taskManager.transform(pluginVariantScope, extension)
 
-            val customTransforms = extension.transforms
-            val customTransformsDependencies = extension.transformsDependencies
-
-            for (i in 0 until customTransforms.size) {
-                val transform = customTransforms[i]
-                val difference = Sets.difference(transform.scopes as Set<*>?, TransformManager.PROJECT_ONLY)
-                if (difference.isNotEmpty()) {
-                    val scopes = difference.toString()
-                    globalScope?.androidBuilder?.issueReporter?.reportError(
-                            EvalIssueReporter.Type.GENERIC,
-                            EvalIssueException("Transforms with scopes '$scopes' cannot be applied to library projects")
-                    )
-                }
-            }
-
-            val jarOutputFolder = pluginVariantScope.getIntermediateJarOutputFolder()
-            val mainClassJar = File(jarOutputFolder, FN_CLASSES_JAR)
-            val mainResJar = File(jarOutputFolder, FN_INTERMEDIATE_RES_JAR)
         }
     }
 
