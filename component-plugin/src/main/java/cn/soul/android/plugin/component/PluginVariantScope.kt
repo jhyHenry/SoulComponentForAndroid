@@ -56,6 +56,9 @@ interface PluginVariantScope : TransformVariantScope {
     fun getJavaClasspath(configType: AndroidArtifacts.ConsumedConfigType,
                          classesType: AndroidArtifacts.ArtifactType): FileCollection
 
+    fun getProvidedOnlyClasspath(): FileCollection
+    fun getLocalPackagedJars(): FileCollection
+
     fun getArtifacts(): BuildArtifactsHolder
     fun getDefaultMergeResourcesOutputDir(): File
     fun getIntermediateDir(type: InternalArtifactType): File
@@ -64,6 +67,9 @@ interface PluginVariantScope : TransformVariantScope {
     fun getGeneratedResOutputDir(): File
     fun getGeneratedPngsOutputDir(): File
     fun getAarLocation(): File
+    fun getAarLibsDirectory(): File
+    fun getMergeNativeLibsOutputDir(): File
+    fun getNdkSoFolder(): Collection<File>
 
     fun getJavaClasspathArtifacts(
             configType: AndroidArtifacts.ConsumedConfigType,
@@ -72,6 +78,8 @@ interface PluginVariantScope : TransformVariantScope {
 
     fun isCrunchPngs(): Boolean
     fun useResourceShrinker(): Boolean
+    fun consumesFeatureJars(): Boolean
+    fun getNeedsMainDexListForBundle(): Boolean
 
     fun getGeneratedDir(): File
     fun getOutputsDir(): File

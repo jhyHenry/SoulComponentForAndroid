@@ -90,20 +90,24 @@ class ComponentPlugin : Plugin<Project> {
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
             val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager)
 
+            taskManager.createDependencyStreams(pluginVariantScope, transformManager)
+
             taskManager.createAnchorTasks(pluginVariantScope)
 
             taskManager.createCheckManifestTask(pluginVariantScope)
+            taskManager.createMergeLibManifestsTask(pluginVariantScope)
 
             taskManager.createAidlTask(pluginVariantScope)
 
-            taskManager.createJavacTask(pluginVariantScope)
+//            taskManager.createJavacTask(pluginVariantScope)
 
             taskManager.createMergeResourcesTask(pluginVariantScope)
 
-            taskManager.createBundleTask(pluginVariantScope)
             taskManager.addJavacClassesStream(pluginVariantScope)
 
             taskManager.transform(pluginVariantScope, extension)
+
+            taskManager.createBundleTask(pluginVariantScope)
 
         }
     }

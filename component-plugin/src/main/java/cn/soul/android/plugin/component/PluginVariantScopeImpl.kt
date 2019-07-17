@@ -5,6 +5,10 @@ import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
 import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.DefaultManifestParser
@@ -105,6 +109,18 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return intermediate("packaged-classes", FN_CLASSES_JAR)
     }
 
+    override fun getAarLibsDirectory(): File {
+        return intermediate("packaged-classes", "libs")
+    }
+
+    override fun getMergeNativeLibsOutputDir(): File {
+        return FileUtils.join(getIntermediatesDir(),"/jniLibs/$dirName")
+    }
+
+    override fun getNdkSoFolder(): Collection<File> {
+        return scope.ndkSoFolder
+    }
+
     override fun getIntermediateJarOutputFolder(): File {
         return File(getIntermediatesDir(), "/intermediate-jars/${getFullName()}")
     }
@@ -145,6 +161,16 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return scope.getJavaClasspath(configType, classesType)
     }
 
+    override fun getProvidedOnlyClasspath(): FileCollection {
+        val compile = getArtifactFileCollection(COMPILE_CLASSPATH, ALL, CLASSES)
+        val pkg = getArtifactFileCollection(RUNTIME_CLASSPATH, ALL, CLASSES)
+        return compile.minus(pkg)
+    }
+
+    override fun getLocalPackagedJars(): FileCollection {
+        return scope.localPackagedJars
+    }
+
     override fun getArtifacts(): BuildArtifactsHolder {
         return scope.artifacts
     }
@@ -176,6 +202,18 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
         return scope.useResourceShrinker()
     }
 
+    override fun consumesFeatureJars(): Boolean {
+        return (getVariantData().type.isBaseModule
+                && getVariantConfiguration().buildType.isMinifyEnabled
+                && globalScope.hasDynamicFeatures())
+    }
+
+    override fun getNeedsMainDexListForBundle(): Boolean {
+        return (getVariantData().type.isBaseModule
+                && globalScope.hasDynamicFeatures()
+                && getVariantConfiguration().dexingType.needsMainDexList)
+    }
+
     override fun getGeneratedDir(): File {
         return File(getScopeBuildDir(), "generated")
     }
@@ -197,7 +235,7 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
     }
 
     override fun getAarLocation(): File {
-        return FileUtils.join(getGeneratedDir(), "aar")
+        return FileUtils.join(getOutputsDir(), "aar")
     }
 
     override fun getJavaClasspathArtifacts(configType: AndroidArtifacts.ConsumedConfigType, classesType: AndroidArtifacts.ArtifactType, generatedBytecodeKey: Any?): ArtifactCollection {

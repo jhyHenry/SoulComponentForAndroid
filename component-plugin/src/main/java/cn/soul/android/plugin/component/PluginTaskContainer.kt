@@ -1,9 +1,6 @@
 package cn.soul.android.plugin.component
 
-import cn.soul.android.plugin.component.tasks.AidlCompile
-import cn.soul.android.plugin.component.tasks.BundleAar
-import cn.soul.android.plugin.component.tasks.CheckManifest
-import cn.soul.android.plugin.component.tasks.MergeResources
+import cn.soul.android.plugin.component.tasks.*
 import com.android.build.gradle.internal.scope.TaskContainer
 import org.gradle.api.Task
 import org.gradle.api.tasks.compile.JavaCompile
@@ -16,6 +13,7 @@ import org.gradle.api.tasks.compile.JavaCompile
  */
 class PluginTaskContainer(container: TaskContainer) : TaskContainer by container {
     var pluginCheckManifestTask: CheckManifest? = null
+    var pluginProcessManifest: ProcessManifest? = null
     var pluginJavacTask: JavaCompile? = null
     var pluginAidlCompile: AidlCompile? = null
     var pluginMergeResourcesTask: MergeResources? = null

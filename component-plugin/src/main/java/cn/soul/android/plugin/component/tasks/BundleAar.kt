@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
+import cn.soul.android.plugin.component.ComponentArtifactType
 import cn.soul.android.plugin.component.PluginVariantScope
 import com.android.SdkConstants
 import com.android.build.gradle.AndroidConfig
@@ -16,6 +17,7 @@ import org.gradle.api.tasks.bundling.Zip
 /**
  * Created by nebula on 2019-07-13
  */
+@Suppress("UnstableApiUsage")
 open class BundleAar : Zip() {
     private lateinit var archiveNameSupplier: () -> String
     @Input
@@ -26,7 +28,7 @@ open class BundleAar : Zip() {
             private val variantScope: PluginVariantScope
     ) : TaskConfigAction<BundleAar> {
 
-        override fun getName() = variantScope.getTaskName("bundle", "Aar")
+        override fun getName(): String = variantScope.getTaskName("bundle", "Aar")
 
         override fun getType() = BundleAar::class.java
 
@@ -61,6 +63,7 @@ open class BundleAar : Zip() {
                 //todo:add dataBinding
             }
             //bundle AndroidManifest.xml|intermediates/merged_manifest/debug/processDebugManifest/merged/AndroidManifest.xml
+            bundle.from(artifacts.getFinalArtifactFiles(InternalArtifactType.LIBRARY_MANIFEST))
 
             //bundle R.txt|SYMBOL_LIST|intermediates/symbols/debug/R.txt
             bundle.from(artifacts.getFinalArtifactFiles(InternalArtifactType.SYMBOL_LIST))
@@ -85,9 +88,10 @@ open class BundleAar : Zip() {
             //bundle annotations.zip|ANNOTATIONS_ZIP|intermediates/annotations_zip/debug/extractDebugAnnotations/annotations.zip
 
             //bundle class.jar|AAR_MAIN_JAR|intermediates/packaged-classes/debug/classes.jar
-            bundle.from()
+            bundle.from(artifacts.getFinalArtifactFiles(ComponentArtifactType.COMPONENT_AAR_MAIN_JAR))
 
             //bundle f:libs|AAR_LIBS_DIRECTORY|intermediates/packaged-classes/debug/libs
+            bundle.from(artifacts.getFinalArtifactFiles(ComponentArtifactType.COMPONENT_AAR_LIBS_DIR))
 
             //bundle f:assets|LIBRARY_ASSETS|intermediates/library_assets/debug/packageDebugAssets/out
 
