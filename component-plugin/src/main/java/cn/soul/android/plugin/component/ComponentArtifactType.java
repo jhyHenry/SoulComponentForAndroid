@@ -10,5 +10,4 @@ import com.android.build.api.artifact.ArtifactType;
 public enum ComponentArtifactType implements ArtifactType {
     COMPONENT_AAR_MAIN_JAR,
     COMPONENT_AAR_LIBS_DIR,
-
 }

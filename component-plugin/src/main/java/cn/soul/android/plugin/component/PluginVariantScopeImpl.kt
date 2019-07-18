@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component
 
+import cn.soul.android.plugin.component.extesion.ComponentExtension
 import com.android.SdkConstants.*
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
@@ -29,7 +30,11 @@ import java.util.*
  * date : 2019-07-11 15:33
  */
 @Suppress("UnstableApiUsage")
-class PluginVariantScopeImpl(private val scope: VariantScope, private val globalScope: GlobalScope, extensions: BaseExtension, private val transformManager: TransformManager) : PluginVariantScope {
+class PluginVariantScopeImpl(private val scope: VariantScope,
+                             private val globalScope: GlobalScope,
+                             extensions: BaseExtension,
+                             private val transformManager: TransformManager,
+                             private val compExtension: ComponentExtension) : PluginVariantScope {
     private var variantConfiguration: GradleVariantConfiguration
     private val manifestParserMap = mutableMapOf<File, ManifestAttributeSupplier>()
 
@@ -114,7 +119,7 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
     }
 
     override fun getMergeNativeLibsOutputDir(): File {
-        return FileUtils.join(getIntermediatesDir(),"/jniLibs/$dirName")
+        return FileUtils.join(getIntermediatesDir(), "/jniLibs/$dirName")
     }
 
     override fun getNdkSoFolder(): Collection<File> {
@@ -260,6 +265,10 @@ class PluginVariantScopeImpl(private val scope: VariantScope, private val global
 
     override fun getTransformManager(): TransformManager {
         return transformManager
+    }
+
+    override fun getComponentExtension(): ComponentExtension {
+        return compExtension
     }
 
     private fun getGeneratedResourcesDir(name: String): File {

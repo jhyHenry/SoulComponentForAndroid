@@ -1,5 +1,7 @@
 package cn.soul.android.plugin.component
 
+import cn.soul.android.plugin.component.extesion.ComponentExtension
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.*
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.dependency.SourceSetManager
@@ -32,6 +34,7 @@ class ComponentPlugin : Plugin<Project> {
         projectOptions = ProjectOptions(p)
         threadRecorder = ThreadRecorder.get()
         taskManager = TaskManager(p)
+        Log.p(msg = "apply component plugin.")
         project.afterEvaluate {
             threadRecorder.record(
                     GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
@@ -55,11 +58,12 @@ class ComponentPlugin : Plugin<Project> {
     }
 
     private fun configureProject() {
+        Log.p(msg = "configure project.")
         val gradle = project.gradle
-
     }
 
     private fun configureExtension() {
+        Log.p(msg = "configure extension.")
         val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
         val variantManager = appPlugin.variantManager
         val scope = variantManager.variantScopes[0]
@@ -79,6 +83,7 @@ class ComponentPlugin : Plugin<Project> {
     }
 
     private fun createTasks() {
+        Log.p(msg = "create tasks.")
         val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
         val variantManager = appPlugin.variantManager
         variantManager.variantScopes.forEach {
@@ -88,7 +93,9 @@ class ComponentPlugin : Plugin<Project> {
                 return@forEach
             }
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
-            val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager)
+            val componentExtension = ComponentExtension()
+            componentExtension.ensureComponentExtension(project)
+            val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager, componentExtension)
 
             taskManager.createDependencyStreams(pluginVariantScope, transformManager)
 
@@ -107,8 +114,9 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.transform(pluginVariantScope, extension)
 
-            taskManager.createBundleTask(pluginVariantScope)
+            taskManager.createRefineManifestTask(pluginVariantScope)
 
+            taskManager.createBundleTask(pluginVariantScope)
         }
     }
 

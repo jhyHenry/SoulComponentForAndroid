@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component
 
+import cn.soul.android.plugin.component.extesion.ComponentExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -91,4 +92,6 @@ interface PluginVariantScope : TransformVariantScope {
     fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File
 
     fun getTransformManager(): TransformManager
+
+    fun getComponentExtension(): ComponentExtension
 }

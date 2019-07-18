@@ -107,6 +107,11 @@ class TaskManager(private val project: Project) {
 //        createMergeResourcesTask(scope, processResources = false, flags = ImmutableSet.of())
     }
 
+    fun createRefineManifestTask(scope: PluginVariantScope) {
+        val processManifestFile = scope.getTaskContainer().pluginProcessManifest?.processorManifestOutputFile
+        taskFactory.create(RefineManifest.ConfigAction(scope, processManifestFile!!))
+    }
+
     fun createBundleTask(scope: PluginVariantScope) {
         val task = taskFactory.create(BundleAar.ConfigAction(scope.globalScope.extension, scope))
         scope.getTaskContainer().pluginBundleAarTask = task

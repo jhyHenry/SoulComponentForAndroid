@@ -33,7 +33,7 @@ open class ProcessManifest : ManifestProcessorTask() {
     private var variantConfiguration: VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor>? = null
     private var outputScope: OutputScope? = null
 
-    private var processorManifestOutputFile: File? = null
+    var processorManifestOutputFile: File? = null
 
     override fun doFullTaskAction() {
         val aaptFriendlyManifestOutputFile = aaptFriendlyManifestOutputFile
@@ -209,11 +209,11 @@ open class ProcessManifest : ManifestProcessorTask() {
 
             processManifest.maxSdkVersion = TaskInputHelper.memoize { mergedFlavor.maxSdkVersion }
 
-            processManifest.manifestOutputDirectory = scope.getArtifacts()
-                    .appendArtifact(
-                            InternalArtifactType.MERGED_MANIFESTS,
+            processManifest.manifestOutputDirectory =
+                    scope.getInternalArtifactTypeOutputFile(InternalArtifactType.MERGED_MANIFESTS,
                             processManifest,
                             "merged")
+
 
             processManifest.aaptFriendlyManifestOutputDirectory = scope.getArtifacts()
                     .appendArtifact(
@@ -225,11 +225,11 @@ open class ProcessManifest : ManifestProcessorTask() {
                     processManifest.manifestOutputDirectory,
                     SdkConstants.FN_ANDROID_MANIFEST_XML)
 
-            scope.getArtifacts()
-                    .appendArtifact(
-                            InternalArtifactType.LIBRARY_MANIFEST,
-                            ImmutableList.of(processManifest.processorManifestOutputFile!!),
-                            processManifest)
+//            scope.getArtifacts()
+//                    .appendArtifact(
+//                            InternalArtifactType.LIBRARY_MANIFEST,
+//                            ImmutableList.of(processManifest.processorManifestOutputFile!!),
+//                            processManifest)
 
             processManifest.outputScope = scope.outputScope
 
