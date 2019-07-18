@@ -1,4 +1,4 @@
-apply plugin: 'com.soul.comgradle'
+apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
@@ -53,7 +53,6 @@ android {
 }
 
 dependencies {
-    implementation project(':componentservice')
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     annotationProcessor project(':router-anno-compiler')
 //    annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
@@ -62,11 +61,6 @@ dependencies {
     })
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-}
-
-combuild {
-    applicationName = 'com.soul.reader.runalone.application.ReaderApplication'
-    isRegisterCompoAuto = false
 }
 
 repositories {

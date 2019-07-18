@@ -13,8 +13,10 @@ import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
+import groovy.lang.Closure
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.dsl.DependencyHandler
 
 /**
  * @author panxinghai
@@ -118,6 +120,12 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.createBundleTask(pluginVariantScope)
         }
+//        project.dependencies(object : Closure<Any>(project.dependencies) {
+//            override fun call(arg: Any?): Any {
+//                val handler = arg as DependencyHandler
+//                handler.
+//            }
+//        })
     }
 
     private fun createSourceSetManager(extraModelInfo: ExtraModelInfo): SourceSetManager {

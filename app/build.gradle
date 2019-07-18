@@ -1,12 +1,12 @@
-//apply plugin: 'com.soul.comgradle'
+apply plugin: 'com.android.application'
 //apply plugin: 'cn.soul.component'
-apply plugin: 'com.android.library'
+//apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
     defaultConfig {
-//        applicationId "com.soul.androidcomponent"
+        applicationId "com.soul.androidcomponent"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
@@ -53,8 +53,8 @@ android {
 }
 
 dependencies {
-    implementation project(':componentservice')
     annotationProcessor project(':router-anno-compiler')
+    implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation project(path: ':router-annotation')
 }
 
