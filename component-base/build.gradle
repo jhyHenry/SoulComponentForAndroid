@@ -10,8 +10,8 @@ uploadArchives {
     repositories.mavenDeployer {
         repository(url: uri('../repo/'))
 
-        pom.groupId = 'cn.soul.android.plugin'
-        pom.artifactId = 'component-plugin'
+        pom.groupId = 'cn.soul.android.module'
+        pom.artifactId = 'component'
         pom.version = '1.0.0'
     }
 }

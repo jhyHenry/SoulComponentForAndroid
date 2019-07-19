@@ -186,7 +186,7 @@ class TaskManager(private val project: Project) {
 //        }
     }
 
-    fun transform(scope: PluginVariantScope, extension: BaseExtension) {
+    fun addCustomTransforms(scope: PluginVariantScope, extension: BaseExtension) {
         val transformManager = scope.getTransformManager()
 
         val customTransforms = extension.transforms
@@ -213,8 +213,11 @@ class TaskManager(private val project: Project) {
                             scope.getTaskContainer().assembleTask.dependsOn(it)
                         }
                     }
-
         }
+    }
+
+    fun transform(scope: PluginVariantScope) {
+        val transformManager = scope.getTransformManager()
 
         val jarOutputFolder = scope.getIntermediateJarOutputFolder()
         val mainClassJar = File(jarOutputFolder, FN_CLASSES_JAR)
@@ -225,6 +228,7 @@ class TaskManager(private val project: Project) {
         createIntermediateJniLibsTransform(jniLibsFolder, transformManager, scope)
 
         val classesJar = scope.getAarClassesJar()
+//        val classesJar = scope.getVariantData().allPostJavacGeneratedBytecode
         val libsDir = scope.getAarLibsDirectory()
         createAarJarsTransform(classesJar, libsDir, scope, transformManager)
 

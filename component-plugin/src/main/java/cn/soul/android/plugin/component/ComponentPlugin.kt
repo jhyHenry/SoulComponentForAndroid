@@ -1,8 +1,11 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.extesion.ComponentExtension
+import cn.soul.android.plugin.component.tasks.transform.RouterCompileTransform
 import cn.soul.android.plugin.component.utils.Log
-import com.android.build.gradle.*
+import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.pipeline.TransformManager
@@ -13,10 +16,8 @@ import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
-import groovy.lang.Closure
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.dsl.DependencyHandler
 
 /**
  * @author panxinghai
@@ -37,6 +38,8 @@ class ComponentPlugin : Plugin<Project> {
         threadRecorder = ThreadRecorder.get()
         taskManager = TaskManager(p)
         Log.p(msg = "apply component plugin.")
+
+        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform())
         project.afterEvaluate {
             threadRecorder.record(
                     GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
@@ -95,6 +98,8 @@ class ComponentPlugin : Plugin<Project> {
                 return@forEach
             }
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
+
+
             val componentExtension = ComponentExtension()
             componentExtension.ensureComponentExtension(project)
             val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager, componentExtension)
@@ -114,7 +119,8 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.addJavacClassesStream(pluginVariantScope)
 
-            taskManager.transform(pluginVariantScope, extension)
+//            taskManager.addCustomTransforms(pluginVariantScope, extension)
+            taskManager.transform(pluginVariantScope)
 
             taskManager.createRefineManifestTask(pluginVariantScope)
 
