@@ -73,7 +73,6 @@ class TaskManager(private val project: Project) {
 
         val javacTask = taskFactory.create(AndroidJavaCompile.JavaCompileConfigAction(scope))
         scope.getTaskContainer().pluginJavacTask = javacTask
-//        javacTask.dependsOn(preCompileTask)
         return javacTask
     }
 
@@ -121,7 +120,6 @@ class TaskManager(private val project: Project) {
 
     fun addJavacClassesStream(scope: PluginVariantScope) {
         val artifacts = scope.getArtifacts()
-//        val javaOutputs = project.files(PluginArtifactsHolder.getArtifactFile(InternalArtifactType.JAVAC))
         val javaOutputs = artifacts.getFinalArtifactFiles(InternalArtifactType.JAVAC).get()
 
         Preconditions.checkNotNull(javaOutputs)
@@ -195,7 +193,7 @@ class TaskManager(private val project: Project) {
         //add customTransform
         for (i in 0 until customTransforms.size) {
             val transform = customTransforms[i]
-            val difference = Sets.difference(transform.scopes as Set<*>?, TransformManager.PROJECT_ONLY)
+            val difference = Sets.difference(transform.scopes as Set<Any?>?, TransformManager.PROJECT_ONLY)
             if (difference.isNotEmpty()) {
                 val scopes = difference.toString()
                 scope.globalScope.androidBuilder?.issueReporter?.reportError(

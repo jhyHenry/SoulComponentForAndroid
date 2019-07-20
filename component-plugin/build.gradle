@@ -7,6 +7,8 @@ dependencies {
     implementation 'com.android.tools.build:gradle:3.2.1'
     implementation 'org.javassist:javassist:3.20.0-GA'
     implementation 'org.dom4j:dom4j:2.1.1'
+//    implementation project(":component-base")
+    implementation 'cn.soul.android.module:component:1.0.0'
     implementation localGroovy()
     //gradle sdk
     implementation gradleApi()
@@ -19,7 +21,7 @@ uploadArchives {
 
         pom.groupId = 'cn.soul.android.plugin'
         pom.artifactId = 'component-plugin'
-        pom.version = '1.0.0'
+        pom.version = '1.0.1'
     }
 }
 
