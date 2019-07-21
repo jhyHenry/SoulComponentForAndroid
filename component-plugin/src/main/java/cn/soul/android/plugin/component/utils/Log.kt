@@ -43,7 +43,7 @@ object Log {
     }
 
     fun e(msg: String) {
-        doErrorLog(Log.Level.ERROR, msg = msg)
+        doErrorLog(Log.Level.ERROR, msg = "error: $msg")
     }
 
     fun w(msg: String) {

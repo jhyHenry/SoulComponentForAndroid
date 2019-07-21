@@ -166,7 +166,7 @@ open class ProcessManifest : ManifestProcessorTask() {
     @Input
     @Optional
     fun getManifestPlaceholders(): String {
-        return ManifestProcessorTask.serializeMap(variantConfiguration!!.manifestPlaceholders)
+        return serializeMap(variantConfiguration!!.manifestPlaceholders)
     }
 
     @Input
@@ -224,12 +224,6 @@ open class ProcessManifest : ManifestProcessorTask() {
             processManifest.processorManifestOutputFile = File(
                     processManifest.manifestOutputDirectory,
                     SdkConstants.FN_ANDROID_MANIFEST_XML)
-
-//            scope.getArtifacts()
-//                    .appendArtifact(
-//                            InternalArtifactType.LIBRARY_MANIFEST,
-//                            ImmutableList.of(processManifest.processorManifestOutputFile!!),
-//                            processManifest)
 
             processManifest.outputScope = scope.outputScope
 

@@ -8,7 +8,7 @@ dependencies {
     implementation 'org.javassist:javassist:3.20.0-GA'
     implementation 'org.dom4j:dom4j:2.1.1'
 //    implementation project(":component-base")
-    implementation 'cn.soul.android.module:component:1.0.0'
+    implementation 'cn.soul.android.module:component:1.0.0@jar'
     implementation localGroovy()
     //gradle sdk
     implementation gradleApi()

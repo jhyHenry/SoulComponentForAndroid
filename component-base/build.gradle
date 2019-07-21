@@ -1,8 +1,29 @@
-apply plugin: 'java-library'
+apply plugin: 'com.android.library'
 apply plugin: 'maven'
 
 
 dependencies {
+
+}
+android {
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+}
+
+android.libraryVariants.all { variant ->
+    def name = variant.buildType.name
+    def task = project.tasks.create "jar${name.capitalize()}", Jar
+    task.dependsOn variant.javaCompile
+    task.from variant.javaCompile.destinationDir
+//    println variant.javaCompileProvider.get().destinationDir
+    artifacts.add('archives', task)
 
 }
 

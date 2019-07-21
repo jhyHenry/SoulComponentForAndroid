@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component.extesion
 
 import cn.soul.android.plugin.component.PluginVariantScope
+import org.gradle.api.Action
 import org.gradle.api.Project
 
 /**
@@ -9,7 +10,12 @@ import org.gradle.api.Project
  * date : 2019-07-12 12:00
  */
 open class ComponentExtension {
+    internal val dependencies = Dependencies()
     var archiveName: String? = null
+
+    fun dependencies(action: Action<Dependencies>) {
+        action.execute(dependencies)
+    }
 
     fun ensureComponentExtension(project: Project) {
         if (archiveName == null) {

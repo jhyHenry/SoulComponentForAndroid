@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
 import org.gradle.api.Project
-import org.gradle.api.Task
+import org.gradle.api.file.FileCollection
 import java.io.File
 import java.util.*
 
@@ -65,15 +65,6 @@ class TaskManager(private val project: Project) {
         val task = taskFactory.create(AidlCompile.ConfigAction(scope))
         scope.getTaskContainer().pluginAidlCompile = task
         task.dependsOn(scope.getTaskContainer().preBuildTask)
-    }
-
-    fun createJavacTask(scope: PluginVariantScope): Task {
-        val preCompileTask = taskFactory.create(JavaPreCompileTask.ConfigAction(scope))
-        preCompileTask.dependsOn(scope.getTaskContainer().preBuildTask)
-
-        val javacTask = taskFactory.create(AndroidJavaCompile.JavaCompileConfigAction(scope))
-        scope.getTaskContainer().pluginJavacTask = javacTask
-        return javacTask
     }
 
     fun createMergeResourcesTask(scope: PluginVariantScope) {
@@ -118,19 +109,12 @@ class TaskManager(private val project: Project) {
         task.dependsOn(scope.getTaskContainer().pluginProcessManifest!!)
     }
 
-    fun addJavacClassesStream(scope: PluginVariantScope) {
+    fun addJavacClassesStream(javaOutputs: FileCollection, scope: PluginVariantScope) {
         val artifacts = scope.getArtifacts()
-        val javaOutputs = artifacts.getFinalArtifactFiles(InternalArtifactType.JAVAC).get()
 
         Preconditions.checkNotNull(javaOutputs)
         // create separate streams for the output of JAVAC and for the pre/post javac
         // bytecode hooks
-        scope.getVariantData().allPreJavacGeneratedBytecode.files.forEach {
-            println("pre:${it.absolutePath}")
-        }
-        scope.getVariantData().allPostJavacGeneratedBytecode.files.forEach {
-            println("post:${it.absolutePath}")
-        }
         scope.getTransformManager()
                 .addStream(
                         OriginalStream.builder(project, "javac-output")
@@ -176,12 +160,6 @@ class TaskManager(private val project: Project) {
                                                     .get())
                                     .build())
         }
-//        scope.getTransformManager().streams.forEach {
-//            println(it.name)
-//            it.fileCollection.files.forEach { file ->
-//                println(file.absolutePath)
-//            }
-//        }
     }
 
     fun addCustomTransforms(scope: PluginVariantScope, extension: BaseExtension) {
@@ -226,7 +204,6 @@ class TaskManager(private val project: Project) {
         createIntermediateJniLibsTransform(jniLibsFolder, transformManager, scope)
 
         val classesJar = scope.getAarClassesJar()
-//        val classesJar = scope.getVariantData().allPostJavacGeneratedBytecode
         val libsDir = scope.getAarLibsDirectory()
         createAarJarsTransform(classesJar, libsDir, scope, transformManager)
 

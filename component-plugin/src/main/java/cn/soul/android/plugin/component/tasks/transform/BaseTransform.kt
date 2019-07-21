@@ -33,7 +33,6 @@ abstract class BaseTransform : Transform() {
                 Format.DIRECTORY
         )
         // 将input的目录复制到output指定目录
-        Log.e(dest.absolutePath)
         FileUtils.copyDirectory(directoryInput.file, dest)
     }
 

@@ -23,8 +23,6 @@ open class RefineManifest : AndroidVariantTask() {
 
     @TaskAction
     fun taskAction() {
-//        manifestFile = File("/Users/panxinghai/AndroidStudioProjects/Test/app/build/soul/intermediates/merged_manifests/debug/componentProcessDebugManifest/merged/AndroidManifest.xml")
-//        val outputFile = File(manifestFile?.parentFile, "test.xml")
         val reader = SAXReader()
         val document = reader.read(manifestFile)
         val root = document.rootElement

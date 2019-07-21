@@ -297,16 +297,16 @@ open class MergeJavaResourcesTransform(val packagingOptions: PackagingOptions,
 
             private fun filter(
                     path: String,
-                    inputs: List<IncrementalFileMergerInput>): ImmutableList<IncrementalFileMergerInput> {
-                var inputs = inputs
+                    mergeInputs: List<IncrementalFileMergerInput>): ImmutableList<IncrementalFileMergerInput> {
+                var localInputs = mergeInputs
                 val packagingAction = packagingOptions.getAction(path)
-                if (packagingAction == PackagingFileAction.NONE && inputs.stream().anyMatch { projectInputs.contains(it) }) {
-                    inputs = inputs.stream()
+                if (packagingAction == PackagingFileAction.NONE && localInputs.stream().anyMatch { projectInputs.contains(it) }) {
+                    localInputs = localInputs.stream()
                             .filter { projectInputs.contains(it) }
                             .collect(ImmutableCollectors.toImmutableList())
                 }
 
-                return ImmutableList.copyOf(inputs)
+                return ImmutableList.copyOf(localInputs)
             }
         }
 

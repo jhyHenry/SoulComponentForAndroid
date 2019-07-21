@@ -3,21 +3,23 @@ package cn.soul.android.plugin.component
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.tasks.transform.RouterCompileTransform
 import cn.soul.android.plugin.component.utils.Log
+import com.android.build.api.transform.Transform
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.internal.ExtraModelInfo
-import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.pipeline.TransformManager
-import com.android.build.gradle.internal.scope.DelayedActionsExecutor
+import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.GlobalScope
-import com.android.build.gradle.internal.variant2.DslScopeImpl
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
+import com.android.utils.StringHelper
+import com.google.common.base.CaseFormat
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
+import java.util.stream.Collectors
 
 /**
  * @author panxinghai
@@ -26,6 +28,7 @@ import org.gradle.api.Project
  */
 class ComponentPlugin : Plugin<Project> {
     private lateinit var extension: BaseExtension
+    private lateinit var pluginExtension: ComponentExtension
     private lateinit var project: Project
     private lateinit var projectOptions: ProjectOptions
     private lateinit var threadRecorder: Recorder
@@ -40,6 +43,7 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "apply component plugin.")
 
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform())
+        pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         project.afterEvaluate {
             threadRecorder.record(
                     GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
@@ -100,9 +104,8 @@ class ComponentPlugin : Plugin<Project> {
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
 
 
-            val componentExtension = ComponentExtension()
-            componentExtension.ensureComponentExtension(project)
-            val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager, componentExtension)
+            pluginExtension.ensureComponentExtension(project)
+            val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager, pluginExtension)
 
             taskManager.createDependencyStreams(pluginVariantScope, transformManager)
 
@@ -113,36 +116,49 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.createAidlTask(pluginVariantScope)
 
-//            taskManager.createJavacTask(pluginVariantScope)
-
             taskManager.createMergeResourcesTask(pluginVariantScope)
 
-            taskManager.addJavacClassesStream(pluginVariantScope)
+            val lastTransform = extension.transforms[extension.transforms.lastIndex]
+            val task = project.tasks.getByName(getTaskNamePrefix(lastTransform, pluginVariantScope.fullVariantName))
 
-//            taskManager.addCustomTransforms(pluginVariantScope, extension)
+            val transformTask = task as TransformTask
+            val sourceClassFileCollection = mutableListOf<File>()
+            transformTask.streamOutputFolder.listFiles()?.forEach { file ->
+                if (file.isDirectory) {
+                    sourceClassFileCollection.add(file)
+                }
+            }
+
+            val javaOutputs = project.files(sourceClassFileCollection).builtBy(transformTask)
+            taskManager.addJavacClassesStream(javaOutputs, pluginVariantScope)
+
             taskManager.transform(pluginVariantScope)
 
             taskManager.createRefineManifestTask(pluginVariantScope)
 
             taskManager.createBundleTask(pluginVariantScope)
         }
-//        project.dependencies(object : Closure<Any>(project.dependencies) {
-//            override fun call(arg: Any?): Any {
-//                val handler = arg as DependencyHandler
-//                handler.
-//            }
-//        })
+
     }
 
-    private fun createSourceSetManager(extraModelInfo: ExtraModelInfo): SourceSetManager {
-        return SourceSetManager(
-                project,
-                //library为true
-                true,
-                DslScopeImpl(
-                        extraModelInfo.syncIssueHandler,
-                        extraModelInfo.deprecationReporter,
-                        project.objects),
-                DelayedActionsExecutor())
+    private fun getTaskNamePrefix(transform: Transform, variant: String): String {
+        val sb = StringBuilder(100)
+        sb.append("transform")
+        sb.append(
+                transform
+                        .inputTypes
+                        .stream()
+                        .map { inputType ->
+                            CaseFormat.UPPER_UNDERSCORE.to(
+                                    CaseFormat.UPPER_CAMEL, inputType.name())
+                        }
+                        .sorted() // Keep the order stable.
+                        .collect(Collectors.joining("And")))
+        sb.append("With")
+        StringHelper.appendCapitalized(sb, transform.name)
+        sb.append("For")
+                .append(variant.capitalize())
+
+        return sb.toString()
     }
 }
