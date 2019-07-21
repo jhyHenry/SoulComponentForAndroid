@@ -54,11 +54,10 @@ class RouterCompileTransform : BaseTransform() {
         try {
             val classPool = InjectHelper.instance.getClassPool()
             val genClass = classPool.makeClass(Constants.GEN_FILE_PACKAGE_NAME + getRouterClassName())
-            if (!genClass.isFrozen) {
-                genClass.addInterface(classPool.get(IRouterFactory::class.java.name))
-                genClass.addMethod(genProduceNodesMethod(genClass, nodeList))
-            }
+            genClass.addInterface(classPool.get(IRouterFactory::class.java.name))
+            genClass.addMethod(genProduceNodesMethod(genClass, nodeList))
             genClass.writeFile(dir.absolutePath)
+            genClass.detach()
         } catch (e: Exception) {
             e.printStackTrace()
             if (e.message != null) {

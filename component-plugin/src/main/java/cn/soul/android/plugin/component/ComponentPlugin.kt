@@ -10,6 +10,7 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.GlobalScope
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
@@ -123,6 +124,9 @@ class ComponentPlugin : Plugin<Project> {
 
             val transformTask = task as TransformTask
             val sourceClassFileCollection = mutableListOf<File>()
+            pluginVariantScope.getArtifacts().getFinalArtifactFiles(InternalArtifactType.JAVAC).files.forEach { file ->
+                println("javac ${file.absolutePath}")
+            }
             transformTask.streamOutputFolder.listFiles()?.forEach { file ->
                 if (file.isDirectory) {
                     sourceClassFileCollection.add(file)
@@ -137,8 +141,9 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.createRefineManifestTask(pluginVariantScope)
 
             taskManager.createBundleTask(pluginVariantScope)
-        }
 
+            taskManager.createUploadTask(pluginVariantScope)
+        }
     }
 
     private fun getTaskNamePrefix(transform: Transform, variant: String): String {

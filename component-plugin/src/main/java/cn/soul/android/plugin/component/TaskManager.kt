@@ -210,6 +210,12 @@ class TaskManager(private val project: Project) {
         createSyncJniLibsTransform(scope, transformManager)
     }
 
+    fun createUploadTask(scope: PluginVariantScope) {
+        val task = taskFactory.create(UploadComponent.ConfigAction(project.name, scope))
+        scope.getTaskContainer().pluginUploadTask = task
+        task.dependsOn(scope.getTaskContainer().pluginBundleAarTask)
+    }
+
     private fun createIntermediateJniLibsTransform(jniLibsFolder: File, transformManager: TransformManager, scope: PluginVariantScope) {
         val intermediateJniTransform = LibraryJniLibsTransform(
                 "intermediateJniLibs",
@@ -277,12 +283,6 @@ class TaskManager(private val project: Project) {
                 true)
         transformManager.addTransform(taskFactory, scope, transform)
                 .ifPresent {
-                    //                    PluginArtifactsHolder.appendArtifact(
-//                            InternalArtifactType.AAR_MAIN_JAR,
-//                            classesJar)
-//                    PluginArtifactsHolder.appendArtifact(
-//                            InternalArtifactType.AAR_LIBS_DIRECTORY,
-//                            libsDir)
                     artifacts.appendArtifact(ComponentArtifactType.COMPONENT_AAR_MAIN_JAR,
                             ImmutableList.of(classesJar),
                             it)
