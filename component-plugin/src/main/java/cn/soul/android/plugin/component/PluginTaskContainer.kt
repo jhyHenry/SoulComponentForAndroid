@@ -16,7 +16,6 @@ class PluginTaskContainer(container: TaskContainer) : TaskContainer by container
     var pluginCheckManifestTask: CheckManifest? = null
     var pluginProcessManifest: ProcessManifest? = null
     var pluginRefineManifest: RefineManifest? = null
-    var pluginJavacTask: JavaCompile? = null
     var pluginAidlCompile: AidlCompile? = null
     var pluginMergeResourcesTask: MergeResources? = null
     var pluginBundleAarTask: BundleAar? = null

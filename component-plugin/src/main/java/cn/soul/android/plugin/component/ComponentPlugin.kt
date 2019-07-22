@@ -10,7 +10,6 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.GlobalScope
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
@@ -19,7 +18,6 @@ import com.google.common.base.CaseFormat
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import java.io.File
 import java.util.stream.Collectors
 
 /**
@@ -46,6 +44,8 @@ class ComponentPlugin : Plugin<Project> {
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform())
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         project.afterEvaluate {
+            pluginExtension.ensureComponentExtension(project)
+
             threadRecorder.record(
                     GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
                     project.path,
@@ -105,7 +105,6 @@ class ComponentPlugin : Plugin<Project> {
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
 
 
-            pluginExtension.ensureComponentExtension(project)
             val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager, pluginExtension)
 
             taskManager.createDependencyStreams(pluginVariantScope, transformManager)
@@ -123,17 +122,14 @@ class ComponentPlugin : Plugin<Project> {
             val task = project.tasks.getByName(getTaskNamePrefix(lastTransform, pluginVariantScope.fullVariantName))
 
             val transformTask = task as TransformTask
-            val sourceClassFileCollection = mutableListOf<File>()
-            pluginVariantScope.getArtifacts().getFinalArtifactFiles(InternalArtifactType.JAVAC).files.forEach { file ->
-                println("javac ${file.absolutePath}")
-            }
-            transformTask.streamOutputFolder.listFiles()?.forEach { file ->
-                if (file.isDirectory) {
-                    sourceClassFileCollection.add(file)
+            transformTask.doLast {
+                pluginExtension.dependencies.resolveDependencies(pluginExtension)
+                pluginExtension.dependencies.dependenciesCollection.forEach { file ->
+                    project.dependencies.add("implementation", file)
                 }
             }
 
-            val javaOutputs = project.files(sourceClassFileCollection).builtBy(transformTask)
+            val javaOutputs = project.files(transformTask.streamOutputFolder).builtBy(transformTask)
             taskManager.addJavacClassesStream(javaOutputs, pluginVariantScope)
 
             taskManager.transform(pluginVariantScope)

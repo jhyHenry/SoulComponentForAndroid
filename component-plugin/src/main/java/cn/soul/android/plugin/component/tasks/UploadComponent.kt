@@ -11,9 +11,10 @@ import java.io.File
  */
 open class UploadComponent : Copy() {
     class ConfigAction(private val componentName: String,
+                       private val versionName: String,
                        private val scope: PluginVariantScope) : TaskConfigAction<UploadComponent> {
         override fun getName(): String {
-            return scope.getTaskName("upload", "Component")
+            return scope.getTaskName("upload")
         }
 
         override fun getType(): Class<UploadComponent> {
@@ -21,7 +22,8 @@ open class UploadComponent : Copy() {
         }
 
         override fun execute(task: UploadComponent) {
-            task.destinationDir = File("${scope.getComponentExtension().repoPath!!}/$componentName")
+            task.destinationDir =
+                    File("${scope.getComponentExtension().repoPath!!}/$componentName/$versionName")
             task.from(scope.getAarLocation())
         }
     }

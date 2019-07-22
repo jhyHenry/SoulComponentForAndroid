@@ -1,9 +1,11 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.tasks.*
+import cn.soul.android.plugin.component.tasks.transform.FilterClassTransform
 import com.android.SdkConstants.*
 import com.android.build.api.transform.QualifiedContent
-import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.InternalScope
 import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.TaskFactoryImpl
@@ -19,8 +21,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.transforms.LibraryAarJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryIntermediateJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryJniLibsTransform
-import com.android.builder.errors.EvalIssueException
-import com.android.builder.errors.EvalIssueReporter
 import com.google.common.base.MoreObjects
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
@@ -162,38 +162,9 @@ class TaskManager(private val project: Project) {
         }
     }
 
-    fun addCustomTransforms(scope: PluginVariantScope, extension: BaseExtension) {
-        val transformManager = scope.getTransformManager()
-
-        val customTransforms = extension.transforms
-        val customTransformsDependencies = extension.transformsDependencies
-
-        //add customTransform
-        for (i in 0 until customTransforms.size) {
-            val transform = customTransforms[i]
-            val difference = Sets.difference(transform.scopes as Set<Any?>?, TransformManager.PROJECT_ONLY)
-            if (difference.isNotEmpty()) {
-                val scopes = difference.toString()
-                scope.globalScope.androidBuilder?.issueReporter?.reportError(
-                        EvalIssueReporter.Type.GENERIC,
-                        EvalIssueException("Transforms with scopes '$scopes' cannot be applied to library projects")
-                )
-            }
-            val deps = customTransformsDependencies[i]
-            transformManager.addTransform(taskFactory, scope, transform)
-                    .ifPresent {
-                        if (deps.isNotEmpty()) {
-                            it.dependsOn(deps)
-                        }
-                        if (transform.scopes.isEmpty()) {
-                            scope.getTaskContainer().assembleTask.dependsOn(it)
-                        }
-                    }
-        }
-    }
-
     fun transform(scope: PluginVariantScope) {
         val transformManager = scope.getTransformManager()
+        createFilterClassTransform(scope, transformManager)
 
         val jarOutputFolder = scope.getIntermediateJarOutputFolder()
         val mainClassJar = File(jarOutputFolder, FN_CLASSES_JAR)
@@ -210,8 +181,15 @@ class TaskManager(private val project: Project) {
         createSyncJniLibsTransform(scope, transformManager)
     }
 
+    private fun createFilterClassTransform(scope: PluginVariantScope, transformManager: TransformManager) {
+        transformManager.addTransform(taskFactory,
+                scope,
+                FilterClassTransform())
+    }
+
     fun createUploadTask(scope: PluginVariantScope) {
-        val task = taskFactory.create(UploadComponent.ConfigAction(project.name, scope))
+        val versionName = project.extensions.getByType(AppExtension::class.java).defaultConfig.versionName
+        val task = taskFactory.create(UploadComponent.ConfigAction(project.name, versionName, scope))
         scope.getTaskContainer().pluginUploadTask = task
         task.dependsOn(scope.getTaskContainer().pluginBundleAarTask)
     }
@@ -288,7 +266,7 @@ class TaskManager(private val project: Project) {
                             it)
                     artifacts.appendArtifact(ComponentArtifactType.COMPONENT_AAR_LIBS_DIR,
                             ImmutableList.of(libsDir),
-                            it);
+                            it)
                 }
     }
 

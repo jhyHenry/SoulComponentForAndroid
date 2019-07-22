@@ -12,7 +12,9 @@ import java.lang.RuntimeException
 open class ComponentExtension {
     internal val dependencies = Dependencies()
     var archiveName: String? = null
+    var uploadPath: String? = null
     var repoPath: String? = null
+
     var resourcePrefix: String? = null
 
     fun dependencies(action: Action<Dependencies>) {
@@ -23,11 +25,17 @@ open class ComponentExtension {
         if (archiveName == null) {
             archiveName = project.name
         }
-        if (repoPath == null) {
-            repoPath = project.parent?.buildDir?.absolutePath
-            if (repoPath == null) {
+        if (uploadPath == null) {
+            uploadPath = project.parent?.buildDir?.absolutePath
+            if (uploadPath == null) {
                 throw RuntimeException("got default build path error, please do not apply plugin in root project")
             }
+        }
+        if (repoPath == null) {
+            repoPath = uploadPath
+        }
+        if (resourcePrefix == null) {
+            resourcePrefix = "${project.name}_"
         }
     }
 }
