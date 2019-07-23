@@ -70,6 +70,22 @@ class ComponentPlugin : Plugin<Project> {
     private fun configureProject() {
         Log.p(msg = "configure project.")
         val gradle = project.gradle
+        gradle.taskGraph.whenReady {
+            val lastTask = it.allTasks.last()
+            if (lastTask.name.startsWith("component")) {
+                return@whenReady
+            }
+            val lastTransform = extension.transforms[extension.transforms.lastIndex]
+            val task = it.allTasks.find { task -> task.name.startsWith(getTaskNamePrefix(lastTransform, "")) }
+                    ?: throw RuntimeException("cannot get task of transform named:${lastTask.name}")
+
+            task.doLast {
+                pluginExtension.dependencies.resolveDependencies(pluginExtension)
+                pluginExtension.dependencies.dependenciesCollection.forEach { file ->
+                    project.dependencies.add("implementation", file)
+                }
+            }
+        }
     }
 
     private fun configureExtension() {

@@ -6,7 +6,7 @@ import java.lang.IllegalArgumentException
 /**
  * Created by nebula on 2019-07-21
  */
-open class Dependencies() {
+open class Dependencies {
     internal val dependenciesCollection = mutableListOf<File>()
     private val dependenciesPath = mutableListOf<String>()
 
@@ -16,14 +16,20 @@ open class Dependencies() {
 
     internal fun resolveDependencies(extension: ComponentExtension) {
         dependenciesPath.forEach {
-            val index = it.indexOf(':')
-            if (index == -1) {
+            val strings = it.split(':')
+            val size = strings.size
+            if (size < 2 || size > 3) {
                 throw IllegalArgumentException(
-                        "wrong format: $it. implementation format must be \$componentName:\$version")
+                        "wrong format: $it. implementation format must be \$componentName:\$version[:\$variantName]")
             }
-            val name = it.substring(0, index)
-            val version = it.substring(index + 1)
-            val path = "${extension.repoPath}/$name/$version"
+            val name = strings[0]
+            val version = strings[1]
+            val variant = if (size == 3) {
+                strings[2]
+            } else {
+                "release"
+            }
+            val path = "${extension.repoPath}/$name/$version/$variant"
             val file = File(path)
             if (!file.exists()) {
                 throw IllegalArgumentException("can not resolve implementation:${file.absolutePath}")

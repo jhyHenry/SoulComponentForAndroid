@@ -11,7 +11,7 @@ import java.lang.RuntimeException
  */
 open class ComponentExtension {
     internal val dependencies = Dependencies()
-    var archiveName: String? = null
+    var componentName: String? = null
     var uploadPath: String? = null
     var repoPath: String? = null
 
@@ -22,8 +22,8 @@ open class ComponentExtension {
     }
 
     fun ensureComponentExtension(project: Project) {
-        if (archiveName == null) {
-            archiveName = project.name
+        if (componentName == null) {
+            componentName = project.name
         }
         if (uploadPath == null) {
             uploadPath = project.parent?.buildDir?.absolutePath

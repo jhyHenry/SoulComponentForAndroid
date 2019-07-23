@@ -23,7 +23,7 @@ open class UploadComponent : Copy() {
 
         override fun execute(task: UploadComponent) {
             task.destinationDir =
-                    File("${scope.getComponentExtension().repoPath!!}/$componentName/$versionName")
+                    File("${scope.getComponentExtension().repoPath!!}/$componentName/$versionName/${scope.getFullName()}")
             task.from(scope.getAarLocation())
         }
     }

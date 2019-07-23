@@ -92,9 +92,9 @@ open class BundleAar : Zip() {
                     + ".")
 
             bundle.destinationDir = variantScope.getAarLocation()
-//            extension.
             bundle.archiveNameSupplier = {
-                "${variantScope.getComponentExtension().archiveName!!}-${variantScope.getFullName()}.aar"
+//                "${variantScope.getComponentExtension().archiveName!!}-${variantScope.getFullName()}.aar"
+                "component.aar"
             }
             bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
 
