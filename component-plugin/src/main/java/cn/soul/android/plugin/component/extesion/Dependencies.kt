@@ -29,7 +29,7 @@ open class Dependencies {
             } else {
                 "release"
             }
-            val path = "${extension.repoPath}/$name/$version/$variant"
+            val path = "${extension.repoPath}/$name/$version/$variant/component.aar"
             val file = File(path)
             if (!file.exists()) {
                 throw IllegalArgumentException("can not resolve implementation:${file.absolutePath}")
