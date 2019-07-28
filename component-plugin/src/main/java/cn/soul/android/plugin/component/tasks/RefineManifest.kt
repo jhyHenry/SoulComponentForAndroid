@@ -61,6 +61,13 @@ open class RefineManifest : AndroidVariantTask() {
                 }
             }
         }
+
+        applicationElement.elementIterator(AndroidXmlHelper.TAG_ACTIVITY).forEach { activityElement ->
+            val intentFilterElement = activityElement.element("intent-filter")
+            if (intentFilterElement.attributeCount() == 0) {
+                activityElement.remove(intentFilterElement)
+            }
+        }
         FileWriter(manifestFile!!).use {
             XMLWriter(it).apply {
                 write(root)

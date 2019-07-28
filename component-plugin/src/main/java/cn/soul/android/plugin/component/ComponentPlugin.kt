@@ -70,25 +70,6 @@ class ComponentPlugin : Plugin<Project> {
     private fun configureProject() {
         Log.p(msg = "configure project.")
         val gradle = project.gradle
-        //根据本次任务执行的task判断是否需要添加动态依赖
-//        gradle.taskGraph.whenReady {
-//            val lastTask = it.allTasks.last()
-//            if (taskManager.isComponentTask(lastTask)) {
-//                return@whenReady
-//            }
-//            val lastTransform = extension.transforms[extension.transforms.lastIndex]
-//            val task = it.allTasks.find { task -> task.name.startsWith(getTaskNamePrefix(lastTransform, "")) }
-//                    ?: throw RuntimeException("cannot get task of transform named:${lastTask.name}")
-//
-//            task.doLast {
-//
-//                Log.e(" add doLast")
-//                pluginExtension.dependencies.resolveDependencies(pluginExtension)
-//                pluginExtension.dependencies.dependenciesCollection.forEach { file ->
-//                    project.dependencies.add("implementation", file)
-//                }
-//            }
-//        }
     }
 
     private fun configureExtension() {
@@ -142,14 +123,14 @@ class ComponentPlugin : Plugin<Project> {
 
             val transformTask = task as TransformTask
             transformTask.doLast {
-                Log.e("do last")
-                if (taskManager.isComponentTask(project.gradle.taskGraph.allTasks.last())) {
-                    return@doLast
-                }
-                pluginExtension.dependencies.resolveDependencies(pluginExtension)
-                pluginExtension.dependencies.dependenciesCollection.forEach { file ->
-                    project.dependencies.add("implementation", project.files(file))
-                }
+//                //根据本次任务执行的task判断是否需要添加动态依赖
+//                if (taskManager.isComponentTask(project.gradle.taskGraph.allTasks.last())) {
+//                    return@doLast
+//                }
+//                pluginExtension.dependencies.resolveDependencies(pluginExtension)
+//                pluginExtension.dependencies.dependenciesCollection.forEach { file ->
+//                    project.dependencies.add("implementation", project.files(file))
+//                }
             }
 
             val javaOutputs = project.files(transformTask.streamOutputFolder).builtBy(transformTask)

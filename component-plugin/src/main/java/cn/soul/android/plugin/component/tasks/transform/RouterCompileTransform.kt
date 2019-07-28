@@ -47,7 +47,9 @@ class RouterCompileTransform : BaseTransform() {
                 TransformManager.CONTENT_CLASS,
                 TransformManager.PROJECT_ONLY,
                 Format.DIRECTORY)
-        genRouterClass(dest, nodeList)
+        if (nodeList.size > 0) {
+            genRouterClass(dest, nodeList)
+        }
     }
 
     private fun genRouterClass(dir: File, nodeList: List<Pair<String, String>>) {
