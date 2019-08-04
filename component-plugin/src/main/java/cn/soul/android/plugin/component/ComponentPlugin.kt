@@ -70,6 +70,24 @@ class ComponentPlugin : Plugin<Project> {
     private fun configureProject() {
         Log.p(msg = "configure project.")
         val gradle = project.gradle
+        val taskNames = gradle.startParameter.taskNames
+
+        if (!needAddComponentDependencies(taskNames)) {
+            return
+        }
+        pluginExtension.dependencies.resolveDependencies(pluginExtension)
+        pluginExtension.dependencies.dependenciesCollection.forEach { file ->
+            project.dependencies.add("implementation", project.files(file))
+        }
+    }
+
+    private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
+        taskNames.forEach {
+            if (it.contains("assemble")) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun configureExtension() {
@@ -123,7 +141,7 @@ class ComponentPlugin : Plugin<Project> {
 
             val transformTask = task as TransformTask
             transformTask.doLast {
-//                //根据本次任务执行的task判断是否需要添加动态依赖
+                //                //根据本次任务执行的task判断是否需要添加动态依赖
 //                if (taskManager.isComponentTask(project.gradle.taskGraph.allTasks.last())) {
 //                    return@doLast
 //                }

@@ -2,6 +2,5 @@ include ':app', ':component-plugin', ':component-base',
         ':componentlib',
         ':readercomponent',
         ':sharecomponent',
-        ':build-gradle',
         ':router-annotation',
         ':router-anno-compiler'

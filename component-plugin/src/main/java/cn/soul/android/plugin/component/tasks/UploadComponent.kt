@@ -8,6 +8,7 @@ import java.io.File
 
 /**
  * Created by nebula on 2019-07-21
+ * 目前只支持本地文件夹的仓库
  */
 open class UploadComponent : Copy() {
     class ConfigAction(private val componentName: String,
