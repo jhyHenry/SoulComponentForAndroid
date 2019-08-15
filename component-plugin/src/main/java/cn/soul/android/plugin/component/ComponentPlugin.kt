@@ -158,6 +158,8 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.createRefineManifestTask(pluginVariantScope)
 
+            taskManager.createPrefixResourcesTask(pluginVariantScope)
+
             taskManager.createBundleTask(pluginVariantScope)
 
             taskManager.createUploadTask(pluginVariantScope)

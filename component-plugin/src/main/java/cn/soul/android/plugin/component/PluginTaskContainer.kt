@@ -18,6 +18,7 @@ class PluginTaskContainer(container: TaskContainer) : TaskContainer by container
     var pluginRefineManifest: RefineManifest? = null
     var pluginAidlCompile: AidlCompile? = null
     var pluginMergeResourcesTask: MergeResources? = null
+    var pluginPrefixResources: PrefixResources? = null
     var pluginBundleAarTask: BundleAar? = null
     var pluginUploadTask: Copy? = null
 

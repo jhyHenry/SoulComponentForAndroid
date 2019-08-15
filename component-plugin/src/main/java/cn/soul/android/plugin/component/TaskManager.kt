@@ -112,10 +112,21 @@ class TaskManager(private val project: Project) {
         componentTaskContainer.add(task)
     }
 
+    fun createPrefixResourcesTask(scope: PluginVariantScope) {
+        val file = scope.getIntermediateDir(InternalArtifactType.PACKAGED_RES)
+        var prefix = scope.getComponentExtension().resourcePrefix
+        if (prefix == null) {
+            prefix = "${project.name}_"
+        }
+        val task = taskFactory.create(PrefixResources.ConfigAction(scope, file, prefix))
+        task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask)
+        scope.getTaskContainer().pluginPrefixResources = task
+    }
+
     fun createBundleTask(scope: PluginVariantScope) {
         val task = taskFactory.create(BundleAar.ConfigAction(scope.globalScope.extension, scope))
         scope.getTaskContainer().pluginBundleAarTask = task
-        task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask!!)
+        task.dependsOn(scope.getTaskContainer().pluginPrefixResources!!)
         task.dependsOn(scope.getTaskContainer().pluginProcessManifest!!)
         componentTaskContainer.add(task)
     }
