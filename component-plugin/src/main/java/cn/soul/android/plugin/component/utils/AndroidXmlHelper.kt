@@ -9,7 +9,7 @@ import org.dom4j.QName
  */
 object AndroidXmlHelper {
 
-    private const val ANDROID_URL = "http://schemas.android.com/apk/res/android"
+    const val ANDROID_URL = "http://schemas.android.com/apk/res/android"
     const val ACTION_MAIN = "android.intent.action.MAIN"
     const val CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"
 
@@ -18,7 +18,7 @@ object AndroidXmlHelper {
     const val TAG_ACTION = "action"
     const val TAG_CATEGORY = "category"
 
-    fun getQName(name: String): QName {
+    fun getAndroidQName(name: String): QName {
         return QName.get(name, ANDROID_URL)
     }
 }

@@ -28,8 +28,8 @@ open class RefineManifest : AndroidVariantTask() {
         val root = document.rootElement
 
         //remove versionCode and versionName attribute in <manifest>
-        root.remove(root.attribute(AndroidXmlHelper.getQName("versionCode")))
-        root.remove(root.attribute(AndroidXmlHelper.getQName("versionName")))
+        root.remove(root.attribute(AndroidXmlHelper.getAndroidQName("versionCode")))
+        root.remove(root.attribute(AndroidXmlHelper.getAndroidQName("versionName")))
 
         //remove uses-sdk tag
         root.remove(root.element("uses-sdk"))
@@ -48,13 +48,13 @@ open class RefineManifest : AndroidVariantTask() {
         applicationElement.elementIterator(AndroidXmlHelper.TAG_ACTIVITY).forEach { activityElement ->
             activityElement.elementIterator("intent-filter").forEach { element ->
                 element.elementIterator("action").forEach {
-                    val attribute = it.attribute(AndroidXmlHelper.getQName("name"))
+                    val attribute = it.attribute(AndroidXmlHelper.getAndroidQName("name"))
                     if (attribute.value == AndroidXmlHelper.ACTION_MAIN) {
                         element.remove(it)
                     }
                 }
                 element.elementIterator("category").forEach {
-                    val attribute = it.attribute(AndroidXmlHelper.getQName("name"))
+                    val attribute = it.attribute(AndroidXmlHelper.getAndroidQName("name"))
                     if (attribute.value == AndroidXmlHelper.CATEGORY_LAUNCHER) {
                         element.remove(it)
                     }
