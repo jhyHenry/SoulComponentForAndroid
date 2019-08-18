@@ -3,10 +3,10 @@ package cn.soul.android.plugin.component.custom
 /**
  * Created by nebula on 2019-08-17
  */
-class SelectorPrefix : CommonPrefix() {
+class AdaptiveIconPrefix : CommonPrefix() {
 
     override fun elementName(): String {
-        return "selector"
+        return "adaptive-icon"
     }
 
     override fun targetAttrNameListWithDefaultNamespace(): List<String> {
@@ -15,7 +15,8 @@ class SelectorPrefix : CommonPrefix() {
 
     override fun childElementPrefixes(): List<IElementPrefix> {
         val list = ArrayList<IElementPrefix>()
-        list.add(SimplePrefix("item", listOf("color")))
-        return list;
+        list.add(SimplePrefix("background", listOf("drawable")))
+        list.add(SimplePrefix("foreground", listOf("drawable")))
+        return list
     }
 }

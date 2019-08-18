@@ -10,6 +10,7 @@ import org.dom4j.QName
 object AndroidXmlHelper {
 
     const val ANDROID_URL = "http://schemas.android.com/apk/res/android"
+    const val APP_URL = "http://schemas.android.com/apk/res-auto"
     const val ACTION_MAIN = "android.intent.action.MAIN"
     const val CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"
 

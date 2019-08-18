@@ -8,9 +8,9 @@ import org.dom4j.QName
 interface IElementPrefix {
     fun elementName(): String
 
-    fun subElementPath(): String
-
     fun targetAttrQNameList(): List<QName>
+
+    fun childElementPrefixes(): List<IElementPrefix>
 
     fun prefix(resourceType: String, text: String, prefix: String): String
 }

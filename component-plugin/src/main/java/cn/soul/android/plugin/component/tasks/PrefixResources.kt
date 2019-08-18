@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.plugin.component.PluginVariantScope
+import cn.soul.android.plugin.component.custom.AdaptiveIconPrefix
 import cn.soul.android.plugin.component.custom.BitmapPrefix
 import cn.soul.android.plugin.component.custom.IElementPrefix
 import cn.soul.android.plugin.component.custom.SelectorPrefix
@@ -14,6 +15,7 @@ import org.dom4j.io.XMLWriter
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.io.FileWriter
+import java.util.*
 
 /**
  * Created by nebula on 2019-08-15
@@ -67,28 +69,55 @@ open class PrefixResources : AndroidVariantTask() {
         val document = reader.read(xmlFile)
         val root = document.rootElement
 
+        if (xmlFile.parentFile.name.startsWith("layout")) {
+            prefixLayouts(root)
+            writeFile(xmlFile, root)
+            return
+        }
         if (root.name == "resources") {
             //process values.xml
             prefixResources(root)
+            writeFile(xmlFile, root)
+            return
         }
-        elementTraversal(root) {
-            val elementPrefix = prefixHandleMap[it.name] ?: return@elementTraversal true
-            Log.e("${xmlFile.name}:$it")
-            val subElementPath = elementPrefix.subElementPath()
-            if (subElementPath != "") {
-                val subElement = it.element(subElementPath)
-                Log.e(subElement.name)
-                prefixElement(subElement, elementPrefix)
-                return@elementTraversal false
-            } else {
-                prefixElement(it, elementPrefix)
-                return@elementTraversal true
-            }
-        }
+        val rootElementPrefix = prefixHandleMap[root.name] ?: return
+        Log.e("${xmlFile.name}   :   $root")
+        prefixElement(root, rootElementPrefix)
+        traversalElementByElementPrefix(root, rootElementPrefix.childElementPrefixes())
+        writeFile(xmlFile, root)
+    }
 
+    private fun writeFile(xmlFile: File, root: Element) {
         FileWriter(xmlFile).use {
             XMLWriter(it).apply {
                 write(root)
+            }
+        }
+    }
+
+    private fun prefixLayouts(root: Element) {
+        Log.e(root.name)
+        elementTraversal(root) {
+            it.attributes().forEach { attr ->
+                if (attr.text.startsWith('@')) {
+                    attr.text = prefixElementText(attr.text)
+                    println(attr.text)
+                }
+            }
+            return@elementTraversal true
+        }
+    }
+
+    private fun traversalElementByElementPrefix(element: Element, elementPrefixes: List<IElementPrefix>) {
+        if (elementPrefixes.isEmpty()) {
+            return
+        }
+        elementPrefixes.forEach {
+            val elements = element.elements(it.elementName())
+            prefixElements(elements, it)
+            elements.forEach { element ->
+                Log.e(element.name + ":" + it.elementName())
+                traversalElementByElementPrefix(element, it.childElementPrefixes())
             }
         }
     }
@@ -98,6 +127,12 @@ open class PrefixResources : AndroidVariantTask() {
             if (attrNeedPrefix(attr, elementPrefix)) {
                 attr.value = prefixReferenceText(attr.value, elementPrefix)
             }
+        }
+    }
+
+    private fun prefixElements(elements: List<Element>, elementPrefix: IElementPrefix) {
+        elements.forEach {
+            prefixElement(it, elementPrefix)
         }
     }
 
@@ -168,9 +203,11 @@ open class PrefixResources : AndroidVariantTask() {
             task.variantName = scope.fullVariantName
             task.packagedResFolder = packagedResFolder
             task.prefix = prefix
+            //add custom prefix strategy
             val list = mutableListOf<IElementPrefix>()
             list.add(BitmapPrefix())
             list.add(SelectorPrefix())
+            list.add(AdaptiveIconPrefix())
             list.forEach {
                 task.putNodePrefix(it)
             }
