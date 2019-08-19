@@ -25,7 +25,7 @@ mainmodulename=app
 
 buildscript {
     dependencies {
-        classpath 'com.walid:soul-component-build-gradle:0.0.4'
+        classpath 'com.walid:soul-component-build-gradle:0.0.6'
     }
 }
 ```
