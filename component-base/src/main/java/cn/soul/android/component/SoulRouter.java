@@ -3,6 +3,7 @@ package cn.soul.android.component;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,8 +51,18 @@ public class SoulRouter {
         mRouterTable.put(path, node);
     }
 
-    public void navigate() {
+    public void navigate(int requestCode, Context context, RouterNode node) {
+        if (context == null) {
+            context = sContext;
+        }
+        if (node.getType() == RouterNode.ACTIVITY) {
+            Intent intent = new Intent(context, node.getTarget());
+            startActivity(requestCode, context, intent);
+        }
+    }
 
+    private void startActivity(int requestCode, Context context, Intent intent) {
+        context.startActivity(intent);
     }
 
     public RouterNode route(String path) {

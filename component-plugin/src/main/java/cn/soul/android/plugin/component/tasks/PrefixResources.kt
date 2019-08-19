@@ -15,7 +15,6 @@ import org.dom4j.io.XMLWriter
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.io.FileWriter
-import java.util.*
 
 /**
  * Created by nebula on 2019-08-15
@@ -47,15 +46,11 @@ open class PrefixResources : AndroidVariantTask() {
     fun taskAction() {
         val startTime = System.currentTimeMillis()
         val folder = packagedResFolder ?: return
-        folder.listFiles()?.forEach {
-            if (it.isDirectory) {
-                it.listFiles()?.forEach { subFile ->
-                    if (subFile.name.endsWith(".xml")) {
-                        refineXmlFile(subFile)
-                    }
-                }
-            } else if (it.name.endsWith(".xml")) {
+        fileTraversal(folder) {
+            if (it.name.endsWith(".xml")) {
                 refineXmlFile(it)
+            } else {
+                renameFileWithPrefix(it)
             }
         }
         Log.i("prefix resources cost: ${System.currentTimeMillis() - startTime}ms")
@@ -63,6 +58,16 @@ open class PrefixResources : AndroidVariantTask() {
 
     fun putNodePrefix(elementPrefix: IElementPrefix) {
         prefixHandleMap[elementPrefix.elementName()] = elementPrefix
+    }
+
+    private fun fileTraversal(file: File, visitor: (File) -> Unit) {
+        if (file.isDirectory) {
+            file.listFiles()?.forEach {
+                fileTraversal(it, visitor)
+            }
+        } else {
+            visitor.invoke(file)
+        }
     }
 
     private fun refineXmlFile(xmlFile: File) {
@@ -77,22 +82,34 @@ open class PrefixResources : AndroidVariantTask() {
         if (root.name == "resources") {
             //process values.xml
             prefixResources(root)
+            writeFile(xmlFile, root, false)
+            return
+        }
+        //process drawable
+        val rootElementPrefix = prefixHandleMap[root.name]
+        if (rootElementPrefix == null) {
             writeFile(xmlFile, root)
             return
         }
-        val rootElementPrefix = prefixHandleMap[root.name] ?: return
         Log.e("${xmlFile.name}   :   $root")
         prefixElement(root, rootElementPrefix)
         traversalElementByElementPrefix(root, rootElementPrefix.childElementPrefixes())
         writeFile(xmlFile, root)
     }
 
-    private fun writeFile(xmlFile: File, root: Element) {
+    private fun writeFile(xmlFile: File, root: Element, rename: Boolean = true) {
         FileWriter(xmlFile).use {
             XMLWriter(it).apply {
                 write(root)
             }
         }
+        if (rename) {
+            renameFileWithPrefix(xmlFile)
+        }
+    }
+
+    private fun renameFileWithPrefix(xmlFile: File) {
+        xmlFile.renameTo(File(xmlFile.parentFile, prefix + xmlFile.name))
     }
 
     private fun prefixLayouts(root: Element) {
