@@ -1,6 +1,7 @@
 package cn.soul.android.component;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -30,6 +31,7 @@ public class SoulRouter {
         if (isInit) {
             return;
         }
+        isInit = true;
         sContext = application;
     }
 
@@ -56,12 +58,15 @@ public class SoulRouter {
             context = sContext;
         }
         if (node.getType() == RouterNode.ACTIVITY) {
-            Intent intent = new Intent(context, node.getTarget());
-            startActivity(requestCode, context, intent);
+            startActivity(requestCode, context, node);
         }
     }
 
-    private void startActivity(int requestCode, Context context, Intent intent) {
+    private void startActivity(int requestCode, Context context, RouterNode node) {
+        Intent intent = new Intent(context, node.getTarget());
+        if (!(context instanceof Activity)) {
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
         context.startActivity(intent);
     }
 

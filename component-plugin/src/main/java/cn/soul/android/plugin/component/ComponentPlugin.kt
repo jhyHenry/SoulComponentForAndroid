@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.extesion.ComponentExtension
+import cn.soul.android.plugin.component.tasks.transform.PrefixRTransform
 import cn.soul.android.plugin.component.tasks.transform.RouterCompileTransform
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.Transform
@@ -42,6 +43,7 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "apply component plugin.")
 
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform())
+        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(PrefixRTransform())
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         project.afterEvaluate {
             pluginExtension.ensureComponentExtension(project)
@@ -114,11 +116,16 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "create tasks.")
         val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
         val variantManager = appPlugin.variantManager
+
         variantManager.variantScopes.forEach {
             val variantType = it.variantData.type
             if (variantType.isTestComponent) {
                 //这里是continue,不给test的variant创建task
                 return@forEach
+            }
+            it.processResourcesTask.doLast { _ ->
+                val outDir = it.processResourcesTask.sourceOutputDir
+                Log.e("doLast:${outDir.absolutePath}")
             }
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
 
