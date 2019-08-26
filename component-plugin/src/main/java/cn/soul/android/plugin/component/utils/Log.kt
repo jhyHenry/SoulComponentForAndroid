@@ -20,7 +20,7 @@ object Log {
 
     var logLevel: ImmutableSet<Level> = entireLevel
 
-    private const val defaultTag = "component plugin"
+    private const val defaultTag = "[component plugin]-"
 
     fun e(tag: String, msg: String) {
         doErrorLog(Log.Level.ERROR, tag, msg)
@@ -64,13 +64,13 @@ object Log {
 
     private fun doNormalLog(level: Level, tag: String = defaultTag, msg: String) {
         if (inScope(level)) {
-            println("$tag: $msg")
+            println("$tag $msg")
         }
     }
 
     private fun doErrorLog(level: Level, tag: String = defaultTag, msg: String) {
         if (inScope(level)) {
-            System.err.println("$tag: $msg")
+            System.err.println("$tag $msg")
         }
     }
 

@@ -1,45 +1,64 @@
 package cn.soul.android.plugin.component.tasks.transform
 
-import cn.soul.android.component.annotation.Router
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.TransformInvocation
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.CtClass
+import javassist.expr.ExprEditor
+import javassist.expr.FieldAccess
+import org.gradle.api.Project
 
 /**
  * Created by nebula on 2019-08-20
  */
 class PrefixRTransform : BaseTransform() {
+    private var prefix: String? = null
+    private var project: Project? = null
+
     override fun getName(): String {
         return "prefixR"
     }
 
     override fun transform(transformInvocation: TransformInvocation?) {
         super.transform(transformInvocation)
+
+        val p = project ?: return
         val inputs = transformInvocation?.inputs ?: return
+        val variantName = transformInvocation.context.variantName
+        val appPlugin = p.plugins.getPlugin(AppPlugin::class.java) as AppPlugin
+        var applicationId = ""
+        (appPlugin.extension as AppExtension).applicationVariants.all {
+            if (it.name == variantName) {
+                applicationId = it.applicationId
+                println("applicationId:$applicationId")
+            }
+        }
         inputs.forEach { input ->
             input.directoryInputs.forEach { dirInput ->
                 InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
-                InjectHelper.instance.processFiles(dirInput.file)
-                        .nameFilter { file -> file.name.endsWith(".class") }
-                        .forEach {
-                            //                            val routerAnnotation = it.getAnnotation(Router::class.java) as Router
-//                            val path = routerAnnotation.path
-                            Log.e("ctClass:${it.name}")
-                            it.refClasses.forEach { ref ->
-                                if (ref is String) {
-                                    Log.e("ref:${ref}")
-                                } else {
-                                    Log.e("class:${ref?.javaClass?.name}")
-                                }
-                            }
-                        }
-                outputFiles(transformInvocation.outputProvider, dirInput)
             }
             input.jarInputs.forEach {
                 InjectHelper.instance.appendClassPath(it.file.absolutePath)
+            }
+        }
+        val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
+        prefixCustomCtClassField(rCtClass)
+        inputs.forEach { input ->
+            input.directoryInputs.forEach { dirInput ->
+
+                InjectHelper.instance.processFiles(dirInput.file)
+                        .nameFilter { file -> file.name.endsWith(".class") }
+                        .forEach {
+                            prefixRClassFieldAccess(it, applicationId)
+                            val dest = getOutputFile(transformInvocation.outputProvider, dirInput)
+                            it.writeFile(dest.absolutePath)
+                        }
+            }
+            input.jarInputs.forEach {
                 outputJarFile(transformInvocation.outputProvider, it)
             }
         }
@@ -49,4 +68,52 @@ class PrefixRTransform : BaseTransform() {
                 TransformManager.PROJECT_ONLY,
                 Format.DIRECTORY)
     }
+
+    fun setPrefix(prefix: String?) {
+        this.prefix = prefix
+    }
+
+    fun setProject(project: Project?) {
+        this.project = project
+    }
+
+    private fun prefixCustomCtClassField(ctClass: CtClass) {
+        ctClass.nestedClasses.forEach {
+            it.fields.forEach { ctField ->
+                ctField.name = "$prefix${ctField.name}"
+            }
+            it.writeFile("/Users/nebula/temp")
+            it.writeFile()
+        }
+    }
+
+    private fun prefixRClassFieldAccess(ctClass: CtClass, applicationId: String) {
+        if (prefix == null) {
+            return
+        }
+        if (isRFile(ctClass.simpleName)) {
+            Log.d("skip prefix R.class field access. which class is: ${ctClass.name}")
+            return
+        }
+        ctClass.instrument(object : ExprEditor() {
+            override fun edit(f: FieldAccess?) {
+                super.edit(f)
+                if (f == null) {
+                    return
+                }
+                if (f.isReader && isCustomRFile(f.className, applicationId)) {
+                    val replaceStr = "\$_ = ${f.className}.$prefix${f.fieldName};"
+                    println("replace Str:" + replaceStr)
+
+                    f.replace("\$_ = ${f.className}.$prefix${f.fieldName};")
+                }
+            }
+        })
+        ctClass.writeFile()
+    }
+
+    private fun isRFile(name: String): Boolean = name == "R" || name.startsWith("R$")
+
+    private fun isCustomRFile(name: String, applicationId: String) = name.startsWith("$applicationId.R")
+
 }

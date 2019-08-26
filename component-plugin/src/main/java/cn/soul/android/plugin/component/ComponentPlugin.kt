@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component
 
+import cn.soul.android.plugin.component.action.RFileAction
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.tasks.transform.PrefixRTransform
 import cn.soul.android.plugin.component.tasks.transform.RouterCompileTransform
@@ -43,7 +44,7 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "apply component plugin.")
 
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform())
-        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(PrefixRTransform())
+
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         project.afterEvaluate {
             pluginExtension.ensureComponentExtension(project)
@@ -73,6 +74,12 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "configure project.")
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
+        if (isRunComponentTask()) {
+            val prefixRTransform = PrefixRTransform()
+            project.extensions.findByType(BaseExtension::class.java)?.registerTransform(prefixRTransform)
+            prefixRTransform.setPrefix(pluginExtension.resourcePrefix)
+            prefixRTransform.setProject(project)
+        }
 
         if (!needAddComponentDependencies(taskNames)) {
             return
@@ -81,6 +88,17 @@ class ComponentPlugin : Plugin<Project> {
         pluginExtension.dependencies.dependenciesCollection.forEach { file ->
             project.dependencies.add("implementation", project.files(file))
         }
+    }
+
+    private fun isRunComponentTask(): Boolean {
+        val gradle = project.gradle
+        val taskNames = gradle.startParameter.taskNames
+        taskNames.forEach {
+            if (it.startsWith("component")) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
@@ -125,7 +143,7 @@ class ComponentPlugin : Plugin<Project> {
             }
             it.processResourcesTask.doLast { _ ->
                 val outDir = it.processResourcesTask.sourceOutputDir
-                Log.e("doLast:${outDir.absolutePath}")
+                RFileAction.removeRFileFinalModifier(outDir)
             }
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
 
