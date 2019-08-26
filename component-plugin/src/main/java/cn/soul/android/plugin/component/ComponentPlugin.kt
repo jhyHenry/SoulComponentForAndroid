@@ -9,6 +9,7 @@ import com.android.build.api.transform.Transform
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.TaskManager.createAndroidJarConfig
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.GlobalScope
@@ -36,6 +37,8 @@ class ComponentPlugin : Plugin<Project> {
     private lateinit var taskManager: TaskManager
     private var globalScope: GlobalScope? = null
 
+    private var mPrefixRTransform: PrefixRTransform? = null
+    private var mIsRunComponentTask: Boolean = false
     override fun apply(p: Project) {
         project = p
         projectOptions = ProjectOptions(p)
@@ -44,6 +47,11 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "apply component plugin.")
 
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform())
+        mIsRunComponentTask = isRunComponentTask()
+        if (mIsRunComponentTask) {
+            mPrefixRTransform = PrefixRTransform()
+            project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mPrefixRTransform)
+        }
 
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         project.afterEvaluate {
@@ -74,11 +82,9 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "configure project.")
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
-        if (isRunComponentTask()) {
-            val prefixRTransform = PrefixRTransform()
-            project.extensions.findByType(BaseExtension::class.java)?.registerTransform(prefixRTransform)
-            prefixRTransform.setPrefix(pluginExtension.resourcePrefix)
-            prefixRTransform.setProject(project)
+        if (mIsRunComponentTask) {
+            mPrefixRTransform?.setPrefix(pluginExtension.resourcePrefix)
+            mPrefixRTransform?.setProject(project)
         }
 
         if (!needAddComponentDependencies(taskNames)) {
@@ -126,6 +132,7 @@ class ComponentPlugin : Plugin<Project> {
                 realScope.toolingRegistry,
                 realScope.buildCache
         )
+        globalScope?.setAndroidJarConfig(createAndroidJarConfig(project));
         extension = scope.globalScope.extension as BaseExtension
         globalScope?.extension = extension
     }
@@ -161,6 +168,10 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.createMergeResourcesTask(pluginVariantScope)
 
+            taskManager.createPrefixResourcesTask(pluginVariantScope)
+
+            taskManager.createGenerateSymbolTask(pluginVariantScope)
+
             val lastTransform = extension.transforms[extension.transforms.lastIndex]
             val task = project.tasks.getByName(getTaskNamePrefix(lastTransform, pluginVariantScope.fullVariantName))
 
@@ -182,8 +193,6 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.transform(pluginVariantScope)
 
             taskManager.createRefineManifestTask(pluginVariantScope)
-
-            taskManager.createPrefixResourcesTask(pluginVariantScope)
 
             taskManager.createBundleTask(pluginVariantScope)
 

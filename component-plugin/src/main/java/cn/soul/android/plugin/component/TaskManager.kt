@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.transforms.LibraryAarJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryIntermediateJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryJniLibsTransform
+import com.android.utils.FileUtils
 import com.google.common.base.MoreObjects
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
@@ -106,6 +107,30 @@ class TaskManager(private val project: Project) {
         componentTaskContainer.add(packageResourcesTask)
     }
 
+    fun createGenerateSymbolTask(scope: PluginVariantScope) {
+        val dir = File(scope.getIntermediatesDir(),
+                "symbols/" + scope
+                        .getVariantData()
+                        .variantConfiguration
+                        .dirName)
+        val symbol = File(dir, FN_RESOURCE_TEXT)
+        val symbolTableWithPackageName = FileUtils.join(
+                scope.getIntermediatesDir(),
+                FD_RES,
+                "symbol-table-with-package",
+                scope.getVariantConfiguration().dirName,
+                "package-aware-r.txt")
+        val task = taskFactory.create(GenerateSymbol.ConfigAction(scope,
+                symbol,
+                symbolTableWithPackageName))
+        scope.getArtifacts().appendArtifact(
+                ComponentArtifactType.COMPONENT_R_TXT,
+                ImmutableList.of(symbol),
+                task)
+//        task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask!!)
+        scope.getTaskContainer().pluginGenerateSymbol = task
+    }
+
     fun createRefineManifestTask(scope: PluginVariantScope) {
         val processManifestFile = scope.getTaskContainer().pluginProcessManifest?.processorManifestOutputFile
         val task = taskFactory.create(RefineManifest.ConfigAction(scope, processManifestFile!!))
@@ -119,6 +144,9 @@ class TaskManager(private val project: Project) {
             prefix = "${project.name}_"
         }
         val task = taskFactory.create(PrefixResources.ConfigAction(scope, file, prefix))
+        scope.getArtifacts().appendArtifact(InternalArtifactType.PACKAGED_RES,
+                ImmutableList.of(file),
+                task)
         task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask)
         scope.getTaskContainer().pluginPrefixResources = task
     }
@@ -128,6 +156,7 @@ class TaskManager(private val project: Project) {
         scope.getTaskContainer().pluginBundleAarTask = task
         task.dependsOn(scope.getTaskContainer().pluginPrefixResources!!)
         task.dependsOn(scope.getTaskContainer().pluginProcessManifest!!)
+        task.dependsOn(scope.getTaskContainer().pluginGenerateSymbol!!)
         componentTaskContainer.add(task)
     }
 

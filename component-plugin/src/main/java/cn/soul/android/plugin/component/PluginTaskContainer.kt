@@ -21,6 +21,7 @@ class PluginTaskContainer(container: TaskContainer) : TaskContainer by container
     var pluginPrefixResources: PrefixResources? = null
     var pluginBundleAarTask: BundleAar? = null
     var pluginUploadTask: Copy? = null
+    var pluginGenerateSymbol: GenerateSymbol? = null
 
     //anchor task
     var resourceGenTask: Task? = null

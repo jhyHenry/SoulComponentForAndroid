@@ -114,7 +114,7 @@ open class BundleAar : Zip() {
             bundle.from(libraryManifestFiles)
 
             //bundle R.txt|SYMBOL_LIST|intermediates/symbols/debug/R.txt
-            val rDotTxt = artifacts.getFinalArtifactFiles(InternalArtifactType.SYMBOL_LIST)
+            val rDotTxt = artifacts.getFinalArtifactFiles(ComponentArtifactType.COMPONENT_R_TXT)
             bundle.from(rDotTxt)
 
             //bundle f:res|PACKAGED_RES|intermediates/packaged_res/debug

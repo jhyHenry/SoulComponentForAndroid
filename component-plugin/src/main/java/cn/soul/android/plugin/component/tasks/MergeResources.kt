@@ -752,9 +752,9 @@ open class MergeResources @Inject constructor(executor:WorkerExecutor) : Increme
 //                    println("\t\t${file.absolutePath}")
 //                }
 //            }
-            val project = scope.getGlobalScope().project
+            val project = scope.globalScope.project
 
-            task.filesProvider = scope.getGlobalScope().filesProvider
+            task.filesProvider = scope.globalScope.filesProvider
             task.minSdk = TaskInputHelper.memoize {
                 variantData
                         .variantConfiguration
@@ -762,9 +762,9 @@ open class MergeResources @Inject constructor(executor:WorkerExecutor) : Increme
                         .apiLevel
             }
 
-            task.aaptGeneration = AaptGeneration.fromProjectOptions(scope.getGlobalScope().projectOptions)
-            task.aapt2FromMaven = getAapt2FromMavenIfEnabled(scope.getGlobalScope())
-            task.setAndroidBuilder(scope.getGlobalScope().androidBuilder)
+            task.aaptGeneration = AaptGeneration.fromProjectOptions(scope.globalScope.projectOptions)
+            task.aapt2FromMaven = getAapt2FromMavenIfEnabled(scope.globalScope)
+            task.setAndroidBuilder(scope.globalScope.androidBuilder)
             task.variantName = scope.getVariantConfiguration().fullName
             task.incrementalFolder = scope.getIncrementalDir(name)
             task.variantScope = scope
@@ -792,7 +792,7 @@ open class MergeResources @Inject constructor(executor:WorkerExecutor) : Increme
             // the getUseSupportLibrary method returns TRUE.
             task.vectorSupportLibraryIsUsed = java.lang.Boolean.TRUE == vectorDrawablesOptions.useSupportLibrary
 
-            val validateEnabled = !scope.getGlobalScope()
+            val validateEnabled = !scope.globalScope
                     .projectOptions
                     .get(BooleanOption.DISABLE_RESOURCE_VALIDATION)
             task.validateEnabled = validateEnabled
@@ -829,7 +829,7 @@ open class MergeResources @Inject constructor(executor:WorkerExecutor) : Increme
             // Filed https://issuetracker.google.com//110412851 to clean this up at some point.
             scope.getTaskContainer().pluginMergeResourcesTask = task
 
-            if (scope.getGlobalScope().extension.dataBinding.isEnabled) {
+            if (scope.globalScope.extension.dataBinding.isEnabled) {
                 // Keep as an output.
                 task.dataBindingLayoutInfoOutFolder = scope.getArtifacts()
                         .appendArtifact(
