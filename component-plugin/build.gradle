@@ -9,6 +9,7 @@ dependencies {
     implementation 'org.dom4j:dom4j:2.1.1'
 //    implementation project(":component-base")
     implementation 'cn.soul.android.module:component:1.0.0@jar'
+    implementation 'net.sf.json-lib:json-lib:2.4:jdk13'
     implementation localGroovy()
     //gradle sdk
     implementation gradleApi()
