@@ -46,7 +46,7 @@ class ComponentPlugin : Plugin<Project> {
         taskManager = TaskManager(p)
         Log.p(msg = "apply component plugin.")
 
-        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform())
+        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform(p))
         mIsRunComponentTask = isRunComponentTask()
         if (mIsRunComponentTask) {
             mPrefixRTransform = PrefixRTransform()

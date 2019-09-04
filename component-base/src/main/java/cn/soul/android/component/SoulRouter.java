@@ -6,7 +6,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 
-
 import java.util.concurrent.ConcurrentHashMap;
 
 import cn.soul.android.component.node.RouterNode;
@@ -49,8 +48,8 @@ public class SoulRouter {
         return sInstance;
     }
 
-    public void addRouterNode(String path, RouterNode node) {
-        mRouterTable.put(path, node);
+    public void addRouterNode(RouterNode node) {
+        mRouterTable.put(node.getPath(), node);
     }
 
     public void navigate(int requestCode, Context context, RouterNode node) {
