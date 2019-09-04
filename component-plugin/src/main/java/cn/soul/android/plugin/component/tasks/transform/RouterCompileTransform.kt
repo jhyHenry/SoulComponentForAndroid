@@ -1,8 +1,9 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.component.Constants
-import cn.soul.android.component.IRouterFactory
 import cn.soul.android.component.annotation.Router
+import cn.soul.android.component.template.IRouterFactory
+import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
@@ -22,7 +23,7 @@ import java.io.File
 class RouterCompileTransform(private val project: Project) : BaseTransform() {
     override fun transform(transformInvocation: TransformInvocation?) {
         super.transform(transformInvocation)
-        val nodeMapByGroup = mutableMapOf<String, List<Pair<String, String>>>()
+        val nodeMapByGroup = mutableMapOf<String, ArrayList<Pair<String, String>>>()
         val inputs = transformInvocation?.inputs ?: return
 
         //traversal all .class file and find the class which annotate by Router, record router path
@@ -38,9 +39,8 @@ class RouterCompileTransform(private val project: Project) : BaseTransform() {
                             val routerAnnotation = it.getAnnotation(Router::class.java) as Router
                             val path = routerAnnotation.path
                             nodeMapByGroup.computeIfAbsent(getGroupWithPath(path)) { _ ->
-                                listOf(Pair(path, it.name))
-                            }
-
+                                arrayListOf(Pair(path, it.name))
+                            }.add(Pair(path, it.name))
                         }
                 outputFiles(transformInvocation.outputProvider, dirInput)
             }
@@ -56,12 +56,12 @@ class RouterCompileTransform(private val project: Project) : BaseTransform() {
                 Format.DIRECTORY)
         if (nodeMapByGroup.isNotEmpty()) {
             nodeMapByGroup.forEach {
-                genRouterClass(dest, it.key, it.value)
+                genRouterFactoryImpl(dest, it.key, it.value)
             }
         }
     }
 
-    private fun genRouterClass(dir: File, group: String, nodeList: List<Pair<String, String>>) {
+    private fun genRouterFactoryImpl(dir: File, group: String, nodeList: List<Pair<String, String>>) {
         try {
             val classPool = InjectHelper.instance.getClassPool()
             val genClass = classPool.makeClass(Constants.GEN_FILE_PACKAGE_NAME + genRouterClassName(group))
@@ -91,9 +91,51 @@ class RouterCompileTransform(private val project: Project) : BaseTransform() {
         return builder.toString()
     }
 
+    private fun genRouterLazyLoaderImpl(dir: File) {
+        try {
+            val classPool = InjectHelper.instance.getClassPool()
+            val genClass = classPool.makeClass(Constants.GEN_FILE_PACKAGE_NAME + "SoulRouterLazyLoaderImpl")
+            genClass.addInterface(classPool.get(IRouterLazyLoader::class.java.name))
+            genClass.addMethod(genLazyLoadFactoryByGroupMethod(dir, genClass))
+            genClass.writeFile(dir.absolutePath)
+            genClass.detach()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            if (e.message != null) {
+                Log.e(e.message!!)
+            }
+        }
+    }
+
+    private fun genLazyLoadFactoryByGroupMethod(dir: File, genClass: CtClass): CtMethod {
+        return CtMethod.make(lazyLoadFactoryByGroupSrc(dir), genClass)
+    }
+
+    private fun lazyLoadFactoryByGroupSrc(dir: File): String {
+        var preGroup = ""
+        val sb = StringBuilder("public java.util.List<${Constants.ROUTER_FACTORY_CLASSNAME}> lazyLoadFactoryByGroup(String arg) {")
+        sb.append("switch(arg) {")
+        dir.walk().filter { it.isFile }
+                .forEach {
+                    val group = it.name.split('$')[0]
+                    if (group != preGroup) {
+                        if (group != "") {
+                            sb.append("return result;}")
+                        }
+                        preGroup = group
+                        sb.append("case \"$group\":{")
+                                .append("java.util.ArrayList<${Constants.ROUTER_FACTORY_CLASSNAME}> result =")
+                                .append("new java.util.ArrayList<>();")
+                    }
+                    sb.append("result.add(new ${Constants.GEN_FILE_PACKAGE_NAME}${it.name}());")
+                }
+        sb.append("}")
+        return sb.toString()
+    }
+
     private fun genRouterClassName(group: String): String {
         val componentName = getComponentExtension().componentName
-        return "${group}\$${componentName}\$NodeFactory"
+        return "$group\$$componentName\$NodeFactory"
     }
 
     private fun getComponentExtension(): ComponentExtension {

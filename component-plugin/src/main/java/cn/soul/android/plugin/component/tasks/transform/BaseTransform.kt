@@ -1,6 +1,5 @@
 package cn.soul.android.plugin.component.tasks.transform
 
-import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils

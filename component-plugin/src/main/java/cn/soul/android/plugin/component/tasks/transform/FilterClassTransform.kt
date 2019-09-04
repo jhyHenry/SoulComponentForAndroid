@@ -34,5 +34,4 @@ class FilterClassTransform : BaseTransform() {
     override fun getName(): String {
         return "filterClass"
     }
-
 }

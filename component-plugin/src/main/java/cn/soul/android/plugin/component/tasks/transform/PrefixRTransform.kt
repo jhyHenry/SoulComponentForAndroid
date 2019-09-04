@@ -82,7 +82,6 @@ class PrefixRTransform : BaseTransform() {
             it.fields.forEach { ctField ->
                 ctField.name = "$prefix${ctField.name}"
             }
-            it.writeFile("/Users/nebula/temp")
             it.writeFile()
         }
     }
@@ -103,8 +102,6 @@ class PrefixRTransform : BaseTransform() {
                 }
                 if (f.isReader && isCustomRFile(f.className, applicationId)) {
                     val replaceStr = "\$_ = ${f.className}.$prefix${f.fieldName};"
-                    println("replace Str:" + replaceStr)
-
                     f.replace("\$_ = ${f.className}.$prefix${f.fieldName};")
                 }
             }
