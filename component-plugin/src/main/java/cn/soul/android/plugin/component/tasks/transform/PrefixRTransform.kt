@@ -15,9 +15,8 @@ import org.gradle.api.Project
 /**
  * Created by nebula on 2019-08-20
  */
-class PrefixRTransform : BaseTransform() {
+class PrefixRTransform(private val project: Project) : BaseTransform() {
     private var prefix: String? = null
-    private var project: Project? = null
 
     override fun getName(): String {
         return "prefixR"
@@ -26,7 +25,7 @@ class PrefixRTransform : BaseTransform() {
     override fun transform(transformInvocation: TransformInvocation?) {
         super.transform(transformInvocation)
 
-        val p = project ?: return
+        val p = project
         val inputs = transformInvocation?.inputs ?: return
         val variantName = transformInvocation.context.variantName
         val appPlugin = p.plugins.getPlugin(AppPlugin::class.java) as AppPlugin
@@ -49,7 +48,6 @@ class PrefixRTransform : BaseTransform() {
         prefixCustomCtClassField(rCtClass)
         inputs.forEach { input ->
             input.directoryInputs.forEach { dirInput ->
-
                 InjectHelper.instance.processFiles(dirInput.file)
                         .nameFilter { file -> file.name.endsWith(".class") }
                         .forEach {
@@ -73,16 +71,14 @@ class PrefixRTransform : BaseTransform() {
         this.prefix = prefix
     }
 
-    fun setProject(project: Project?) {
-        this.project = project
-    }
-
     private fun prefixCustomCtClassField(ctClass: CtClass) {
         ctClass.nestedClasses.forEach {
             it.fields.forEach { ctField ->
+                if (it.isFrozen) {
+                    it.defrost()
+                }
                 ctField.name = "$prefix${ctField.name}"
             }
-            it.writeFile()
         }
     }
 
@@ -94,6 +90,9 @@ class PrefixRTransform : BaseTransform() {
             Log.d("skip prefix R.class field access. which class is: ${ctClass.name}")
             return
         }
+        if (ctClass.isFrozen) {
+            ctClass.defrost()
+        }
         ctClass.instrument(object : ExprEditor() {
             override fun edit(f: FieldAccess?) {
                 super.edit(f)
@@ -101,12 +100,10 @@ class PrefixRTransform : BaseTransform() {
                     return
                 }
                 if (f.isReader && isCustomRFile(f.className, applicationId)) {
-                    val replaceStr = "\$_ = ${f.className}.$prefix${f.fieldName};"
                     f.replace("\$_ = ${f.className}.$prefix${f.fieldName};")
                 }
             }
         })
-        ctClass.writeFile()
     }
 
     private fun isRFile(name: String): Boolean = name == "R" || name.startsWith("R$")

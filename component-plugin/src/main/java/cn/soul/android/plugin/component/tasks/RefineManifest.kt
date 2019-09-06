@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.plugin.component.PluginVariantScope
+import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.AndroidXmlHelper
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -64,10 +65,11 @@ open class RefineManifest : AndroidVariantTask() {
 
         applicationElement.elementIterator(AndroidXmlHelper.TAG_ACTIVITY).forEach { activityElement ->
             val intentFilterElement = activityElement.element("intent-filter")
-            if (intentFilterElement.attributeCount() == 0) {
+            if (intentFilterElement != null && intentFilterElement.attributeCount() == 0) {
                 activityElement.remove(intentFilterElement)
             }
         }
+        PrefixHelper.instance.prefixResourceFile(applicationElement)
         FileWriter(manifestFile!!).use {
             XMLWriter(it).apply {
                 write(root)
@@ -91,6 +93,7 @@ open class RefineManifest : AndroidVariantTask() {
             task.variantName = scope.getFullName()
 
             scope.getTaskContainer().pluginRefineManifest = task
+            task.dependsOn(scope.getTaskContainer().pluginPrefixResources)
             task.dependsOn(scope.getTaskContainer().pluginProcessManifest)
 
             scope.getArtifacts()

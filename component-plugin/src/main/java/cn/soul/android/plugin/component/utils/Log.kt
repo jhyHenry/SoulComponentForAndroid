@@ -9,57 +9,62 @@ import com.google.common.collect.ImmutableSet
  */
 object Log {
     enum class Level {
+        //error info
         ERROR,
+        //warning info
         WARNING,
+        //information of plugin process, you can see the task or action's execution progress
         PROCESS,
+        //detail of all task, it maybe great amount
         DETAIL,
+        //some unnecessary log
         INFO
     }
 
-    val entireLevel: ImmutableSet<Level> = ImmutableSet.of(Log.Level.ERROR, Log.Level.WARNING, Log.Level.PROCESS, Log.Level.DETAIL, Log.Level.INFO)
+    val entireLevel: ImmutableSet<Level> = ImmutableSet.of(Level.ERROR, Level.WARNING, Level.PROCESS, Level.DETAIL, Level.INFO)
 
     var logLevel: ImmutableSet<Level> = entireLevel
 
     private const val defaultTag = "[component plugin]-"
 
     fun e(tag: String, msg: String) {
-        doErrorLog(Log.Level.ERROR, tag, msg)
+        doErrorLog(Level.ERROR, tag, msg)
     }
 
     fun w(tag: String, msg: String) {
-        doNormalLog(Log.Level.WARNING, tag, msg)
+        doNormalLog(Level.WARNING, tag, msg)
     }
 
     fun p(tag: String, msg: String) {
-        doNormalLog(Log.Level.PROCESS, tag, msg)
+        doNormalLog(Level.PROCESS, tag, msg)
     }
 
     fun d(tag: String, msg: String) {
-        doNormalLog(Log.Level.DETAIL, tag, msg)
+        doNormalLog(Level.DETAIL, tag, msg)
     }
 
     fun i(msg: String) {
-        doNormalLog(Log.Level.INFO, msg = msg)
+        doNormalLog(Level.INFO, msg = msg)
     }
 
     fun e(msg: String) {
-        doErrorLog(Log.Level.ERROR, msg = "error: $msg")
+        doErrorLog(Level.ERROR, msg = "error: $msg")
     }
 
     fun w(msg: String) {
-        doNormalLog(Log.Level.WARNING, msg = msg)
+        doNormalLog(Level.WARNING, msg = msg)
     }
 
     fun p(msg: String) {
-        doNormalLog(Log.Level.PROCESS, msg = msg)
+        doNormalLog(Level.PROCESS, msg = msg)
     }
 
     fun d(msg: String) {
-        doNormalLog(Log.Level.DETAIL, msg = msg)
+        doNormalLog(Level.DETAIL, msg = msg)
     }
 
     fun i(tag: String = defaultTag, msg: String) {
-        doNormalLog(Log.Level.INFO, tag, msg)
+        doNormalLog(Level.INFO, tag, msg)
     }
 
     private fun doNormalLog(level: Level, tag: String = defaultTag, msg: String) {

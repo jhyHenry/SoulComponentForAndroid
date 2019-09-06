@@ -46,10 +46,11 @@ class ComponentPlugin : Plugin<Project> {
         taskManager = TaskManager(p)
         Log.p(msg = "apply component plugin.")
 
-        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform(p))
         mIsRunComponentTask = isRunComponentTask()
+        val buildType = if (mIsRunComponentTask) RouterCompileTransform.BuildType.COMPONENT else RouterCompileTransform.BuildType.APPLICATION
+        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform(p, buildType))
         if (mIsRunComponentTask) {
-            mPrefixRTransform = PrefixRTransform()
+            mPrefixRTransform = PrefixRTransform(project)
             project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mPrefixRTransform)
         }
 
@@ -84,7 +85,6 @@ class ComponentPlugin : Plugin<Project> {
         val taskNames = gradle.startParameter.taskNames
         if (mIsRunComponentTask) {
             mPrefixRTransform?.setPrefix(pluginExtension.resourcePrefix)
-            mPrefixRTransform?.setProject(project)
         }
 
         if (!needAddComponentDependencies(taskNames)) {
@@ -100,11 +100,15 @@ class ComponentPlugin : Plugin<Project> {
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
         taskNames.forEach {
-            if (it.startsWith("component")) {
+            if (getTaskNameWithoutModule(it).startsWith("component")) {
                 return true
             }
         }
         return false
+    }
+
+    private fun getTaskNameWithoutModule(name: String): String {
+        return name.substring(name.lastIndexOf(':') + 1)
     }
 
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
@@ -148,6 +152,8 @@ class ComponentPlugin : Plugin<Project> {
                 //这里是continue,不给test的variant创建task
                 return@forEach
             }
+
+            Log.p("crate start")
             it.processResourcesTask.doLast { _ ->
                 val outDir = it.processResourcesTask.sourceOutputDir
                 RFileAction.removeRFileFinalModifier(outDir)

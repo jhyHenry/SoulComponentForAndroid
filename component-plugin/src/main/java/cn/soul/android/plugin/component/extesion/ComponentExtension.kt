@@ -2,7 +2,6 @@ package cn.soul.android.plugin.component.extesion
 
 import org.gradle.api.Action
 import org.gradle.api.Project
-import java.lang.RuntimeException
 
 /**
  * @author panxinghai
@@ -28,7 +27,7 @@ open class ComponentExtension {
         if (uploadPath == null) {
             uploadPath = project.parent?.buildDir?.absolutePath
             if (uploadPath == null) {
-                throw RuntimeException("got default build path error, please do not apply plugin in root project")
+                throw RuntimeException("got default build path error, please do not apply SoulComponent plugin in root project")
             }
         }
         if (repoPath == null) {

@@ -5,6 +5,7 @@ import cn.soul.android.plugin.component.custom.AdaptiveIconPrefix
 import cn.soul.android.plugin.component.custom.BitmapPrefix
 import cn.soul.android.plugin.component.custom.IElementPrefix
 import cn.soul.android.plugin.component.custom.SelectorPrefix
+import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
@@ -44,15 +45,21 @@ open class PrefixResources : AndroidVariantTask() {
 
     @TaskAction
     fun taskAction() {
-        val startTime = System.currentTimeMillis()
         val folder = packagedResFolder ?: return
-        fileTraversal(folder) {
-            if (it.name.endsWith(".xml")) {
-                refineXmlFile(it)
-            } else {
-                renameFileWithPrefix(it)
-            }
-        }
+        val startTime = System.currentTimeMillis()
+        PrefixHelper.instance.initWithPackagedRes(prefix, folder)
+//        fileTraversal(folder) {
+//            if (it.name.endsWith(".xml")) {
+//                refineXmlFile(it)
+//            } else {
+//                renameFileWithPrefix(it)
+//            }
+//        }
+        folder.walk().filter { it.isFile && it.name != "values.xml" }
+                .forEach {
+                    PrefixHelper.instance.prefixResourceFile(it)
+                }
+        PrefixHelper.instance.prefixValues(File(folder, "values/values.xml"))
         Log.i("prefix resources cost: ${System.currentTimeMillis() - startTime}ms")
     }
 
@@ -113,12 +120,11 @@ open class PrefixResources : AndroidVariantTask() {
     }
 
     private fun prefixLayouts(root: Element) {
-        Log.e(root.name)
         elementTraversal(root) {
             it.attributes().forEach { attr ->
                 if (attr.text.startsWith('@')) {
                     attr.text = prefixElementText(attr.text)
-                    println(attr.text)
+//                    println(attr.text)
                 }
             }
             return@elementTraversal true

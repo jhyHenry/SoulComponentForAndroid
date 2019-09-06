@@ -1,7 +1,6 @@
 package cn.soul.android.plugin.component.extesion
 
 import java.io.File
-import java.lang.IllegalArgumentException
 
 /**
  * Created by nebula on 2019-07-21
@@ -14,13 +13,16 @@ open class Dependencies {
         dependenciesPath.add(path)
     }
 
+    /**
+     * resolve component dependencies, format like after:{name:version[:variant]}
+     * @param extension extension created in plugin
+     */
     internal fun resolveDependencies(extension: ComponentExtension) {
         dependenciesPath.forEach {
             val strings = it.split(':')
             val size = strings.size
-            if (size < 2 || size > 3) {
-                throw IllegalArgumentException(
-                        "wrong format: $it. implementation format must be \$componentName:\$version[:\$variantName]")
+            require(!(size < 2 || size > 3)) {
+                "wrong format: $it. implementation format must be \$componentName:\$version[:\$variantName]"
             }
             val name = strings[0]
             val version = strings[1]
