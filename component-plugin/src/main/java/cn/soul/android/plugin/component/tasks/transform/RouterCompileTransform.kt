@@ -143,7 +143,7 @@ class RouterCompileTransform(private val project: Project,
     private fun lazyLoadFactoryByGroupSrc(dir: File): String {
         var preGroup = ""
         val sb = StringBuilder("public java.util.List<${Constants.ROUTER_FACTORY_CLASSNAME}> lazyLoadFactoryByGroup(String arg) {")
-        sb.append("switch(arg) {")
+        sb.append("switch(\$1) {")
         dir.walk().filter { it.isFile }
                 .forEach {
                     val group = it.name.split('$')[0]
