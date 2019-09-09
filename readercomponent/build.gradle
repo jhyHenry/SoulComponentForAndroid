@@ -55,12 +55,12 @@ android {
 }
 
 dependencies {
-//    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     annotationProcessor project(':router-anno-compiler')
-//    annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+    releaseImplementation 'net.sf.json-lib:json-lib:2.4:jdk13'
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     // https://mvnrepository.com/artifact/org.gradle/gradle-core
@@ -83,19 +83,19 @@ afterEvaluate {
 //        it.variantData.variantDependency.compileClasspath.resolve().forEach{
 //            println it
 //        }
-        if(it.variantData.name == "release")
-            return
-//        it.variantData.getVariantDependency().getApiElements().getIncoming().getDependencies().forEach{
-//            println it
-//        }
-        project.getConfigurations()["implementation"].allDependencies.all {
-            if (it instanceof DefaultSelfResolvingDependency) {
-                it.resolve().forEach {
-                    println it
-                }
-            } else {
-                println it.group + ":" + it.name + ":" + it.version
-            }
+//        if(it.variantData.name == "release")
+//            return
+        it.variantData.getVariantDependency().getRuntimeElements().getAllDependencies().forEach{
+            println it
         }
+//        project.getConfigurations()["implementation"].allDependencies.all {
+//            if (it instanceof DefaultSelfResolvingDependency) {
+//                it.resolve().forEach {
+//                    println it
+//                }
+//            } else {
+//                println it.group + ":" + it.name + ":" + it.version
+//            }
+//        }
     }
 }
