@@ -15,8 +15,10 @@ import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.ClassClassPath
 import javassist.CtClass
 import javassist.CtMethod
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import java.io.File
+import java.util.zip.ZipFile
 
 /**
  * @author panxinghai
@@ -25,48 +27,44 @@ import java.io.File
  */
 class RouterCompileTransform(private val project: Project,
                              private val buildType: BuildType) : BaseTraversalTransform() {
-
-
     enum class BuildType {
         COMPONENT,
         APPLICATION,
     }
 
     private val nodeMapByGroup = mutableMapOf<String, ArrayList<Pair<String, String>>>()
-    private val groupMap = mutableMapOf<String, String>()
+    private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
     override fun onDirVisited(dirInput: DirectoryInput) {
-        if (buildType == BuildType.COMPONENT) {
-            //traversal all .class file and find the class which annotate by Router, record router path
-            //and Class for RouterNode construction
-            InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
-            InjectHelper.instance.processFiles(dirInput.file)
-                    .nameFilter { file -> file.name.endsWith(".class") }
-                    .classFilter { ctClass ->
-                        ctClass.getAnnotation(Router::class.java) != null
-                    }.forEach {
-                        val routerAnnotation = it.getAnnotation(Router::class.java) as Router
-                        val path = routerAnnotation.path
-                        nodeMapByGroup.computeIfAbsent(getGroupWithPath(path)) {
-                            arrayListOf()
-                        }.add(Pair(path, it.name))
-                    }
-        } else {
-            dirInput.file.walk()
-                    .filter { it.isFile }
-                    .forEach {
-                        if (it.absolutePath.startsWith(Constants.GEN_FILE_PACKAGE_NAME)) {
-                            
-                        }
-                    }
-        }
+        //traversal all .class file and find the class which annotate by Router, record router path
+        //and Class for RouterNode construction
+        InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
+        InjectHelper.instance.processFiles(dirInput.file)
+                .nameFilter { file -> file.name.endsWith(".class") }
+                .classFilter { ctClass ->
+                    ctClass.getAnnotation(Router::class.java) != null
+                }.forEach {
+                    val routerAnnotation = it.getAnnotation(Router::class.java) as Router
+                    val path = routerAnnotation.path
+                    nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, it.name)) {
+                        arrayListOf()
+                    }.add(Pair(path, it.name))
+                }
     }
 
     override fun onJarVisited(jarInput: JarInput) {
-        if (buildType == BuildType.COMPONENT) {
-            InjectHelper.instance.appendClassPath(jarInput.file.absolutePath)
-        } else {
-
+        InjectHelper.instance.appendClassPath(jarInput.file.absolutePath)
+        if (buildType == BuildType.APPLICATION) {
+            val zip = ZipFile(jarInput.file)
+            zip.use {
+                it.entries().iterator().forEach { entry ->
+                    if (entry.name.startsWith(Constants.GEN_FILE_PACKAGE_NAME_SPLIT_WITH_SLASH)) {
+                        groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
+                            arrayListOf()
+                        }.add(getNameWithEntryName(entry.name))
+                    }
+                }
+            }
         }
     }
 
@@ -77,16 +75,20 @@ class RouterCompileTransform(private val project: Project,
                 TransformManager.PROJECT_ONLY,
                 Format.DIRECTORY)
 
-        if (buildType == BuildType.COMPONENT) {
-            if (nodeMapByGroup.isNotEmpty()) {
-                nodeMapByGroup.forEach {
-                    genRouterFactoryImpl(dest, it.key, it.value)
-                }
+        if (nodeMapByGroup.isNotEmpty()) {
+            nodeMapByGroup.forEach {
+                genRouterFactoryImpl(dest, it.key, it.value)
             }
-        } else {
+        }
+        if (buildType == BuildType.APPLICATION) {
+            nodeMapByGroup.forEach {
+                groupMap.computeIfAbsent(it.key) {
+                    arrayListOf()
+                }.add(genRouterClassName(it.key))
+            }
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterFactory::class.java))
-            genRouterLazyLoaderImpl(dest)
+            genRouterLazyLoaderImpl(dest, groupMap)
         }
     }
 
@@ -107,7 +109,6 @@ class RouterCompileTransform(private val project: Project,
                         .setBody(produceNodesMethodBodySrc(nodeList))
             }
             genClass?.writeFile(dir.absolutePath)
-            genClass?.detach()
         } catch (e: Exception) {
             e.printStackTrace()
             if (e.message != null) {
@@ -134,15 +135,14 @@ class RouterCompileTransform(private val project: Project,
         return builder.toString()
     }
 
-    private fun genRouterLazyLoaderImpl(dir: File) {
+    private fun genRouterLazyLoaderImpl(dir: File, groupMap: MutableMap<String, ArrayList<String>>) {
         try {
             val classPool = InjectHelper.instance.getClassPool()
             val genClass = classPool.makeClass(Constants.GEN_FILE_PACKAGE_NAME + "SoulRouterLazyLoaderImpl")
             genClass.addInterface(classPool.get(IRouterLazyLoader::class.java.name))
-            genClass.addMethod(genLazyLoadFactoryByGroupMethod(dir, genClass))
+            genClass.addMethod(genLazyLoadFactoryByGroupMethod(groupMap, genClass))
             genClass.writeFile(dir.absolutePath)
             genClass.defrost()
-            genClass.detach()
         } catch (e: Exception) {
             e.printStackTrace()
             if (e.message != null) {
@@ -151,32 +151,26 @@ class RouterCompileTransform(private val project: Project,
         }
     }
 
-    private fun genLazyLoadFactoryByGroupMethod(dir: File, genClass: CtClass): CtMethod {
-        return CtMethod.make(lazyLoadFactoryByGroupSrc(dir), genClass)
+    private fun genLazyLoadFactoryByGroupMethod(groupMap: MutableMap<String, ArrayList<String>>, genClass: CtClass): CtMethod {
+        return CtMethod.make(lazyLoadFactoryByGroupSrc(groupMap), genClass)
     }
 
-    private fun lazyLoadFactoryByGroupSrc(dir: File): String {
-        var preGroup = ""
+    private fun lazyLoadFactoryByGroupSrc(groupMap: MutableMap<String, ArrayList<String>>): String {
         val sb = StringBuilder("public java.util.List lazyLoadFactoryByGroup(String arg) {")
                 .append("java.util.ArrayList result =")
-                .append("new java.util.ArrayList();")
-        if (dir.listFiles() != null && dir.listFiles()?.size!! > 0) {
-            sb.append("switch(\$1) {")
-        }
-        dir.walk().filter { it.isFile }
-                .forEach {
-                    val group = it.name.split('$')[0]
-                    if (group == "") {
-                        sb.append("return result;}")
-                        return@forEach
-                    }
-                    if (group != preGroup) {
-                        sb.append("return result;}")
-                        preGroup = group
-                        sb.append("case \"$group\":{")
-                    }
-                    sb.append("result.add(new ${Constants.GEN_FILE_PACKAGE_NAME}${it.name}());")
+                .appendln("new java.util.ArrayList();")
+        if (groupMap.isNotEmpty()) {
+            sb.append("switch(\$1.hashCode()) {")
+            groupMap.forEach {
+                val group = it.key
+                sb.append("case ${group.hashCode()}:{")
+                it.value.forEach { name ->
+                    sb.append("result.add(new ${Constants.GEN_FILE_PACKAGE_NAME}${name}());")
                 }
+                sb.append("return result;}")
+            }
+            sb.append("default:break;}")
+        }
         sb.append("return result;}")
         Log.e(sb.toString())
         return sb.toString()
@@ -192,8 +186,20 @@ class RouterCompileTransform(private val project: Project,
                 ?: throw RuntimeException("can not find ComponentExtension, please check your build.gradle file")
     }
 
-    private fun getGroupWithPath(path: String): String {
-        return path.split('/')[1]
+    private fun getGroupWithPath(path: String, clazz: String): String {
+        val strings = path.split('/')
+        if (strings.size < 3) {
+            throw GradleException("invalid router path: \"$path\" in $clazz. Router Path must starts with '/' and has a group segment")
+        }
+        return strings[1]
+    }
+
+    private fun getGroupWithEntryName(name: String): String {
+        return name.split('/').last().split('$')[0]
+    }
+
+    private fun getNameWithEntryName(name: String): String {
+        return name.split('/').last().split('.')[0]
     }
 
     override fun getName(): String {

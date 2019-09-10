@@ -6,7 +6,7 @@ import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class ArscFile(private val bytes: ByteArray) : SerializableResource {
+class ArscFile(bytes: ByteArray) : SerializableResource {
     var chunks = arrayListOf<SerializableResource>()
     private var buff: ByteBuffer
 

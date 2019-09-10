@@ -6,9 +6,12 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cn.soul.android.component.node.RouterNode;
+import cn.soul.android.component.template.IRouterFactory;
+import cn.soul.android.component.template.IRouterLazyLoader;
 
 
 /**
@@ -19,6 +22,7 @@ public class SoulRouter {
     private volatile static SoulRouter sInstance;
     private volatile static boolean isInit = false;
     private static Context sContext;
+    private IRouterLazyLoader mLazyLoader;
 
     private ConcurrentHashMap<String, RouterNode> mRouterTable;
 
@@ -58,6 +62,27 @@ public class SoulRouter {
         }
         if (node.getType() == RouterNode.ACTIVITY) {
             startActivity(requestCode, context, node);
+        }
+    }
+
+    private void loadNode(String group) {
+        if (mLazyLoader == null) {
+            try {
+                mLazyLoader = (IRouterLazyLoader) Class.forName(Constants.GEN_FILE_PACKAGE_NAME + "SoulRouterLazyLoaderImpl").newInstance();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            if (mLazyLoader == null) {
+                return;
+            }
+        }
+        List<IRouterFactory> list = mLazyLoader.lazyLoadFactoryByGroup(group);
+        for (IRouterFactory factory : list) {
+            factory.produceRouterNodes(this);
         }
     }
 
