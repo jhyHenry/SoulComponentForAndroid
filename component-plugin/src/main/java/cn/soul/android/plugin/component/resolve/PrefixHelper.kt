@@ -19,7 +19,6 @@ class PrefixHelper {
         }
     }
 
-
     private val resTypeSet = hashSetOf("anim",
             "animator",
             "color",
@@ -127,7 +126,6 @@ class PrefixHelper {
             }
             val attribute = it.attribute("name")
             attribute.value = prefix + attribute.value
-            println(attribute.value)
             if (it.text.startsWith('@')) {
                 it.text = prefixElementText(it.text)
             }
@@ -147,11 +145,15 @@ class PrefixHelper {
             return text
         }
         //if resource did not in current component, do not add prefix for this resource reference
-        val refSet = componentResMap[type] ?: return text
-        if (!refSet.contains(resourceRef)) {
+        if (!isRefNeedPrefix(type, resourceRef)) {
             return text
         }
         return "@$type/$prefix${resourceRef}"
+    }
+
+    fun isRefNeedPrefix(type: String, ref: String): Boolean {
+        val refSet = componentResMap[type] ?: return false
+        return refSet.contains(ref)
     }
 
     private fun writeFile(xmlFile: File, root: Element) {

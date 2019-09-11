@@ -122,27 +122,38 @@ class RouterCompileTransform(private val project: Project,
     }
 
     private fun produceNodesMethodSrc(nodeList: List<Pair<String, String>>): String {
-        return "public void produceRouterNodes(${Constants.SOUL_ROUTER_CLASSNAME} instance) " +
+        return "public java.util.List produceRouterNodes() " +
                 produceNodesMethodBodySrc(nodeList)
     }
 
     private fun produceNodesMethodBodySrc(nodeList: List<Pair<String, String>>): String {
         val builder = StringBuilder("{")
+                .append("java.util.ArrayList list = new java.util.ArrayList();")
         nodeList.forEach {
-            builder.append("\$1.addRouterNode(new ${Constants.ACTIVITY_NODE_CLASSNAME}(\"${it.first}\", ${it.second}.class));")
+            builder.append("list.add(new ${Constants.ACTIVITY_NODE_CLASSNAME}(\"${it.first}\", ${it.second}.class));")
         }
-        builder.append("}")
+        builder.append("return list;")
+                .append("}")
         return builder.toString()
     }
 
     private fun genRouterLazyLoaderImpl(dir: File, groupMap: MutableMap<String, ArrayList<String>>) {
         try {
             val classPool = InjectHelper.instance.getClassPool()
-            val genClass = classPool.makeClass(Constants.GEN_FILE_PACKAGE_NAME + "SoulRouterLazyLoaderImpl")
-            genClass.addInterface(classPool.get(IRouterLazyLoader::class.java.name))
-            genClass.addMethod(genLazyLoadFactoryByGroupMethod(groupMap, genClass))
-            genClass.writeFile(dir.absolutePath)
-            genClass.defrost()
+            val name = Constants.GEN_FILE_PACKAGE_NAME + Constants.LAZY_LOADER_IMPL_NAME
+            var genClass: CtClass? = classPool.getOrNull(name)
+            if (genClass == null) {
+                genClass = classPool.makeClass(name)
+                genClass.addInterface(classPool.get(IRouterLazyLoader::class.java.name))
+                genClass.addMethod(genLazyLoadFactoryByGroupMethod(groupMap, genClass))
+            } else {
+                if (genClass.isFrozen) {
+                    genClass.defrost()
+                }
+                genClass.getDeclaredMethod("lazyLoadFactoryByGroup")
+                        .setBody(produceLazyLoadFactoryBodySrc(groupMap))
+            }
+            genClass?.writeFile(dir.absolutePath)
         } catch (e: Exception) {
             e.printStackTrace()
             if (e.message != null) {
@@ -152,11 +163,16 @@ class RouterCompileTransform(private val project: Project,
     }
 
     private fun genLazyLoadFactoryByGroupMethod(groupMap: MutableMap<String, ArrayList<String>>, genClass: CtClass): CtMethod {
-        return CtMethod.make(lazyLoadFactoryByGroupSrc(groupMap), genClass)
+        return CtMethod.make(lazyLoadFactorySrc(groupMap), genClass)
     }
 
-    private fun lazyLoadFactoryByGroupSrc(groupMap: MutableMap<String, ArrayList<String>>): String {
-        val sb = StringBuilder("public java.util.List lazyLoadFactoryByGroup(String arg) {")
+    private fun lazyLoadFactorySrc(groupMap: MutableMap<String, ArrayList<String>>): String {
+        return "public java.util.List lazyLoadFactoryByGroup(String arg)" +
+                produceLazyLoadFactoryBodySrc(groupMap)
+    }
+
+    private fun produceLazyLoadFactoryBodySrc(groupMap: MutableMap<String, ArrayList<String>>): String {
+        val sb = StringBuilder("{")
                 .append("java.util.ArrayList result =")
                 .appendln("new java.util.ArrayList();")
         if (groupMap.isNotEmpty()) {
@@ -172,7 +188,6 @@ class RouterCompileTransform(private val project: Project,
             sb.append("default:break;}")
         }
         sb.append("return result;}")
-        Log.e(sb.toString())
         return sb.toString()
     }
 

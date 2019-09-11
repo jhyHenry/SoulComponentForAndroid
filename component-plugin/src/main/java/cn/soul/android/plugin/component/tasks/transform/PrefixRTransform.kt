@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.Format
@@ -99,7 +100,7 @@ class PrefixRTransform(private val project: Project) : BaseTransform() {
                 if (f == null) {
                     return
                 }
-                if (f.isReader && isCustomRFile(f.className, applicationId)) {
+                if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
                     f.replace("\$_ = ${f.className}.$prefix${f.fieldName};")
                 }
             }
@@ -107,6 +108,18 @@ class PrefixRTransform(private val project: Project) : BaseTransform() {
     }
 
     private fun isRFile(name: String): Boolean = name == "R" || name.startsWith("R$")
+
+    private fun needPrefix(fullName: String, ref: String, applicationId: String): Boolean {
+        if (!isCustomRFile(fullName, applicationId)) {
+            return false
+        }
+        val strings = fullName.split('$')
+        if (strings.size <= 1) {
+            return false
+        }
+        val rName = strings[1]
+        return PrefixHelper.instance.isRefNeedPrefix(rName, ref)
+    }
 
     private fun isCustomRFile(name: String, applicationId: String) = name.startsWith("$applicationId.R")
 

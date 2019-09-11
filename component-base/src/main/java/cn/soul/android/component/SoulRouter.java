@@ -6,12 +6,8 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
+import cn.soul.android.component.common.Trustee;
 import cn.soul.android.component.node.RouterNode;
-import cn.soul.android.component.template.IRouterFactory;
-import cn.soul.android.component.template.IRouterLazyLoader;
 
 
 /**
@@ -22,12 +18,8 @@ public class SoulRouter {
     private volatile static SoulRouter sInstance;
     private volatile static boolean isInit = false;
     private static Context sContext;
-    private IRouterLazyLoader mLazyLoader;
-
-    private ConcurrentHashMap<String, RouterNode> mRouterTable;
 
     private SoulRouter() {
-        mRouterTable = new ConcurrentHashMap<>();
     }
 
     public static void init(Application application) {
@@ -53,7 +45,7 @@ public class SoulRouter {
     }
 
     public void addRouterNode(RouterNode node) {
-        mRouterTable.put(node.getPath(), node);
+        Trustee.instance().putRouterNode(node);
     }
 
     public void navigate(int requestCode, Context context, RouterNode node) {
@@ -62,27 +54,6 @@ public class SoulRouter {
         }
         if (node.getType() == RouterNode.ACTIVITY) {
             startActivity(requestCode, context, node);
-        }
-    }
-
-    private void loadNode(String group) {
-        if (mLazyLoader == null) {
-            try {
-                mLazyLoader = (IRouterLazyLoader) Class.forName(Constants.GEN_FILE_PACKAGE_NAME + "SoulRouterLazyLoaderImpl").newInstance();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            if (mLazyLoader == null) {
-                return;
-            }
-        }
-        List<IRouterFactory> list = mLazyLoader.lazyLoadFactoryByGroup(group);
-        for (IRouterFactory factory : list) {
-            factory.produceRouterNodes(this);
         }
     }
 
@@ -95,6 +66,6 @@ public class SoulRouter {
     }
 
     public RouterNode route(String path) {
-        return mRouterTable.get(path);
+        return Trustee.instance().getRouterNode(path);
     }
 }
