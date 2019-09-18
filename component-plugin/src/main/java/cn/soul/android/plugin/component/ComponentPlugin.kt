@@ -39,6 +39,7 @@ class ComponentPlugin : Plugin<Project> {
 
     private var mPrefixRTransform: PrefixRTransform? = null
     private var mIsRunComponentTask: Boolean = false
+
     override fun apply(p: Project) {
         project = p
         projectOptions = ProjectOptions(p)
@@ -46,6 +47,7 @@ class ComponentPlugin : Plugin<Project> {
         taskManager = TaskManager(p)
         Log.p(msg = "apply component plugin.")
 
+        p.plugins.apply("maven")
         mIsRunComponentTask = isRunComponentTask()
         val buildType = if (mIsRunComponentTask) RouterCompileTransform.BuildType.COMPONENT else RouterCompileTransform.BuildType.APPLICATION
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform(p, buildType))

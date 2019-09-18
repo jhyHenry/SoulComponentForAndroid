@@ -124,7 +124,6 @@ open class PrefixResources : AndroidVariantTask() {
             it.attributes().forEach { attr ->
                 if (attr.text.startsWith('@')) {
                     attr.text = prefixElementText(attr.text)
-//                    println(attr.text)
                 }
             }
             return@elementTraversal true

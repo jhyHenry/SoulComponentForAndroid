@@ -26,6 +26,9 @@ class GenerateDependencies : AndroidVariantTask() {
 
         override fun execute(task: GenerateDependencies) {
             task.variantName = scope.fullVariantName
+            scope.getVariantData().variantDependency.runtimeElements.allDependencies.forEach {
+                it.group
+            }
         }
     }
 }

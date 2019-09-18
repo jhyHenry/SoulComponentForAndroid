@@ -74,11 +74,16 @@ class PrefixHelper {
         val document = reader.read(File(dir, "values/values.xml"))
         val root = document.rootElement
         root.elementIterator().forEach {
-            if (!accessTypeSet.contains(it.name)) {
+            var type = it.name
+            //handle special type [string-array]
+            if (type == "string-array") {
+                type = "array"
+            }
+            if (!accessTypeSet.contains(type)) {
                 return@forEach
             }
             val attribute = it.attribute("name")
-            componentResMap.computeIfAbsent(it.name) {
+            componentResMap.computeIfAbsent(type) {
                 hashSetOf()
             }.add(attribute.value)
         }
