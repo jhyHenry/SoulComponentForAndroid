@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.transforms.LibraryAarJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryIntermediateJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryJniLibsTransform
+import com.android.build.gradle.internal.variant.VariantHelper
 import com.android.utils.FileUtils
 import com.google.common.base.MoreObjects
 import com.google.common.base.Preconditions
@@ -158,6 +159,15 @@ class TaskManager(private val project: Project) {
         task.dependsOn(scope.getTaskContainer().pluginProcessManifest!!)
         task.dependsOn(scope.getTaskContainer().pluginGenerateSymbol!!)
         componentTaskContainer.add(task)
+
+        scope.getArtifacts().appendArtifact(ComponentArtifactType.COMPONENT_AAR,
+                ImmutableList.of(File(scope.getAarLocation(), "component.aar")),
+                task)
+
+        if (scope.fullVariantName == "release") {
+            VariantHelper.setupArchivesConfig(project, scope.getRealScope().variantDependencies.runtimeClasspath)
+            project.artifacts.add("archives", task)
+        }
     }
 
     fun addJavacClassesStream(javaOutputs: FileCollection, scope: PluginVariantScope) {
@@ -243,7 +253,7 @@ class TaskManager(private val project: Project) {
 
     fun createUploadTask(scope: PluginVariantScope) {
         val versionName = project.extensions.getByType(AppExtension::class.java).defaultConfig.versionName
-        val task = taskFactory.create(UploadComponent.ConfigAction(project.name, versionName, scope))
+        val task = taskFactory.create(UploadComponent.ConfigAction(project.name, versionName, scope, project))
         scope.getTaskContainer().pluginUploadTask = task
         task.dependsOn(scope.getTaskContainer().pluginBundleAarTask)
 

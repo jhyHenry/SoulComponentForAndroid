@@ -22,6 +22,8 @@ interface PluginVariantScope : TransformVariantScope {
     //transformVariantScope
     override fun getGlobalScope(): GlobalScope
 
+    fun getRealScope():VariantScope
+
     fun getTaskContainer(): PluginTaskContainer
     fun getFullName(): String
     fun getVariantData(): BaseVariantData

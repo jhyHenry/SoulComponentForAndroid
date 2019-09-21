@@ -155,7 +155,6 @@ class ComponentPlugin : Plugin<Project> {
                 return@forEach
             }
 
-            Log.p("crate start")
             it.processResourcesTask.doLast { _ ->
                 val outDir = it.processResourcesTask.sourceOutputDir
                 RFileAction.removeRFileFinalModifier(outDir)

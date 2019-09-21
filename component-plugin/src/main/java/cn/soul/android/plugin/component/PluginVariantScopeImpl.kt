@@ -54,6 +54,10 @@ class PluginVariantScopeImpl(private val scope: VariantScope,
                         this::canParseManifest)
     }
 
+    override fun getRealScope(): VariantScope {
+        return scope
+    }
+
     override fun getTaskName(prefix: String, suffix: String): String {
         return scope.getTaskName("component${prefix.capitalize()}", suffix)
     }

@@ -8,6 +8,7 @@ import com.android.build.api.artifact.ArtifactType;
  * date : 2019-07-17 16:34
  */
 public enum ComponentArtifactType implements ArtifactType {
+    COMPONENT_AAR,
     COMPONENT_AAR_MAIN_JAR,
     COMPONENT_AAR_LIBS_DIR,
     COMPONENT_R_TXT,
