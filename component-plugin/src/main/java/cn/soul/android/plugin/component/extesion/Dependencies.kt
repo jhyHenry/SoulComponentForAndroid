@@ -33,9 +33,7 @@ open class Dependencies {
             }
             val path = "${extension.repoPath}/$name/$version/$variant/component.aar"
             val file = File(path)
-            if (!file.exists()) {
-                throw IllegalArgumentException("can not resolve implementation:${file.absolutePath}")
-            }
+            require(file.exists()) { "can not resolve implementation:${file.absolutePath}" }
             dependenciesCollection.add(file)
         }
     }

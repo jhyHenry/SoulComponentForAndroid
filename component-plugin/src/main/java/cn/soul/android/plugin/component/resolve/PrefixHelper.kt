@@ -50,6 +50,9 @@ class PrefixHelper {
             "array"
     )
 
+    private val attributeNameTypeMap = hashMapOf(
+            "string-array" to "array")
+
     private val componentResMap = hashMapOf<String, HashSet<String>>()
     private val reader: SAXReader = SAXReader()
     private var prefix = ""
@@ -75,9 +78,9 @@ class PrefixHelper {
         val root = document.rootElement
         root.elementIterator().forEach {
             var type = it.name
-            //handle special type [string-array]
-            if (type == "string-array") {
-                type = "array"
+            //handle special type. eg:[string-array]
+            if (attributeNameTypeMap.containsKey(type)) {
+                type = attributeNameTypeMap[type]
             }
             if (!accessTypeSet.contains(type)) {
                 return@forEach
