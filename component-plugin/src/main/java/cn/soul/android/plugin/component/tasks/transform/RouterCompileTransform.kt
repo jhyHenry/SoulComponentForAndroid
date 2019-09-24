@@ -5,6 +5,7 @@ import cn.soul.android.component.annotation.Router
 import cn.soul.android.component.template.IRouterFactory
 import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.plugin.component.extesion.ComponentExtension
+import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
@@ -25,17 +26,11 @@ import java.util.zip.ZipFile
  *
  * date : 2019-07-19 18:09
  */
-class RouterCompileTransform(private val project: Project,
-                             private val buildType: BuildType) : BaseTraversalTransform() {
-    enum class BuildType {
-        COMPONENT,
-        APPLICATION,
-    }
-
+class RouterCompileTransform(private val project: Project) : TypeTraversalTransform() {
     private val nodeMapByGroup = mutableMapOf<String, ArrayList<Pair<String, String>>>()
     private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
-    override fun onDirVisited(dirInput: DirectoryInput) {
+    override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
         //traversal all .class file and find the class which annotate by Router, record router path
         //and Class for RouterNode construction
         InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
@@ -50,9 +45,10 @@ class RouterCompileTransform(private val project: Project,
                         arrayListOf()
                     }.add(Pair(path, it.name))
                 }
+        return false
     }
 
-    override fun onJarVisited(jarInput: JarInput) {
+    override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
         InjectHelper.instance.appendClassPath(jarInput.file.absolutePath)
         if (buildType == BuildType.APPLICATION) {
             val zip = ZipFile(jarInput.file)
@@ -66,6 +62,7 @@ class RouterCompileTransform(private val project: Project,
                 }
             }
         }
+        return false
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {

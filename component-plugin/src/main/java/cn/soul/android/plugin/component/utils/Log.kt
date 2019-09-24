@@ -25,7 +25,7 @@ object Log {
 
     var logLevel: ImmutableSet<Level> = entireLevel
 
-    private const val defaultTag = "[component plugin]-"
+    private const val defaultTag = "[component]"
 
     fun e(tag: String, msg: String) {
         doErrorLog(Level.ERROR, tag, msg)

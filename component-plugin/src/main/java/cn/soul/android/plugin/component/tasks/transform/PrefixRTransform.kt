@@ -1,13 +1,14 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
-import com.android.build.api.transform.Format
+import com.android.build.api.transform.DirectoryInput
+import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.CtClass
 import javassist.expr.ExprEditor
 import javassist.expr.FieldAccess
@@ -16,56 +17,50 @@ import org.gradle.api.Project
 /**
  * Created by nebula on 2019-08-20
  */
-class PrefixRTransform(private val project: Project) : BaseTransform() {
-    private var prefix: String? = null
-
-    override fun getName(): String {
-        return "prefixR"
-    }
-
-    override fun transform(transformInvocation: TransformInvocation?) {
-        super.transform(transformInvocation)
-
+class PrefixRTransform(private val project: Project) : TypeTraversalTransform() {
+    private var applicationId = ""
+    override fun preTransform(transformInvocation: TransformInvocation) {
+        if (buildType == BuildType.APPLICATION) {
+            return
+        }
         val p = project
-        val inputs = transformInvocation?.inputs ?: return
         val variantName = transformInvocation.context.variantName
         val appPlugin = p.plugins.getPlugin(AppPlugin::class.java) as AppPlugin
-        var applicationId = ""
         (appPlugin.extension as AppExtension).applicationVariants.all {
             if (it.name == variantName) {
                 applicationId = it.applicationId
                 println("applicationId:$applicationId")
             }
         }
-        inputs.forEach { input ->
-            input.directoryInputs.forEach { dirInput ->
-                InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
-            }
-            input.jarInputs.forEach {
-                InjectHelper.instance.appendClassPath(it.file.absolutePath)
-            }
-        }
         val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
         prefixCustomCtClassField(rCtClass)
-        inputs.forEach { input ->
-            input.directoryInputs.forEach { dirInput ->
-                InjectHelper.instance.processFiles(dirInput.file)
-                        .nameFilter { file -> file.name.endsWith(".class") }
-                        .forEach {
-                            prefixRClassFieldAccess(it, applicationId)
-                            val dest = getOutputFile(transformInvocation.outputProvider, dirInput)
-                            it.writeFile(dest.absolutePath)
-                        }
-            }
-            input.jarInputs.forEach {
-                outputJarFile(transformInvocation.outputProvider, it)
-            }
+    }
+
+    override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
+        if (buildType == BuildType.APPLICATION) {
+            return false
         }
-        val dest = transformInvocation.outputProvider.getContentLocation(
-                "prefixR",
-                TransformManager.CONTENT_CLASS,
-                TransformManager.PROJECT_ONLY,
-                Format.DIRECTORY)
+        InjectHelper.instance.processFiles(dirInput.file)
+                .nameFilter { file -> file.name.endsWith(".class") }
+                .forEach {
+                    prefixRClassFieldAccess(it, applicationId)
+                    val dest = getOutputFile(transformInvocation.outputProvider, dirInput)
+                    it.writeFile(dest.absolutePath)
+                }
+        return true
+    }
+
+    override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
+        return false
+    }
+
+    override fun postTransform(transformInvocation: TransformInvocation) {
+    }
+
+    private var prefix: String? = null
+
+    override fun getName(): String {
+        return "prefixR"
     }
 
     fun setPrefix(prefix: String?) {
@@ -78,7 +73,9 @@ class PrefixRTransform(private val project: Project) : BaseTransform() {
                 if (it.isFrozen) {
                     it.defrost()
                 }
-                ctField.name = "$prefix${ctField.name}"
+                if (PrefixHelper.instance.isRefNeedPrefix(it.name, ctField.name)) {
+                    ctField.name = "$prefix${ctField.name}"
+                }
             }
         }
     }

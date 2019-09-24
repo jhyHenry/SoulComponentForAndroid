@@ -4,7 +4,6 @@ import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.tasks.transform.FilterClassTransform
 import com.android.SdkConstants.*
 import com.android.build.api.transform.QualifiedContent
-import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.InternalScope
 import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.TaskFactoryImpl
@@ -39,25 +38,34 @@ import java.util.*
  * date : 2019-07-11 14:22
  */
 class TaskManager(private val project: Project) {
-    private var taskFactory: TaskFactory = PluginTaskFactory(TaskFactoryImpl(project.tasks))
-    private val componentTaskContainer: MutableSet<Task> = mutableSetOf()
+    private var taskFactory: TaskFactory = PluginTaskFactory(TaskFactoryImpl(project.tasks), this)
+    val componentTaskContainer: MutableSet<Task> = mutableSetOf()
 
     fun isComponentTask(task: Task) = componentTaskContainer.contains(task)
+
+    fun isComponentTask(taskName: String): Boolean {
+        componentTaskContainer.forEach {
+            if (it.name == taskName) {
+                return true
+            }
+        }
+        return false
+    }
 
     fun createAnchorTasks(scope: PluginVariantScope) {
         scope.getTaskContainer().resourceGenTask =
                 taskFactory.create(scope.getTaskName("generate", "Resources"))
         scope.getTaskContainer().assetGenTask =
                 taskFactory.create(scope.getTaskName("generate", "Assets"))
-        componentTaskContainer.add(scope.getTaskContainer().resourceGenTask!!)
-        componentTaskContainer.add(scope.getTaskContainer().assetGenTask!!)
+//        componentTaskContainer.add(scope.getTaskContainer().resourceGenTask!!)
+//        componentTaskContainer.add(scope.getTaskContainer().assetGenTask!!)
     }
 
     fun createCheckManifestTask(scope: PluginVariantScope) {
         val task = taskFactory.create(CheckManifest.ConfigAction(scope, false))
         scope.getTaskContainer().pluginCheckManifestTask = task
         task.dependsOn(scope.getTaskContainer().preBuildTask)
-        componentTaskContainer.add(task)
+//        componentTaskContainer.add(task)
     }
 
     fun createMergeLibManifestsTask(scope: PluginVariantScope) {
@@ -66,15 +74,14 @@ class TaskManager(private val project: Project) {
         processManifest.dependsOn(scope.getTaskContainer().checkManifestTask!!)
 
         scope.getTaskContainer().pluginProcessManifest = processManifest
-
-        componentTaskContainer.add(processManifest)
+//        componentTaskContainer.add(processManifest)
     }
 
     fun createAidlTask(scope: PluginVariantScope) {
         val task = taskFactory.create(AidlCompile.ConfigAction(scope))
         scope.getTaskContainer().pluginAidlCompile = task
         task.dependsOn(scope.getTaskContainer().preBuildTask)
-        componentTaskContainer.add(task)
+//        componentTaskContainer.add(task)
     }
 
     fun createMergeResourcesTask(scope: PluginVariantScope) {
@@ -105,7 +112,7 @@ class TaskManager(private val project: Project) {
                                 FN_PUBLIC_TXT))
         scope.getTaskContainer().pluginMergeResourcesTask = packageResourcesTask
 //        createMergeResourcesTask(scope, processResources = false, flags = ImmutableSet.of())
-        componentTaskContainer.add(packageResourcesTask)
+//        componentTaskContainer.add(packageResourcesTask)
     }
 
     fun createGenerateSymbolTask(scope: PluginVariantScope) {
@@ -135,7 +142,7 @@ class TaskManager(private val project: Project) {
     fun createRefineManifestTask(scope: PluginVariantScope) {
         val processManifestFile = scope.getTaskContainer().pluginProcessManifest?.processorManifestOutputFile
         val task = taskFactory.create(RefineManifest.ConfigAction(scope, processManifestFile!!))
-        componentTaskContainer.add(task)
+//        componentTaskContainer.add(task)
     }
 
     fun createPrefixResourcesTask(scope: PluginVariantScope) {
@@ -158,15 +165,26 @@ class TaskManager(private val project: Project) {
         task.dependsOn(scope.getTaskContainer().pluginPrefixResources!!)
         task.dependsOn(scope.getTaskContainer().pluginProcessManifest!!)
         task.dependsOn(scope.getTaskContainer().pluginGenerateSymbol!!)
-        componentTaskContainer.add(task)
+//        componentTaskContainer.add(task)
 
         scope.getArtifacts().appendArtifact(ComponentArtifactType.COMPONENT_AAR,
                 ImmutableList.of(File(scope.getAarLocation(), "component.aar")),
                 task)
 
-        if (scope.fullVariantName == "release") {
-            VariantHelper.setupArchivesConfig(project, scope.getRealScope().variantDependencies.runtimeClasspath)
-            project.artifacts.add("archives", task)
+        if (scope.getVariantConfiguration().buildType.name != "release") {
+            return
+        }
+        val uploadTaskPrefix = "uploadComponent"
+        if (project.gradle.startParameter.taskNames.size == 0) {
+            return
+        }
+        val startTaskName = project.gradle.startParameter.taskNames[0]
+        if (startTaskName.startsWith(uploadTaskPrefix)) {
+            val flavor = startTaskName.substring(uploadTaskPrefix.length)
+            if (flavor.toLowerCase(Locale.getDefault()) == scope.getRealScope().variantConfiguration.flavorName) {
+                VariantHelper.setupArchivesConfig(project, scope.getRealScope().variantDependencies.runtimeClasspath)
+                project.artifacts.add("archives", task)
+            }
         }
     }
 
@@ -247,17 +265,17 @@ class TaskManager(private val project: Project) {
                 scope,
                 FilterClassTransform())
                 .ifPresent {
-                    componentTaskContainer.add(it)
+                    //                    componentTaskContainer.add(it)
                 }
     }
 
     fun createUploadTask(scope: PluginVariantScope) {
-        val versionName = project.extensions.getByType(AppExtension::class.java).defaultConfig.versionName
-        val task = taskFactory.create(UploadComponent.ConfigAction(project.name, versionName, scope, project))
+        if (scope.getVariantConfiguration().buildType.name != "release") {
+            return
+        }
+        val task = taskFactory.create(UploadComponent.ConfigAction(scope, project))
         scope.getTaskContainer().pluginUploadTask = task
-        task.dependsOn(scope.getTaskContainer().pluginBundleAarTask)
-
-        componentTaskContainer.add(task)
+//        componentTaskContainer.add(task)
     }
 
     private fun createIntermediateJniLibsTransform(jniLibsFolder: File, transformManager: TransformManager, scope: PluginVariantScope) {
@@ -272,7 +290,7 @@ class TaskManager(private val project: Project) {
                     PluginArtifactsHolder.appendArtifact(
                             InternalArtifactType.LIBRARY_JNI,
                             jniLibsFolder)
-                    componentTaskContainer.add(it)
+//                    componentTaskContainer.add(it)
                 }
     }
 
@@ -293,7 +311,7 @@ class TaskManager(private val project: Project) {
                     PluginArtifactsHolder.appendArtifact(
                             InternalArtifactType.LIBRARY_JAVA_RES,
                             mainResJar)
-                    componentTaskContainer.add(it)
+//                    componentTaskContainer.add(it)
                 }
 
         transformManager.addStream(
@@ -335,7 +353,6 @@ class TaskManager(private val project: Project) {
                     artifacts.appendArtifact(ComponentArtifactType.COMPONENT_AAR_LIBS_DIR,
                             ImmutableList.of(libsDir),
                             it)
-                    componentTaskContainer.add(it)
                 }
     }
 
@@ -611,7 +628,6 @@ class TaskManager(private val project: Project) {
                             InternalArtifactType.LIBRARY_AND_LOCAL_JARS_JNI,
                             ImmutableList.of(jniLibsFolder),
                             t)
-            componentTaskContainer.add(t)
         }
     }
 }

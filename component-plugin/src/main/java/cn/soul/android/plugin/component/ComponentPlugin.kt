@@ -2,6 +2,8 @@ package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.action.RFileAction
 import cn.soul.android.plugin.component.extesion.ComponentExtension
+import cn.soul.android.plugin.component.manager.BuildType
+import cn.soul.android.plugin.component.manager.StatusManager
 import cn.soul.android.plugin.component.tasks.transform.PrefixRTransform
 import cn.soul.android.plugin.component.tasks.transform.RouterCompileTransform
 import cn.soul.android.plugin.component.utils.Log
@@ -21,6 +23,7 @@ import com.google.common.base.CaseFormat
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import java.util.stream.Collectors
 
 /**
@@ -38,7 +41,7 @@ class ComponentPlugin : Plugin<Project> {
     private var globalScope: GlobalScope? = null
 
     private var mPrefixRTransform: PrefixRTransform? = null
-    private var mIsRunComponentTask: Boolean = false
+    private var mRouterCompileTransform: RouterCompileTransform? = null
 
     override fun apply(p: Project) {
         project = p
@@ -46,17 +49,13 @@ class ComponentPlugin : Plugin<Project> {
         threadRecorder = ThreadRecorder.get()
         taskManager = TaskManager(p)
         Log.p(msg = "apply component plugin.")
-
         p.plugins.apply("maven")
-        mIsRunComponentTask = isRunComponentTask()
-        val buildType = if (mIsRunComponentTask) RouterCompileTransform.BuildType.COMPONENT else RouterCompileTransform.BuildType.APPLICATION
-        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(RouterCompileTransform(p, buildType))
-        if (mIsRunComponentTask) {
-            mPrefixRTransform = PrefixRTransform(project)
-            project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mPrefixRTransform)
-        }
 
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
+        mRouterCompileTransform = RouterCompileTransform(project)
+        mPrefixRTransform = PrefixRTransform(project)
+        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mRouterCompileTransform)
+        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mPrefixRTransform)
         project.afterEvaluate {
             pluginExtension.ensureComponentExtension(project)
 
@@ -78,6 +77,23 @@ class ComponentPlugin : Plugin<Project> {
                     null,
                     this::createTasks
             )
+            //if only run component task, skip some time consuming operations
+            StatusManager.isRunComponentTaskOnly = isRunComponentTaskOnly()
+            val buildType = if (StatusManager.isRunComponentTaskOnly) BuildType.COMPONENT else BuildType.APPLICATION
+            if (StatusManager.isRunComponentTaskOnly) {
+                mPrefixRTransform?.setPrefix(pluginExtension.resourcePrefix)
+                mPrefixRTransform?.setTaskBuildType(buildType)
+                mRouterCompileTransform?.setTaskBuildType(buildType)
+            }
+            val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
+            appPlugin.variantManager.variantScopes.forEach {
+                val variantType = it.variantData.type
+                if (variantType.isTestComponent) {
+                    return@forEach
+                }
+                val task: Task = project.tasks.getByName(getTransformTaskName(mPrefixRTransform!!, it.variantConfiguration.fullName))
+                task.onlyIf { StatusManager.isRunComponentTaskOnly }
+            }
         }
     }
 
@@ -85,28 +101,20 @@ class ComponentPlugin : Plugin<Project> {
         Log.p(msg = "configure project.")
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
-        if (mIsRunComponentTask) {
-            mPrefixRTransform?.setPrefix(pluginExtension.resourcePrefix)
-        }
 
         if (!needAddComponentDependencies(taskNames)) {
             return
         }
-        pluginExtension.dependencies.resolveDependencies(pluginExtension)
-        pluginExtension.dependencies.dependenciesCollection.forEach { file ->
-            project.dependencies.add("implementation", project.files(file))
+//        pluginExtension.dependencies.resolveDependencies(pluginExtension)
+        pluginExtension.dependencies.dependenciesPath.forEach {
+            project.dependencies.add("implementation", it)
         }
     }
 
-    private fun isRunComponentTask(): Boolean {
+    private fun isRunComponentTaskOnly(): Boolean {
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
-        taskNames.forEach {
-            if (getTaskNameWithoutModule(it).startsWith("component")) {
-                return true
-            }
-        }
-        return false
+        return taskNames.size == 1 && taskManager.isComponentTask(taskNames[0])
     }
 
     private fun getTaskNameWithoutModule(name: String): String {
@@ -115,7 +123,7 @@ class ComponentPlugin : Plugin<Project> {
 
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
         taskNames.forEach {
-            if (it.contains("assemble")) {
+            if (it.startsWith("assemble")) {
                 return true
             }
         }
@@ -160,8 +168,6 @@ class ComponentPlugin : Plugin<Project> {
                 RFileAction.removeRFileFinalModifier(outDir)
             }
             val transformManager = TransformManager(project, globalScope!!.errorHandler, threadRecorder)
-
-
             val pluginVariantScope = PluginVariantScopeImpl(it, globalScope!!, extension, transformManager, pluginExtension)
 
             taskManager.createDependencyStreams(pluginVariantScope, transformManager)
@@ -180,20 +186,9 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.createGenerateSymbolTask(pluginVariantScope)
 
             val lastTransform = extension.transforms[extension.transforms.lastIndex]
-            val task = project.tasks.getByName(getTaskNamePrefix(lastTransform, pluginVariantScope.fullVariantName))
+            val task = project.tasks.getByName(getTransformTaskName(lastTransform, pluginVariantScope.getFullName()))
 
             val transformTask = task as TransformTask
-            transformTask.doLast {
-                //                //根据本次任务执行的task判断是否需要添加动态依赖
-//                if (taskManager.isComponentTask(project.gradle.taskGraph.allTasks.last())) {
-//                    return@doLast
-//                }
-//                pluginExtension.dependencies.resolveDependencies(pluginExtension)
-//                pluginExtension.dependencies.dependenciesCollection.forEach { file ->
-//                    project.dependencies.add("implementation", project.files(file))
-//                }
-            }
-
             val javaOutputs = project.files(transformTask.streamOutputFolder).builtBy(transformTask)
             taskManager.addJavacClassesStream(javaOutputs, pluginVariantScope)
 
@@ -207,7 +202,7 @@ class ComponentPlugin : Plugin<Project> {
         }
     }
 
-    private fun getTaskNamePrefix(transform: Transform, variant: String): String {
+    private fun getTransformTaskName(transform: Transform, variant: String): String {
         val sb = StringBuilder(100)
         sb.append("transform")
         sb.append(

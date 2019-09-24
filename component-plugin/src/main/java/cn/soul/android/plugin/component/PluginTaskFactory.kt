@@ -9,16 +9,21 @@ import org.gradle.api.Task
  *
  * date : 2019-07-12 17:38
  */
-class PluginTaskFactory(private val factory: TaskFactory) : TaskFactory by factory {
+class PluginTaskFactory(private val factory: TaskFactory,
+                        private val taskManager: TaskManager) : TaskFactory by factory {
     override fun <T : Task?> create(configAction: TaskConfigAction<T>?): T {
         val task = factory.create(configAction)
         task?.group = "component"
+        if (task != null) {
+            taskManager.componentTaskContainer.add(task)
+        }
         return task
     }
 
     override fun create(name: String?): Task {
         val task = factory.create(name)
         task.group = "component"
+        taskManager.componentTaskContainer.add(task)
         return task
     }
 }

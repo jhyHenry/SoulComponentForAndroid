@@ -7,7 +7,7 @@ import java.io.File
  */
 open class Dependencies {
     internal val dependenciesCollection = mutableListOf<File>()
-    private val dependenciesPath = mutableListOf<String>()
+    internal val dependenciesPath = mutableListOf<String>()
 
     fun implementation(path: String) {
         dependenciesPath.add(path)

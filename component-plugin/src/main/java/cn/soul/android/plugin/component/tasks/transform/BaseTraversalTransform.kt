@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import cn.soul.android.plugin.component.utils.InjectHelper
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
@@ -14,25 +15,36 @@ abstract class BaseTraversalTransform : BaseTransform() {
         super.transform(transformInvocation)
         val inputs = transformInvocation?.inputs ?: return
 
+        inputs.forEach { input ->
+            input.directoryInputs.forEach { dirInput ->
+                InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
+            }
+            input.jarInputs.forEach {
+                InjectHelper.instance.appendClassPath(it.file.absolutePath)
+            }
+        }
+
         preTransform(transformInvocation)
         inputs.forEach { input ->
             input.directoryInputs.forEach { dirInput ->
-                onDirVisited(dirInput)
-                outputFiles(transformInvocation.outputProvider, dirInput)
+                if (!onDirVisited(dirInput, transformInvocation)) {
+                    outputFiles(transformInvocation.outputProvider, dirInput)
+                }
             }
             input.jarInputs.forEach {
-                onJarVisited(it)
-                outputJarFile(transformInvocation.outputProvider, it)
+                if (!onJarVisited(it, transformInvocation)) {
+                    outputJarFile(transformInvocation.outputProvider, it)
+                }
             }
         }
         postTransform(transformInvocation)
     }
 
-    abstract fun onDirVisited(dirInput: DirectoryInput)
+    abstract fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean
 
-    abstract fun onJarVisited(jarInput: JarInput)
+    abstract fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean
 
-    fun preTransform(transformInvocation: TransformInvocation) {
+    protected open fun preTransform(transformInvocation: TransformInvocation) {
 
     }
 

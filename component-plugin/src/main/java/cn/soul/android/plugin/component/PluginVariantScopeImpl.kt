@@ -14,7 +14,6 @@ import com.android.build.gradle.internal.scope.*
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.DefaultManifestParser
 import com.android.builder.core.ManifestAttributeSupplier
-import com.android.builder.core.VariantTypeImpl
 import com.android.utils.FileUtils
 import com.android.utils.StringHelper
 import org.gradle.api.Task
@@ -35,24 +34,26 @@ class PluginVariantScopeImpl(private val scope: VariantScope,
                              extensions: BaseExtension,
                              private val transformManager: TransformManager,
                              private val compExtension: ComponentExtension) : PluginVariantScope {
-    private var variantConfiguration: GradleVariantConfiguration
+//    private var variantConfiguration: GradleVariantConfiguration
     private val manifestParserMap = mutableMapOf<File, ManifestAttributeSupplier>()
 
-    init {
-        val realConfig = scope.variantData.variantConfiguration
-        variantConfiguration = GradleVariantConfiguration.getBuilderForExtension(extensions)
-                .create(
-                        globalScope.projectOptions,
-                        realConfig.defaultConfig,
-                        realConfig.defaultSourceSet,
-                        getParser(realConfig.defaultSourceSet.manifestFile, globalScope),
-                        realConfig.buildType,
-                        realConfig.buildTypeSourceSet,
-                        VariantTypeImpl.LIBRARY,
-                        realConfig.signingConfig,
-                        globalScope.errorHandler,
-                        this::canParseManifest)
-    }
+//    init {
+//        val realConfig = scope.variantData.variantConfiguration
+//        Log.e("realConfig: ${realConfig.buildType.name}")
+//        Log.e("realFlavor: ${realConfig.defaultConfig.name}")
+//        variantConfiguration = GradleVariantConfiguration.getBuilderForExtension(extensions)
+//                .create(
+//                        globalScope.projectOptions,
+//                        realConfig.defaultConfig,
+//                        realConfig.defaultSourceSet,
+//                        getParser(realConfig.defaultSourceSet.manifestFile, globalScope),
+//                        realConfig.buildType,
+//                        realConfig.buildTypeSourceSet,
+//                        VariantTypeImpl.LIBRARY,
+//                        realConfig.signingConfig,
+//                        globalScope.errorHandler,
+//                        this::canParseManifest)
+//    }
 
     override fun getRealScope(): VariantScope {
         return scope
@@ -143,7 +144,8 @@ class PluginVariantScopeImpl(private val scope: VariantScope,
     }
 
     override fun getVariantConfiguration(): GradleVariantConfiguration {
-        return variantConfiguration
+        return scope.variantConfiguration
+//        return variantConfiguration
     }
 
     override fun getAidlSourceOutputDir(): File {

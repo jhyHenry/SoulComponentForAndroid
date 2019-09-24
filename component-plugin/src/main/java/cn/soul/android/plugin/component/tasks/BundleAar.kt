@@ -93,7 +93,7 @@ open class BundleAar : Zip() {
 
             bundle.destinationDir = variantScope.getAarLocation()
             bundle.archiveNameSupplier = {
-//                "${variantScope.getComponentExtension().archiveName!!}-${variantScope.getFullName()}.aar"
+                //                "${variantScope.getComponentExtension().archiveName!!}-${variantScope.getFullName()}.aar"
                 "component.aar"
             }
             bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
@@ -143,8 +143,10 @@ open class BundleAar : Zip() {
 
             //bundle f:libs|AAR_LIBS_DIRECTORY|intermediates/packaged-classes/debug/libs
             val aarLibs = artifacts.getFinalArtifactFiles(ComponentArtifactType.COMPONENT_AAR_LIBS_DIR)
-            bundle.from(aarLibs)
-
+            bundle.from(
+                    aarLibs,
+                    prependToCopyPath(SdkConstants.FD_ADDON_LIBS)
+            )
             //bundle f:assets|LIBRARY_ASSETS|intermediates/library_assets/debug/packageDebugAssets/out
 
         }

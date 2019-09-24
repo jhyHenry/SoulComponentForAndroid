@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.extesion
 
+import cn.soul.android.plugin.component.utils.Log
 import org.gradle.api.Action
 import org.gradle.api.Project
 
@@ -13,6 +14,7 @@ open class ComponentExtension {
     var componentName: String? = null
     var uploadPath: String? = null
     var repoPath: String? = null
+    var logLevel: Log.Level? = null
 
     var resourcePrefix: String? = null
 
