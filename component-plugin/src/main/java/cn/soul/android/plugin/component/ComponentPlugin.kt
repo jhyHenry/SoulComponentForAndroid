@@ -23,7 +23,6 @@ import com.google.common.base.CaseFormat
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import java.util.stream.Collectors
 
 /**
@@ -85,15 +84,6 @@ class ComponentPlugin : Plugin<Project> {
                 mPrefixRTransform?.setTaskBuildType(buildType)
                 mRouterCompileTransform?.setTaskBuildType(buildType)
             }
-            val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
-            appPlugin.variantManager.variantScopes.forEach {
-                val variantType = it.variantData.type
-                if (variantType.isTestComponent) {
-                    return@forEach
-                }
-                val task: Task = project.tasks.getByName(getTransformTaskName(mPrefixRTransform!!, it.variantConfiguration.fullName))
-                task.onlyIf { StatusManager.isRunComponentTaskOnly }
-            }
         }
     }
 
@@ -123,7 +113,8 @@ class ComponentPlugin : Plugin<Project> {
 
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
         taskNames.forEach {
-            if (it.startsWith("assemble")) {
+            val taskName = getTaskNameWithoutModule(it)
+            if (taskName.startsWith("assemble") || taskName.startsWith("install")) {
                 return true
             }
         }

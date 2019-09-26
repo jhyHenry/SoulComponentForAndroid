@@ -5,6 +5,7 @@ import android.util.SparseArray;
 import java.util.List;
 
 import cn.soul.android.component.Constants;
+import cn.soul.android.component.exception.HashCollisionException;
 import cn.soul.android.component.node.RouterNode;
 import cn.soul.android.component.template.IRouterFactory;
 import cn.soul.android.component.template.IRouterLazyLoader;
@@ -114,7 +115,11 @@ public class Trustee {
             if (nodeMap == null) {
                 return null;
             }
-            return nodeMap.get(path.hashCode());
+            RouterNode node = nodeMap.get(path.hashCode());
+            if (!node.getPath().equals(path)) {
+                throw new HashCollisionException(path, node.getPath());
+            }
+            return node;
         }
     }
 }

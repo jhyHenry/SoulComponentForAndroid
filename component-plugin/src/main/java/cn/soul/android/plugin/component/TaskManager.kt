@@ -264,9 +264,6 @@ class TaskManager(private val project: Project) {
         transformManager.addTransform(taskFactory,
                 scope,
                 FilterClassTransform())
-                .ifPresent {
-                    //                    componentTaskContainer.add(it)
-                }
     }
 
     fun createUploadTask(scope: PluginVariantScope) {
@@ -275,7 +272,6 @@ class TaskManager(private val project: Project) {
         }
         val task = taskFactory.create(UploadComponent.ConfigAction(scope, project))
         scope.getTaskContainer().pluginUploadTask = task
-//        componentTaskContainer.add(task)
     }
 
     private fun createIntermediateJniLibsTransform(jniLibsFolder: File, transformManager: TransformManager, scope: PluginVariantScope) {
@@ -290,7 +286,6 @@ class TaskManager(private val project: Project) {
                     PluginArtifactsHolder.appendArtifact(
                             InternalArtifactType.LIBRARY_JNI,
                             jniLibsFolder)
-//                    componentTaskContainer.add(it)
                 }
     }
 

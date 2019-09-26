@@ -1,9 +1,7 @@
 package cn.soul.android.component.node;
 
-import android.content.Context;
+import android.os.Bundle;
 import android.text.TextUtils;
-
-import cn.soul.android.component.SoulRouter;
 
 /**
  * Created by nebula on 2019-07-21
@@ -17,11 +15,17 @@ public abstract class RouterNode {
     protected String mPath;
     protected int mType;
     protected Class<?> mTarget;
+    protected Bundle mBundle;
 
     public RouterNode(String path, Class<?> target) {
         mPath = path;
         mTarget = target;
         mType = getType();
+    }
+
+    public RouterNode(String path, String group) {
+        mPath = path;
+        mGroup = group;
     }
 
     public abstract int getType();
@@ -38,17 +42,5 @@ public abstract class RouterNode {
         if (TextUtils.isEmpty(mPath)) {
         }
         return false;
-    }
-
-    public void navigate() {
-        navigate(null);
-    }
-
-    public void navigate(Context context) {
-        navigate(0, context);
-    }
-
-    public void navigate(int requestCode, Context context) {
-        SoulRouter.instance().navigate(requestCode, context, this);
     }
 }

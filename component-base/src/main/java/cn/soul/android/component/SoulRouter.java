@@ -14,12 +14,22 @@ import cn.soul.android.component.node.RouterNode;
  * Created by nebula on 2019-07-20
  */
 @SuppressLint("StaticFieldLeak")
+@SuppressWarnings("unused")
 public class SoulRouter {
     private volatile static SoulRouter sInstance;
     private volatile static boolean isInit = false;
     private static Context sContext;
+    private NavigateCallback mNavigateCallback;
 
     private SoulRouter() {
+    }
+
+    public interface NavigateCallback {
+        void onFound(RouterNode node);
+
+        void onLost(String path);
+
+        void onArrival(RouterNode node);
     }
 
     public static void init(Application application) {
@@ -48,7 +58,17 @@ public class SoulRouter {
         Trustee.instance().putRouterNode(node);
     }
 
-    public void navigate(int requestCode, Context context, RouterNode node) {
+    void navigate(int requestCode, Context context, Navigator guide) {
+        RouterNode node = Trustee.instance().getRouterNode(guide.path);
+        if (node == null) {
+            if (mNavigateCallback != null) {
+                mNavigateCallback.onLost(guide.path);
+            }
+            return;
+        }
+        if (mNavigateCallback != null) {
+            mNavigateCallback.onFound(node);
+        }
         if (context == null) {
             context = sContext;
         }
