@@ -6,6 +6,7 @@ import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.manager.StatusManager
 import cn.soul.android.plugin.component.tasks.transform.PrefixRTransform
 import cn.soul.android.plugin.component.tasks.transform.RouterCompileTransform
+import cn.soul.android.plugin.component.utils.Descriptor
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.Transform
 import com.android.build.gradle.AppPlugin
@@ -107,13 +108,9 @@ class ComponentPlugin : Plugin<Project> {
         return taskNames.size == 1 && taskManager.isComponentTask(taskNames[0])
     }
 
-    private fun getTaskNameWithoutModule(name: String): String {
-        return name.substring(name.lastIndexOf(':') + 1)
-    }
-
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
         taskNames.forEach {
-            val taskName = getTaskNameWithoutModule(it)
+            val taskName = Descriptor.getTaskNameWithoutModule(it)
             if (taskName.startsWith("assemble") || taskName.startsWith("install")) {
                 return true
             }
@@ -188,6 +185,8 @@ class ComponentPlugin : Plugin<Project> {
             taskManager.createRefineManifestTask(pluginVariantScope)
 
             taskManager.createBundleTask(pluginVariantScope)
+
+            taskManager.crateGenInterfaceArtifactTask(pluginVariantScope)
 
             taskManager.createUploadTask(pluginVariantScope)
         }

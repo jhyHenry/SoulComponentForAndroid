@@ -15,6 +15,7 @@ abstract class BaseTraversalTransform : BaseTransform() {
         super.transform(transformInvocation)
         val inputs = transformInvocation?.inputs ?: return
 
+        preTraversal(transformInvocation)
         inputs.forEach { input ->
             input.directoryInputs.forEach { dirInput ->
                 InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
@@ -44,6 +45,9 @@ abstract class BaseTraversalTransform : BaseTransform() {
 
     abstract fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean
 
+    protected open fun preTraversal(transformInvocation: TransformInvocation) {
+
+    }
     protected open fun preTransform(transformInvocation: TransformInvocation) {
 
     }

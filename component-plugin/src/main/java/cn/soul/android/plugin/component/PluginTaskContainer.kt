@@ -3,8 +3,6 @@ package cn.soul.android.plugin.component
 import cn.soul.android.plugin.component.tasks.*
 import com.android.build.gradle.internal.scope.TaskContainer
 import org.gradle.api.Task
-import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.compile.JavaCompile
 
 
 /**
@@ -22,6 +20,7 @@ class PluginTaskContainer(container: TaskContainer) : TaskContainer by container
     var pluginBundleAarTask: BundleAar? = null
     var pluginUploadTask: Task? = null
     var pluginGenerateSymbol: GenerateSymbol? = null
+    var pluginGenInterface: GenerateInterfaceArtifact? = null
 
     //anchor task
     var resourceGenTask: Task? = null

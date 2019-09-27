@@ -2,6 +2,7 @@ package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.tasks.transform.FilterClassTransform
+import cn.soul.android.plugin.component.utils.Descriptor
 import com.android.SdkConstants.*
 import com.android.build.api.transform.QualifiedContent
 import com.android.build.gradle.internal.InternalScope
@@ -159,6 +160,27 @@ class TaskManager(private val project: Project) {
         scope.getTaskContainer().pluginPrefixResources = task
     }
 
+    fun crateGenInterfaceArtifactTask(scope: PluginVariantScope) {
+        val file = scope.getArtifacts().getFinalArtifactFiles(InternalArtifactType.JAVAC).single()
+        val task = taskFactory.create(GenerateInterfaceArtifact.ConfigAction(scope, file))
+        task.dependsOn(scope.getTaskContainer().javacTask)
+        scope.getTaskContainer().pluginGenInterface = task
+        if (scope.getVariantConfiguration().buildType.name != "release") {
+            return
+        }
+        val uploadTaskPrefix = "uploadComponent"
+        if (project.gradle.startParameter.taskNames.size == 0) {
+            return
+        }
+        val startTaskName = Descriptor.getTaskNameWithoutModule(project.gradle.startParameter.taskNames[0])
+        if (startTaskName.startsWith(uploadTaskPrefix)) {
+            val flavor = startTaskName.substring(uploadTaskPrefix.length)
+            if (flavor.toLowerCase(Locale.getDefault()) == scope.getRealScope().variantConfiguration.flavorName) {
+                project.artifacts.add("archives", File(task.destDir, "interface.jar"))
+            }
+        }
+    }
+
     fun createBundleTask(scope: PluginVariantScope) {
         val task = taskFactory.create(BundleAar.ConfigAction(scope.globalScope.extension, scope))
         scope.getTaskContainer().pluginBundleAarTask = task
@@ -178,7 +200,7 @@ class TaskManager(private val project: Project) {
         if (project.gradle.startParameter.taskNames.size == 0) {
             return
         }
-        val startTaskName = project.gradle.startParameter.taskNames[0]
+        val startTaskName = Descriptor.getTaskNameWithoutModule(project.gradle.startParameter.taskNames[0])
         if (startTaskName.startsWith(uploadTaskPrefix)) {
             val flavor = startTaskName.substring(uploadTaskPrefix.length)
             if (flavor.toLowerCase(Locale.getDefault()) == scope.getRealScope().variantConfiguration.flavorName) {
@@ -186,6 +208,10 @@ class TaskManager(private val project: Project) {
                 project.artifacts.add("archives", task)
             }
         }
+    }
+
+    private fun addArchives() {
+
     }
 
     fun addJavacClassesStream(javaOutputs: FileCollection, scope: PluginVariantScope) {
@@ -272,6 +298,7 @@ class TaskManager(private val project: Project) {
         }
         val task = taskFactory.create(UploadComponent.ConfigAction(scope, project))
         scope.getTaskContainer().pluginUploadTask = task
+        task.dependsOn(scope.getTaskContainer().pluginGenInterface!!)
     }
 
     private fun createIntermediateJniLibsTransform(jniLibsFolder: File, transformManager: TransformManager, scope: PluginVariantScope) {

@@ -8,7 +8,7 @@ import java.io.File
  * Created by nebula on 2019-07-20
  */
 class InjectHelper private constructor() {
-    private val mClassPool: ClassPool = ClassPool.getDefault()
+    private var mClassPool: ClassPool? = null
 
     companion object {
         val instance: InjectHelper by lazy {
@@ -16,11 +16,21 @@ class InjectHelper private constructor() {
         }
     }
 
-    fun appendClassPath(path: String) {
-        mClassPool.insertClassPath(path)
+    fun refresh() {
+        mClassPool = ClassPool(null)
+        mClassPool?.appendSystemPath()
     }
 
-    fun getClassPool() = mClassPool
+    fun appendClassPath(path: String) {
+        mClassPool?.insertClassPath(path)
+    }
+
+    fun getClassPool(): ClassPool {
+        if (mClassPool == null) {
+            refresh()
+        }
+        return mClassPool!!
+    }
 
     fun processFiles(file: File): ActionContainer {
         val bufferList = mutableListOf<File>()
@@ -61,7 +71,7 @@ class InjectHelper private constructor() {
             list.forEach inner@{
                 if (mNameFilterAction == null
                         || (mNameFilterAction != null && mNameFilterAction?.invoke(it)!!)) {
-                    val classPool = this@InjectHelper.mClassPool
+                    val classPool = this@InjectHelper.getClassPool()
                     val pathLength = it.absolutePath.length
                     val className = it.absolutePath.subSequence(packageIndex, pathLength - 6)
                             .toString().replace('/', '.')

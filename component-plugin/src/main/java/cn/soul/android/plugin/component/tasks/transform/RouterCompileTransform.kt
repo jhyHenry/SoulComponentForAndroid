@@ -30,10 +30,14 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     private val nodeMapByGroup = mutableMapOf<String, ArrayList<Pair<String, String>>>()
     private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
+    override fun preTraversal(transformInvocation: TransformInvocation) {
+        super.preTraversal(transformInvocation)
+        InjectHelper.instance.refresh()
+    }
+
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
         //traversal all .class file and find the class which annotate by Router, record router path
         //and Class for RouterNode construction
-        InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
         InjectHelper.instance.processFiles(dirInput.file)
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .classFilter { ctClass ->
@@ -49,7 +53,6 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     }
 
     override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
-        InjectHelper.instance.appendClassPath(jarInput.file.absolutePath)
         if (buildType == BuildType.APPLICATION) {
             val zip = ZipFile(jarInput.file)
             zip.use {

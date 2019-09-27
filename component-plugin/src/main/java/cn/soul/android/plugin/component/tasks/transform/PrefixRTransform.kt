@@ -19,6 +19,11 @@ import org.gradle.api.Project
  */
 class PrefixRTransform(private val project: Project) : TypeTraversalTransform() {
     private var applicationId = ""
+
+    override fun preTraversal(transformInvocation: TransformInvocation) {
+        InjectHelper.instance.refresh()
+    }
+
     override fun preTransform(transformInvocation: TransformInvocation) {
         if (buildType == BuildType.APPLICATION) {
             return
@@ -73,7 +78,8 @@ class PrefixRTransform(private val project: Project) : TypeTraversalTransform() 
                 if (it.isFrozen) {
                     it.defrost()
                 }
-                if (PrefixHelper.instance.isRefNeedPrefix(it.name, ctField.name)) {
+                //eg:it.simpleName = "R$id"
+                if (PrefixHelper.instance.isRefNeedPrefix(it.simpleName.substring(2), ctField.name)) {
                     ctField.name = "$prefix${ctField.name}"
                 }
             }

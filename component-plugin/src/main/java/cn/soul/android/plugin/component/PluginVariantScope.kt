@@ -22,7 +22,7 @@ interface PluginVariantScope : TransformVariantScope {
     //transformVariantScope
     override fun getGlobalScope(): GlobalScope
 
-    fun getRealScope():VariantScope
+    fun getRealScope(): VariantScope
 
     fun getTaskContainer(): PluginTaskContainer
     fun getFullName(): String
@@ -92,6 +92,8 @@ interface PluginVariantScope : TransformVariantScope {
 
     //custom
     fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File
+
+    fun getInternalArtifactTypeOutputFile(type: ComponentArtifactType, task: Task, fileName: String): File
 
     fun getTransformManager(): TransformManager
 

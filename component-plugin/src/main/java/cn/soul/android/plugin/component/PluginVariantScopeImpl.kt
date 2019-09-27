@@ -34,7 +34,7 @@ class PluginVariantScopeImpl(private val scope: VariantScope,
                              extensions: BaseExtension,
                              private val transformManager: TransformManager,
                              private val compExtension: ComponentExtension) : PluginVariantScope {
-//    private var variantConfiguration: GradleVariantConfiguration
+    //    private var variantConfiguration: GradleVariantConfiguration
     private val manifestParserMap = mutableMapOf<File, ManifestAttributeSupplier>()
 
 //    init {
@@ -197,6 +197,10 @@ class PluginVariantScopeImpl(private val scope: VariantScope,
         return File(getIntermediatesDir(), "${type.name.toLowerCase(Locale.US)}/${getVariantConfiguration().dirName}")
     }
 
+    private fun getIntermediateDir(type: ComponentArtifactType): File {
+        return File(getIntermediatesDir(), "${type.name.toLowerCase(Locale.US)}/${getVariantConfiguration().dirName}")
+    }
+
     override fun getResourceBlameLogDir(): File {
         return FileUtils.join(getIntermediatesDir(),
                 StringHelper.toStrings(
@@ -266,6 +270,10 @@ class PluginVariantScopeImpl(private val scope: VariantScope,
     }
 
     override fun getInternalArtifactTypeOutputFile(type: InternalArtifactType, task: Task, fileName: String): File {
+        return File(getIntermediateDir(type), "${task.name}/$fileName")
+    }
+
+    override fun getInternalArtifactTypeOutputFile(type: ComponentArtifactType, task: Task, fileName: String): File {
         return File(getIntermediateDir(type), "${task.name}/$fileName")
     }
 
