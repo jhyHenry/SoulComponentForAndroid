@@ -85,7 +85,7 @@ public class SoulRouter {
         context.startActivity(intent);
     }
 
-    public RouterNode route(String path) {
-        return Trustee.instance().getRouterNode(path);
+    public Navigator route(String path) {
+        return new Navigator(path);
     }
 }

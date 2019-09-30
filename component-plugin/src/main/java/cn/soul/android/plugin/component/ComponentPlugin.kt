@@ -93,13 +93,10 @@ class ComponentPlugin : Plugin<Project> {
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
 
-        if (!needAddComponentDependencies(taskNames)) {
-            return
-        }
-//        pluginExtension.dependencies.resolveDependencies(pluginExtension)
-        pluginExtension.dependencies.dependenciesPath.forEach {
-            project.dependencies.add("implementation", it)
-        }
+        val needAddDependencies = needAddComponentDependencies(taskNames)
+
+        pluginExtension.dependencies.appendDependencies(project, needAddDependencies)
+        pluginExtension.dependencies.appendInterfaceApis(project, needAddDependencies)
     }
 
     private fun isRunComponentTaskOnly(): Boolean {
@@ -134,7 +131,7 @@ class ComponentPlugin : Plugin<Project> {
                 realScope.toolingRegistry,
                 realScope.buildCache
         )
-        globalScope?.setAndroidJarConfig(createAndroidJarConfig(project));
+        globalScope?.setAndroidJarConfig(createAndroidJarConfig(project))
         extension = scope.globalScope.extension as BaseExtension
         globalScope?.extension = extension
     }

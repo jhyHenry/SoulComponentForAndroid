@@ -1,17 +1,46 @@
 package cn.soul.android.plugin.component.extesion
 
+import org.gradle.api.Project
 import java.io.File
+
 
 /**
  * Created by nebula on 2019-07-21
  */
 open class Dependencies {
-    internal val dependenciesCollection = mutableListOf<File>()
-    internal val dependenciesPath = mutableListOf<String>()
+    private val dependenciesCollection = mutableListOf<File>()
+    private val dependenciesPath = mutableListOf<String>()
+    private val interfacesPath = mutableListOf<String>()
 
     fun implementation(path: String) {
         dependenciesPath.add(path)
     }
+
+    fun interfaceApi(path: String) {
+        interfacesPath.add(path)
+    }
+
+    internal fun appendDependencies(project: Project, addRuntimeDependencies: Boolean) {
+        if (!addRuntimeDependencies) {
+            return
+        }
+        dependenciesPath.forEach {
+            project.dependencies.add("implementation", it)
+        }
+    }
+
+    internal fun appendInterfaceApis(project: Project, addRuntimeDependencies: Boolean) {
+        interfacesPath.forEach {
+            project.dependencies.add("compileOnly", "$it@jar")
+            if (addRuntimeDependencies) {
+                project.dependencies.add("implementation", it)
+            }
+        }
+    }
+
+//    private fun parse(parser: NotationConverter<String, Dependency>, value: String): Dependency {
+//        return NotationParserBuilder.toType(Dependency::class.java).fromCharSequence(parser).toComposite().parseNotation(value)
+//    }
 
     /**
      * resolve component dependencies, format like after:{name:version[:variant]}

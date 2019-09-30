@@ -1,17 +1,22 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.component.Constants
+import cn.soul.android.component.annotation.Inject
 import cn.soul.android.component.annotation.Router
+import cn.soul.android.component.exception.InjectTypeException
+import cn.soul.android.component.template.IInjectable
 import cn.soul.android.component.template.IRouterFactory
 import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.BuildType
+import cn.soul.android.plugin.component.manager.InjectType
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
+import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.ClassClassPath
 import javassist.CtClass
@@ -22,6 +27,7 @@ import java.io.File
 import java.util.zip.ZipFile
 
 /**
+ * All router relative code are in here.This class help inject code for Router Jump
  * @author panxinghai
  *
  * date : 2019-07-19 18:09
@@ -33,6 +39,8 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     override fun preTraversal(transformInvocation: TransformInvocation) {
         super.preTraversal(transformInvocation)
         InjectHelper.instance.refresh()
+        val extension = project.extensions.getByName("android") as AppExtension
+        InjectHelper.instance.appendClassPath(File(extension.sdkDirectory, "platforms/${extension.compileSdkVersion}/android.jar").absolutePath)
     }
 
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
@@ -48,6 +56,9 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                     nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, it.name)) {
                         arrayListOf()
                     }.add(Pair(path, it.name))
+                    if (insertInjectImplement(it)) {
+                        it.writeFile(dirInput.file.absolutePath)
+                    }
                 }
         return false
     }
@@ -89,6 +100,64 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterFactory::class.java))
             genRouterLazyLoaderImpl(dest, groupMap)
+        }
+    }
+
+    /**
+     *
+     * @return if return true, this class need writeFile()
+     */
+    private fun insertInjectImplement(ctClass: CtClass): Boolean {
+        val injectInfoList = arrayListOf<InjectInfo>()
+        val classPool = InjectHelper.instance.getClassPool()
+        ctClass.declaredFields.forEach {
+            var inject = it.getAnnotation(Inject::class.java) ?: return@forEach
+            println("field:" + it.name + ":" + it.type)
+            inject = inject as Inject
+            val annotationName = if (inject.name != "") {
+                inject.name
+            } else {
+                it.name
+            }
+            injectInfoList.add(InjectInfo(it.name, annotationName, ctClass, it.type))
+        }
+        if (injectInfoList.size > 0) {
+            try {
+                val method = ctClass.getDeclaredMethod("autoSynthetic\$FieldInjectSoulComponent")
+                method.setBody(produceInjectMethod(injectInfoList))
+            } catch (e: Exception) {
+                ctClass.addInterface(classPool[IInjectable::class.java.name])
+                ctClass.addMethod(genAutoSyntheticInjectMethod(injectInfoList, ctClass))
+            }
+        }
+        return injectInfoList.size > 0
+    }
+
+    private fun genAutoSyntheticInjectMethod(infoList: ArrayList<InjectInfo>, ctClass: CtClass): CtMethod {
+        return CtMethod.make("public void autoSynthetic\$FieldInjectSoulComponent()${produceInjectMethod(infoList)}", ctClass)
+    }
+
+    private fun produceInjectMethod(infoList: ArrayList<InjectInfo>): String {
+        val stringBuilder = StringBuilder("{")
+        if (infoList.size > 0) {
+            stringBuilder.append("if(!(\$0 instanceof ${Constants.INJECTABLE_CLASSNAME})){return;}")
+            infoList.forEach {
+                stringBuilder.append("${it.fieldName} = getIntent().")
+                        .append(getExtraStatement(it.fieldName, it.annotationName, it.type))
+            }
+        }
+        stringBuilder.append("}")
+        return stringBuilder.toString()
+    }
+
+    private fun getExtraStatement(fieldName: String, annotationName: String, type: Int): String {
+        return when (InjectType.values()[type]) {
+            InjectType.INTEGER -> {
+                "getIntExtra(\"$annotationName\", $fieldName);"
+            }
+            else -> {
+                ""
+            }
         }
     }
 
@@ -219,5 +288,64 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
 
     override fun getName(): String {
         return "routerCompile"
+    }
+
+    data class InjectInfo(val fieldName: String,
+                          val annotationName: String,
+                          private val ctClass: CtClass,
+                          private val classType: CtClass) {
+        var type: Int = 0
+
+        init {
+            type = initType()
+        }
+
+        private fun initType(): Int {
+            return when (classType.name) {
+                "int", "java.lang.Integer" -> {
+                    InjectType.INTEGER.ordinal
+                }
+                "boolean", "java.lang.Boolean" -> {
+                    InjectType.BOOLEAN.ordinal
+                }
+                "java.lang.String" -> {
+                    InjectType.STRING.ordinal
+                }
+                "char", "java.lang.Character" -> {
+                    InjectType.CHARACTER.ordinal
+                }
+                "float", "java.lang.Float" -> {
+                    InjectType.FLOAT.ordinal
+                }
+                "double", "java.lang.Double" -> {
+                    InjectType.DOUBLE.ordinal
+                }
+                "byte", "java.lang.Byte" -> {
+                    InjectType.BYTE.ordinal
+                }
+                "long", "java.lang.Long" -> {
+                    InjectType.LONG.ordinal
+                }
+                "short", "java.lang.Short" -> {
+                    InjectType.SHORT.ordinal
+                }
+                "java.io.Serializable" -> {
+                    InjectType.SERIALIZABLE.ordinal
+                }
+                "android.os.Parcelable" -> {
+                    InjectType.PARCELABLE.ordinal
+                }
+                else -> {
+                    if (ctClass.subtypeOf(InjectHelper.instance.getClassPool()["java.io.Serializable"])) {
+                        InjectType.SERIALIZABLE.ordinal
+                    }
+                    if (ctClass.subtypeOf(InjectHelper.instance.getClassPool()["android.os.Parcelable"])) {
+                        InjectType.PARCELABLE.ordinal
+                    } else {
+                        throw InjectTypeException(ctClass.name, fieldName, classType.name)
+                    }
+                }
+            }
+        }
     }
 }
