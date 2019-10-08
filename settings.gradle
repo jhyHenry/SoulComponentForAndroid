@@ -1,6 +1,4 @@
 include ':app', ':component-plugin', ':component-base',
-        ':componentlib',
         ':readercomponent',
-        ':sharecomponent',
-        ':router-annotation',
-        ':router-anno-compiler'
+        ':sharecomponent'
+

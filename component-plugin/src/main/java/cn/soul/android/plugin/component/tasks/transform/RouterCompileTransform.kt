@@ -341,7 +341,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                 val group = it.key
                 sb.append("case ${group.hashCode()}:{")
                 it.value.forEach { name ->
-                    sb.append("result.add(new ${Constants.GEN_FILE_PACKAGE_NAME}${name}());")
+                    sb.append("result.add(new ${Constants.GEN_FILE_PACKAGE_NAME}$name());")
                 }
                 sb.append("return result;}")
             }

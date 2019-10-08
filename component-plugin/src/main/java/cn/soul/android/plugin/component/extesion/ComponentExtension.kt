@@ -15,6 +15,7 @@ open class ComponentExtension {
     var uploadPath: String? = null
     var repoPath: String? = null
     var logLevel: Log.Level? = null
+    var removeDuplicateResources = true
 
     var resourcePrefix: String? = null
 
@@ -22,7 +23,7 @@ open class ComponentExtension {
         action.execute(dependencies)
     }
 
-    fun ensureComponentExtension(project: Project) {
+    internal fun ensureComponentExtension(project: Project) {
         if (componentName == null) {
             componentName = project.name
         }

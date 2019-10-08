@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * @author panxinghai
@@ -35,10 +36,21 @@ public class Navigator {
         return this;
     }
 
+    public Navigator withStringArray(String key, String[] value) {
+        bundle.putStringArray(key, value);
+        return this;
+    }
+
+    public Navigator withStringArrayList(String key, ArrayList<String> value) {
+        bundle.putStringArrayList(key, value);
+        return this;
+    }
+
     public Navigator withSerializable(String key, Serializable serializable) {
         bundle.putSerializable(key, serializable);
         return this;
     }
+
 
     public Navigator withInt(String key, int value) {
         bundle.putInt(key, value);
@@ -52,6 +64,31 @@ public class Navigator {
 
     public Navigator withBoolean(String key, boolean value) {
         bundle.putBoolean(key, value);
+        return this;
+    }
+
+    public Navigator withBooleanArray(String key, boolean[] value) {
+        bundle.putBooleanArray(key, value);
+        return this;
+    }
+
+    public Navigator withFloat(String key, float value) {
+        bundle.putFloat(key, value);
+        return this;
+    }
+
+    public Navigator withFloatArray(String key, float[] value) {
+        bundle.putFloatArray(key, value);
+        return this;
+    }
+
+    public Navigator withLong(String key, long value) {
+        bundle.putLong(key, value);
+        return this;
+    }
+
+    public Navigator withLongArray(String key, long[] array) {
+        bundle.putLongArray(key, array);
         return this;
     }
 

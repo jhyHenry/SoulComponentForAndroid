@@ -8,9 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
-import com.soul.router.facade.annotation.RouteNode;
 
-@RouteNode(path = "/main", desc = "首页")
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     Fragment fragment;
