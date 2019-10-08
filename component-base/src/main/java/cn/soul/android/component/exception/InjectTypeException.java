@@ -8,7 +8,6 @@ package cn.soul.android.component.exception;
 public class InjectTypeException extends RuntimeException {
     public InjectTypeException(String target, String field, String type) {
         super("@Inject annotation type Error: got [" + target + "." + field + "] type is:" + type +
-                ". @Inject must annotate the field which type is primitive/boxing or " +
-                "subType of android.os.Parcelable/java.io.Serializable");
+                ". @Inject must annotate the field which type is support by bundle.");
     }
 }

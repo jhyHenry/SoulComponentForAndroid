@@ -85,9 +85,9 @@ afterEvaluate {
 //        }
 //        if(it.variantData.name == "release")
 //            return
-        it.variantData.getVariantDependency().getRuntimeElements().getAllDependencies().forEach{
-            println it
-        }
+//        it.variantData.getVariantDependency().getRuntimeElements().getAllDependencies().forEach{
+//            println it
+//        }
 //        project.getConfigurations()["implementation"].allDependencies.all {
 //            if (it instanceof DefaultSelfResolvingDependency) {
 //                it.resolve().forEach {

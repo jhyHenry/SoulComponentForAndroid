@@ -1,4 +1,4 @@
-package cn.soul.android.component.template;
+package cn.soul.android.plugin.component.templete;
 
 /**
  * @author panxinghai

@@ -4,12 +4,12 @@ import cn.soul.android.component.Constants
 import cn.soul.android.component.annotation.Inject
 import cn.soul.android.component.annotation.Router
 import cn.soul.android.component.exception.InjectTypeException
-import cn.soul.android.component.template.IInjectable
 import cn.soul.android.component.template.IRouterFactory
 import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.BuildType
-import cn.soul.android.plugin.component.manager.InjectType
+import cn.soul.android.plugin.component.manager.InjectType.*
+import cn.soul.android.plugin.component.templete.IInjectable
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
@@ -20,14 +20,17 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.ClassClassPath
 import javassist.CtClass
+import javassist.CtField
 import javassist.CtMethod
+import javassist.bytecode.FieldInfo
+import javassist.bytecode.SignatureAttribute
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import java.io.File
 import java.util.zip.ZipFile
 
 /**
- * All router relative code are in here.This class help inject code for Router Jump
+ * All router relative code is in here.This class help inject code for Router Jump
  * @author panxinghai
  *
  * date : 2019-07-19 18:09
@@ -41,6 +44,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         InjectHelper.instance.refresh()
         val extension = project.extensions.getByName("android") as AppExtension
         InjectHelper.instance.appendClassPath(File(extension.sdkDirectory, "platforms/${extension.compileSdkVersion}/android.jar").absolutePath)
+        InjectHelper.instance.appendClassPath(ClassClassPath(IInjectable::class.java))
     }
 
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
@@ -119,7 +123,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             } else {
                 it.name
             }
-            injectInfoList.add(InjectInfo(it.name, annotationName, ctClass, it.type))
+            injectInfoList.add(InjectInfo(it, annotationName, ctClass))
         }
         if (injectInfoList.size > 0) {
             try {
@@ -140,23 +144,112 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     private fun produceInjectMethod(infoList: ArrayList<InjectInfo>): String {
         val stringBuilder = StringBuilder("{")
         if (infoList.size > 0) {
-            stringBuilder.append("if(!(\$0 instanceof ${Constants.INJECTABLE_CLASSNAME})){return;}")
+            stringBuilder.append("if(!(\$0 instanceof ${IInjectable::class.java.name})){return;}")
             infoList.forEach {
-                stringBuilder.append("${it.fieldName} = getIntent().")
-                        .append(getExtraStatement(it.fieldName, it.annotationName, it.type))
+                stringBuilder.append("${it.fieldName} = ")
+                        .append(getPrefixStatement(it))
+                        .append(getExtraStatement(it))
             }
         }
         stringBuilder.append("}")
+        Log.e(stringBuilder.toString())
         return stringBuilder.toString()
     }
 
-    private fun getExtraStatement(fieldName: String, annotationName: String, type: Int): String {
-        return when (InjectType.values()[type]) {
-            InjectType.INTEGER -> {
+    private fun getPrefixStatement(injectInfo: InjectInfo): String {
+        val type = injectInfo.type
+        val classType = injectInfo.classType
+        return when (values()[type]) {
+            SERIALIZABLE, PARCELABLE_ARRAY -> "(${classType.name})getIntent()."
+            else -> "getIntent()."
+        }
+    }
+
+    private fun getExtraStatement(injectInfo: InjectInfo): String {
+        val type = injectInfo.type
+        val annotationName = injectInfo.annotationName
+        val fieldName = injectInfo.fieldName
+        return when (values()[type]) {
+            INTEGER -> {
                 "getIntExtra(\"$annotationName\", $fieldName);"
             }
-            else -> {
-                ""
+            INT_ARRAY -> {
+                "getIntArrayExtra(\"$annotationName\");"
+            }
+            INT_LIST -> {
+                "getIntegerArrayListExtra(\"$annotationName\");"
+            }
+            BOOLEAN -> {
+                "getBooleanExtra(\"$annotationName\", $fieldName);"
+            }
+            BOOLEAN_ARRAY -> {
+                "getBooleanArrayExtra(\"$annotationName\");"
+            }
+            STRING -> {
+                "getStringExtra(\"$annotationName\");"
+            }
+            STRING_ARRAY -> {
+                "getStringArrayExtra(\"$annotationName\");"
+            }
+            STRING_LIST -> {
+                "getStringArrayListExtra(\"$annotationName\");"
+            }
+            CHARACTER -> {
+                "getCharExtra(\"$annotationName\", $fieldName);"
+            }
+            CHAR_ARRAY -> {
+                "getCharArrayExtra(\"$annotationName\");"
+            }
+            SERIALIZABLE -> {
+                "getSerializableExtra(\"$annotationName\");"
+            }
+            PARCELABLE -> {
+                "getParcelableExtra(\"$annotationName\");"
+            }
+            PARCELABLE_ARRAY -> {
+                "getParcelableArrayExtra(\"$annotationName\");"
+            }
+            PARCELABLE_LIST -> {
+                "getParcelableArrayListExtra(\"$annotationName\");"
+            }
+            BYTE -> {
+                "getByteExtra(\"$annotationName\", $fieldName);"
+            }
+            BYTE_ARRAY -> {
+                "getByteArrayExtra(\"$annotationName\");"
+            }
+            DOUBLE -> {
+                "getDoubleExtra(\"$annotationName\", $fieldName);"
+            }
+            DOUBLE_ARRAY -> {
+                "getDoubleArrayExtra(\"$annotationName\");"
+            }
+            FLOAT -> {
+                "getFloatExtra(\"$annotationName\", $fieldName);"
+            }
+            FLOAT_ARRAY -> {
+                "getFloatArrayExtra(\"$annotationName\");"
+            }
+            LONG -> {
+                "getLongExtra(\"$annotationName\", $fieldName);"
+            }
+            LONG_ARRAY -> {
+                "getLongArrayExtra(\"$annotationName\");"
+            }
+            SHORT -> {
+                "getShortExtra(\"$annotationName\", $fieldName);"
+            }
+            SHORT_ARRAY -> {
+                "getShortArrayExtra(\"$annotationName\");"
+            }
+            CHAR_SEQUENCE -> {
+                "getCharSequenceExtra(\"$annotationName\");"
+            }
+            CHAR_SEQUENCE_ARRAY -> {
+                "getCharSequenceArrayExtra(\"$annotationName\");"
+            }
+            CHAR_SEQUENCE_LIST -> {
+                "getCharSequenceArrayListExtra(\"$annotationName\");"
             }
         }
     }
@@ -290,62 +383,85 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         return "routerCompile"
     }
 
-    data class InjectInfo(val fieldName: String,
+    data class InjectInfo(val ctField: CtField,
                           val annotationName: String,
-                          private val ctClass: CtClass,
-                          private val classType: CtClass) {
+                          private val ctClass: CtClass) {
         var type: Int = 0
+        val fieldName: String = ctField.name
+        val classType: CtClass = ctField.type
+
+        private val classPool = InjectHelper.instance.getClassPool()
+        private val serializableType = classPool["java.io.Serializable"]
+        private val parcelableType = classPool["android.os.Parcelable"]
 
         init {
             type = initType()
         }
 
         private fun initType(): Int {
+
+            Log.e(classType.name)
             return when (classType.name) {
-                "int", "java.lang.Integer" -> {
-                    InjectType.INTEGER.ordinal
-                }
-                "boolean", "java.lang.Boolean" -> {
-                    InjectType.BOOLEAN.ordinal
-                }
-                "java.lang.String" -> {
-                    InjectType.STRING.ordinal
-                }
-                "char", "java.lang.Character" -> {
-                    InjectType.CHARACTER.ordinal
-                }
-                "float", "java.lang.Float" -> {
-                    InjectType.FLOAT.ordinal
-                }
-                "double", "java.lang.Double" -> {
-                    InjectType.DOUBLE.ordinal
-                }
-                "byte", "java.lang.Byte" -> {
-                    InjectType.BYTE.ordinal
-                }
-                "long", "java.lang.Long" -> {
-                    InjectType.LONG.ordinal
-                }
-                "short", "java.lang.Short" -> {
-                    InjectType.SHORT.ordinal
-                }
-                "java.io.Serializable" -> {
-                    InjectType.SERIALIZABLE.ordinal
-                }
-                "android.os.Parcelable" -> {
-                    InjectType.PARCELABLE.ordinal
+                "int", "java.lang.Integer" -> INTEGER.ordinal
+                "boolean", "java.lang.Boolean" -> BOOLEAN.ordinal
+                "java.lang.String" -> STRING.ordinal
+                "char", "java.lang.Character" -> CHARACTER.ordinal
+                "float", "java.lang.Float" -> FLOAT.ordinal
+                "double", "java.lang.Double" -> DOUBLE.ordinal
+                "byte", "java.lang.Byte" -> BYTE.ordinal
+                "long", "java.lang.Long" -> LONG.ordinal
+                "short", "java.lang.Short" -> SHORT.ordinal
+                "java.lang.CharSequence" -> CHAR_SEQUENCE.ordinal
+
+                "java.io.Serializable" -> SERIALIZABLE.ordinal
+                "android.os.Parcelable" -> PARCELABLE.ordinal
+
+                "int[]" -> INT_ARRAY.ordinal
+                "boolean[]" -> BOOLEAN_ARRAY.ordinal
+                "java.lang.String[]" -> STRING_ARRAY.ordinal
+                "char[]" -> CHAR_ARRAY.ordinal
+                "float[]" -> FLOAT_ARRAY.ordinal
+                "double[]" -> DOUBLE_ARRAY.ordinal
+                "byte[]" -> BYTE_ARRAY.ordinal
+                "long[]" -> LONG_ARRAY.ordinal
+                "short[]" -> SHORT_ARRAY.ordinal
+                "java.lang.CharSequence[]" -> CHAR_SEQUENCE_ARRAY.ordinal
+
+
+                "java.util.ArrayList" -> {
+                    val fieldInfo = ctClass.classFile.fields.find { it is FieldInfo && it.name == fieldName } as FieldInfo
+                    val sa = fieldInfo.getAttribute(SignatureAttribute.tag) as SignatureAttribute
+                    val type = SignatureAttribute.toFieldSignature(sa.signature).jvmTypeName()
+                    return when (val genericType = extractGeneric(type)) {
+                        "java.lang.String" -> STRING_LIST.ordinal
+                        "java.lang.Integer" -> INT_LIST.ordinal
+                        "java.lang.CharSequence" -> CHAR_SEQUENCE_LIST.ordinal
+                        else -> {
+                            val ctClass = classPool[genericType]
+                            if (ctClass.subtypeOf(parcelableType)) {
+                                PARCELABLE_LIST.ordinal
+                            } else {
+                                throw InjectTypeException(ctClass.name, fieldName, type)
+                            }
+                        }
+                    }
                 }
                 else -> {
-                    if (ctClass.subtypeOf(InjectHelper.instance.getClassPool()["java.io.Serializable"])) {
-                        InjectType.SERIALIZABLE.ordinal
-                    }
-                    if (ctClass.subtypeOf(InjectHelper.instance.getClassPool()["android.os.Parcelable"])) {
-                        InjectType.PARCELABLE.ordinal
-                    } else {
-                        throw InjectTypeException(ctClass.name, fieldName, classType.name)
+                    println(classType.subtypeOf(serializableType))
+                    when {
+                        classType.isArray && classType.componentType.subtypeOf(parcelableType) -> PARCELABLE_ARRAY.ordinal
+                        classType.subtypeOf(parcelableType) -> PARCELABLE.ordinal
+                        classType.subtypeOf(serializableType) -> SERIALIZABLE.ordinal
+                        else -> throw InjectTypeException(ctClass.name, fieldName, classType.name)
                     }
                 }
             }
+        }
+
+        private fun extractGeneric(s: String): String {
+            val startIndex = s.indexOf('<') + 1
+            val endIndex = s.lastIndexOf('>')
+            return s.substring(startIndex, endIndex).trim()
         }
     }
 }

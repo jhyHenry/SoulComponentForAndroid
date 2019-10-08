@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.utils
 
+import javassist.ClassClassPath
 import javassist.ClassPool
 import javassist.CtClass
 import java.io.File
@@ -23,6 +24,10 @@ class InjectHelper private constructor() {
 
     fun appendClassPath(path: String) {
         mClassPool?.insertClassPath(path)
+    }
+
+    fun appendClassPath(path: ClassClassPath) {
+        mClassPool?.appendClassPath(path)
     }
 
     fun getClassPool(): ClassPool {

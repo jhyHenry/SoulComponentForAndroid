@@ -69,7 +69,7 @@ object Log {
 
     private fun doNormalLog(level: Level, tag: String = defaultTag, msg: String) {
         if (inScope(level)) {
-            println("$tag $msg")
+            println("$tag: $msg")
         }
     }
 
