@@ -17,11 +17,17 @@ public class Navigator {
 
     public Navigator(String path) {
         this.path = path;
+        init();
     }
 
     public Navigator(String path, String group) {
         this.path = path;
         this.group = group;
+        init();
+    }
+
+    private void init() {
+        bundle = new Bundle();
     }
 
     public Navigator withString(String key, String value) {

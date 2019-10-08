@@ -8,6 +8,7 @@ import android.content.Intent;
 
 import cn.soul.android.component.common.Trustee;
 import cn.soul.android.component.node.RouterNode;
+import cn.soul.android.component.template.IInjectable;
 
 
 /**
@@ -54,6 +55,16 @@ public class SoulRouter {
         return sInstance;
     }
 
+    public void inject(Object target) {
+        if (target instanceof IInjectable) {
+            ((IInjectable) target).autoSynthetic$FieldInjectSoulComponent();
+        }
+    }
+
+    public Navigator route(String path) {
+        return new Navigator(path);
+    }
+
     public void addRouterNode(RouterNode node) {
         Trustee.instance().putRouterNode(node);
     }
@@ -73,19 +84,17 @@ public class SoulRouter {
             context = sContext;
         }
         if (node.getType() == RouterNode.ACTIVITY) {
-            startActivity(requestCode, context, node);
+            startActivity(requestCode, context, node, guide);
         }
     }
 
-    private void startActivity(int requestCode, Context context, RouterNode node) {
+    private void startActivity(int requestCode, Context context, RouterNode node, Navigator guide) {
         Intent intent = new Intent(context, node.getTarget());
+        intent.putExtras(guide.bundle);
         if (!(context instanceof Activity)) {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         context.startActivity(intent);
     }
 
-    public Navigator route(String path) {
-        return new Navigator(path);
-    }
 }

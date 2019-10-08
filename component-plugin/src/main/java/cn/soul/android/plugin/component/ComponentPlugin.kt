@@ -205,8 +205,7 @@ class ComponentPlugin : Plugin<Project> {
         sb.append("With")
         StringHelper.appendCapitalized(sb, transform.name)
         sb.append("For")
-                .append(variant.capitalize())
-
+        StringHelper.appendCapitalized(sb, variant)
         return sb.toString()
     }
 }

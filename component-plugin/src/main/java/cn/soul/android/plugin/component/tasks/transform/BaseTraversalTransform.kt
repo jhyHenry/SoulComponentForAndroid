@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.InjectHelper
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
@@ -11,8 +12,10 @@ import com.android.build.api.transform.TransformInvocation
  * date : 2019-09-09 18:06
  */
 abstract class BaseTraversalTransform : BaseTransform() {
+    private var timeCost = 0L
     override fun transform(transformInvocation: TransformInvocation?) {
         super.transform(transformInvocation)
+        val current = System.currentTimeMillis()
         val inputs = transformInvocation?.inputs ?: return
 
         preTraversal(transformInvocation)
@@ -39,6 +42,8 @@ abstract class BaseTraversalTransform : BaseTransform() {
             }
         }
         postTransform(transformInvocation)
+        timeCost = System.currentTimeMillis() - current
+        Log.p("transform time cost: ${timeCost}ms")
     }
 
     abstract fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean
@@ -48,6 +53,7 @@ abstract class BaseTraversalTransform : BaseTransform() {
     protected open fun preTraversal(transformInvocation: TransformInvocation) {
 
     }
+
     protected open fun preTransform(transformInvocation: TransformInvocation) {
 
     }

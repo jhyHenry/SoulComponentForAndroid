@@ -210,10 +210,6 @@ class TaskManager(private val project: Project) {
         }
     }
 
-    private fun addArchives() {
-
-    }
-
     fun addJavacClassesStream(javaOutputs: FileCollection, scope: PluginVariantScope) {
         val artifacts = scope.getArtifacts()
 

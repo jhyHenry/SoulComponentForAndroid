@@ -33,7 +33,7 @@ open class Dependencies {
         interfacesPath.forEach {
             project.dependencies.add("compileOnly", "$it@jar")
             if (addRuntimeDependencies) {
-                project.dependencies.add("implementation", it)
+                project.dependencies.add("implementation", "$it@aar")
             }
         }
     }
