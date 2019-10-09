@@ -388,6 +388,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             private val classPool = InjectHelper.instance.getClassPool()
             private val serializableType = classPool["java.io.Serializable"]
             private val parcelableType = classPool["android.os.Parcelable"]
+            private val charSequenceType = classPool["java.lang.CharSequence"]
         }
 
         var type: Int = 0
@@ -398,6 +399,9 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             type = initType()
         }
 
+        /**
+         * initType() method will decide and check the type of the field which transport by bundle
+         */
         private fun initType(): Int {
             return when (classType.name) {
                 "int", "java.lang.Integer" -> INTEGER.ordinal
@@ -409,10 +413,11 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                 "byte", "java.lang.Byte" -> BYTE.ordinal
                 "long", "java.lang.Long" -> LONG.ordinal
                 "short", "java.lang.Short" -> SHORT.ordinal
-                "java.lang.CharSequence" -> CHAR_SEQUENCE.ordinal
 
+                //keep these for abstract field
                 "java.io.Serializable" -> SERIALIZABLE.ordinal
                 "android.os.Parcelable" -> PARCELABLE.ordinal
+                "java.lang.CharSequence" -> CHAR_SEQUENCE.ordinal
 
                 "int[]" -> INT_ARRAY.ordinal
                 "boolean[]" -> BOOLEAN_ARRAY.ordinal
@@ -424,29 +429,36 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                 "long[]" -> LONG_ARRAY.ordinal
                 "short[]" -> SHORT_ARRAY.ordinal
                 "java.lang.CharSequence[]" -> CHAR_SEQUENCE_ARRAY.ordinal
+                "android.os.Parcelable[]" -> PARCELABLE_ARRAY.ordinal
 
-
+                //process put[...]ArrayList type
                 "java.util.ArrayList" -> {
                     val fieldInfo = ctClass.classFile.fields.find { it is FieldInfo && it.name == fieldName } as FieldInfo
                     val sa = fieldInfo.getAttribute(SignatureAttribute.tag) as SignatureAttribute
+                    //do this for get generic type int ArrayList,
+                    //check this type whether fit for bundle support type
                     val type = SignatureAttribute.toFieldSignature(sa.signature).jvmTypeName()
                     return when (val genericType = extractGeneric(type)) {
                         "java.lang.String" -> STRING_LIST.ordinal
                         "java.lang.Integer" -> INT_LIST.ordinal
+                        //keep this for abstract
                         "java.lang.CharSequence" -> CHAR_SEQUENCE_LIST.ordinal
                         else -> {
                             val ctClass = classPool[genericType]
-                            if (ctClass.subtypeOf(parcelableType)) {
-                                PARCELABLE_LIST.ordinal
-                            } else {
-                                throw InjectTypeException(ctClass.name, fieldName, type)
+                            when {
+                                ctClass.subtypeOf(parcelableType) -> PARCELABLE_LIST.ordinal
+                                ctClass.subtypeOf(charSequenceType) -> CHAR_SEQUENCE_LIST.ordinal
+                                else -> throw InjectTypeException(ctClass.name, fieldName, type)
                             }
                         }
                     }
                 }
                 else -> {
                     when {
+                        //process put[...]Array type
                         classType.isArray && classType.componentType.subtypeOf(parcelableType) -> PARCELABLE_ARRAY.ordinal
+                        classType.isArray && classType.componentType.subtypeOf(charSequenceType) -> CHAR_SEQUENCE_ARRAY.ordinal
+                        //process putParcelable/putSerializable type
                         classType.subtypeOf(parcelableType) -> PARCELABLE.ordinal
                         classType.subtypeOf(serializableType) -> SERIALIZABLE.ordinal
                         else -> throw InjectTypeException(ctClass.name, fieldName, classType.name)

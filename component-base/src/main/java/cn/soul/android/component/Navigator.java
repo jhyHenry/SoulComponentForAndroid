@@ -2,6 +2,7 @@ package cn.soul.android.component;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Parcelable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
  * <p>
  * date : 2019-09-25 18:33
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class Navigator {
     String path;
     String group;
@@ -51,6 +53,21 @@ public class Navigator {
         return this;
     }
 
+    public Navigator withParcelable(String key, Parcelable value) {
+        bundle.putParcelable(key, value);
+        return this;
+    }
+
+    public Navigator withParcelableArray(String key, Parcelable[] value) {
+        bundle.putParcelableArray(key, value);
+        return this;
+    }
+
+    public Navigator withParcelableArrayList(String key, ArrayList<Parcelable> value) {
+        bundle.putParcelableArrayList(key, value);
+        return this;
+    }
+
 
     public Navigator withInt(String key, int value) {
         bundle.putInt(key, value);
@@ -59,6 +76,11 @@ public class Navigator {
 
     public Navigator withIntArray(String key, int[] array) {
         bundle.putIntArray(key, array);
+        return this;
+    }
+
+    public Navigator withIntegerArrayList(String key, ArrayList<Integer> value) {
+        bundle.putIntegerArrayList(key, value);
         return this;
     }
 
@@ -92,15 +114,74 @@ public class Navigator {
         return this;
     }
 
+    public Navigator withByte(String key, byte value) {
+        bundle.putByte(key, value);
+        return this;
+    }
+
+    public Navigator withByteArray(String key, byte[] value) {
+        bundle.putByteArray(key, value);
+        return this;
+    }
+
+    public Navigator withDouble(String key, double value) {
+        bundle.putDouble(key, value);
+        return this;
+    }
+
+    public Navigator withDoubleArray(String key, double[] value) {
+        bundle.putDoubleArray(key, value);
+        return this;
+    }
+
+    public Navigator withChar(String key, char value) {
+        bundle.putChar(key, value);
+        return this;
+    }
+
+    public Navigator withCharArray(String key, char[] value) {
+        bundle.putCharArray(key, value);
+        return this;
+    }
+
+    public Navigator withShort(String key, short value) {
+        bundle.putShort(key, value);
+        return this;
+    }
+
+    public Navigator withShortArray(String key, short[] value) {
+        bundle.putShortArray(key, value);
+        return this;
+    }
+
+    public Navigator withCharSequence(String key, CharSequence value) {
+        bundle.putCharSequence(key, value);
+        return this;
+    }
+
+    public Navigator withCharSequenceArray(String key, CharSequence[] value) {
+        bundle.putCharSequenceArray(key, value);
+        return this;
+    }
+
+    public Navigator withCharSequenceArrayList(String key, ArrayList<CharSequence> value) {
+        bundle.putCharSequenceArrayList(key, value);
+        return this;
+    }
+
     public void navigate() {
         navigate(null);
     }
 
     public void navigate(Context context) {
-        navigate(0, context);
+        navigate(0, context, null);
     }
 
-    public void navigate(int requestCode, Context context) {
-        SoulRouter.instance().navigate(requestCode, context, this);
+    public void navigate(Context context, SoulRouter.NavigateCallback callback) {
+        navigate(0, context, callback);
+    }
+
+    public void navigate(int requestCode, Context context, SoulRouter.NavigateCallback navigateCallback) {
+        SoulRouter.instance().navigate(requestCode, context, this, navigateCallback);
     }
 }

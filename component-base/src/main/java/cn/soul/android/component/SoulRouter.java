@@ -2,7 +2,6 @@ package cn.soul.android.component;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 
@@ -14,8 +13,8 @@ import cn.soul.android.component.template.IInjectable;
 /**
  * Created by nebula on 2019-07-20
  */
-@SuppressLint("StaticFieldLeak")
-@SuppressWarnings("unused")
+@SuppressLint({"StaticFieldLeak"})
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class SoulRouter {
     private volatile static SoulRouter sInstance;
     private volatile static boolean isInit = false;
@@ -33,12 +32,13 @@ public class SoulRouter {
         void onArrival(RouterNode node);
     }
 
-    public static void init(Application application) {
+    public void init(SoulRouterConfig config) {
         if (isInit) {
             return;
         }
         isInit = true;
-        sContext = application;
+        sContext = config.context;
+        mNavigateCallback = config.navigateCallback;
     }
 
     public static SoulRouter instance() {
@@ -69,16 +69,17 @@ public class SoulRouter {
         Trustee.instance().putRouterNode(node);
     }
 
-    void navigate(int requestCode, Context context, Navigator guide) {
+    void navigate(int requestCode, Context context, Navigator guide, NavigateCallback callback) {
         RouterNode node = Trustee.instance().getRouterNode(guide.path);
+        NavigateCallback navigateCallback = callback == null ? mNavigateCallback : callback;
         if (node == null) {
-            if (mNavigateCallback != null) {
-                mNavigateCallback.onLost(guide.path);
+            if (navigateCallback != null) {
+                navigateCallback.onLost(guide.path);
             }
             return;
         }
-        if (mNavigateCallback != null) {
-            mNavigateCallback.onFound(node);
+        if (navigateCallback != null) {
+            navigateCallback.onFound(node);
         }
         if (context == null) {
             context = sContext;
