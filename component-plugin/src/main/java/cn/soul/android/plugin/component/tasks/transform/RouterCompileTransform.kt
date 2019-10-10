@@ -70,7 +70,6 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             val zip = ZipFile(jarInput.file)
             zip.use {
                 it.entries().iterator().forEach { entry ->
-                    Log.e(entry.name)
                     if (entry.name.startsWith(Constants.GEN_FILE_PACKAGE_NAME_SPLIT_WITH_SLASH)) {
                         groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
                             arrayListOf()

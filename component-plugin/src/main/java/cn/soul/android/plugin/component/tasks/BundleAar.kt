@@ -132,7 +132,11 @@ open class BundleAar : Zip() {
 
 
             //bundle f:jni|LIBRARY_AND_LOCAL_JARS_JNI|intermediates/library_and_local_jars_jni/debug
-
+            val jniLibs = artifacts.getFinalArtifactFiles(InternalArtifactType.LIBRARY_AND_LOCAL_JARS_JNI)
+            bundle.from(
+                    jniLibs,
+                    prependToCopyPath(SdkConstants.FD_JNI)
+            )
             //bundle lint.jar|LINT_JAR|
 
             //bundle annotations.zip|ANNOTATIONS_ZIP|intermediates/annotations_zip/debug/extractDebugAnnotations/annotations.zip

@@ -2,6 +2,7 @@ package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.tasks.transform.FilterClassTransform
+import cn.soul.android.plugin.component.tasks.transform.MergeJavaResourcesTransform
 import cn.soul.android.plugin.component.utils.Descriptor
 import com.android.SdkConstants.*
 import com.android.build.api.transform.QualifiedContent
@@ -17,6 +18,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactSco
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.*
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.*
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.transforms.LibraryAarJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryIntermediateJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryJniLibsTransform
@@ -58,15 +60,15 @@ class TaskManager(private val project: Project) {
                 taskFactory.create(scope.getTaskName("generate", "Resources"))
         scope.getTaskContainer().assetGenTask =
                 taskFactory.create(scope.getTaskName("generate", "Assets"))
-//        componentTaskContainer.add(scope.getTaskContainer().resourceGenTask!!)
-//        componentTaskContainer.add(scope.getTaskContainer().assetGenTask!!)
+        scope.getTaskContainer().sourceGenTask =
+                taskFactory.create(scope.getTaskName("generate", "Source"))
+//        scope.getTaskContainer().sourceGenTask?.dependsOn(scope.getRealScope().taskContainer.externalNativeBuildTask)
     }
 
     fun createCheckManifestTask(scope: PluginVariantScope) {
         val task = taskFactory.create(CheckManifest.ConfigAction(scope, false))
         scope.getTaskContainer().pluginCheckManifestTask = task
         task.dependsOn(scope.getTaskContainer().preBuildTask)
-//        componentTaskContainer.add(task)
     }
 
     fun createMergeLibManifestsTask(scope: PluginVariantScope) {
@@ -75,14 +77,12 @@ class TaskManager(private val project: Project) {
         processManifest.dependsOn(scope.getTaskContainer().checkManifestTask!!)
 
         scope.getTaskContainer().pluginProcessManifest = processManifest
-//        componentTaskContainer.add(processManifest)
     }
 
     fun createAidlTask(scope: PluginVariantScope) {
         val task = taskFactory.create(AidlCompile.ConfigAction(scope))
         scope.getTaskContainer().pluginAidlCompile = task
         task.dependsOn(scope.getTaskContainer().preBuildTask)
-//        componentTaskContainer.add(task)
     }
 
     fun createMergeResourcesTask(scope: PluginVariantScope) {
@@ -112,8 +112,6 @@ class TaskManager(private val project: Project) {
                                 packageResourcesTask,
                                 FN_PUBLIC_TXT))
         scope.getTaskContainer().pluginMergeResourcesTask = packageResourcesTask
-//        createMergeResourcesTask(scope, processResources = false, flags = ImmutableSet.of())
-//        componentTaskContainer.add(packageResourcesTask)
     }
 
     fun createGenerateSymbolTask(scope: PluginVariantScope) {
@@ -136,7 +134,6 @@ class TaskManager(private val project: Project) {
                 ComponentArtifactType.COMPONENT_R_TXT,
                 ImmutableList.of(symbol),
                 task)
-//        task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask!!)
         scope.getTaskContainer().pluginGenerateSymbol = task
     }
 
@@ -192,6 +189,10 @@ class TaskManager(private val project: Project) {
         scope.getArtifacts().appendArtifact(ComponentArtifactType.COMPONENT_AAR,
                 ImmutableList.of(File(scope.getAarLocation(), "component.aar")),
                 task)
+        val tTask = project.tasks.findByName("componentTransformClassesAndResourcesWithSyncLibJarsForProRelease")
+        tTask?.taskDependencies?.getDependencies(tTask)?.forEach {
+            println(it)
+        }
 
         if (scope.getVariantConfiguration().buildType.name != "release") {
             return
@@ -286,6 +287,9 @@ class TaskManager(private val project: Project) {
         transformManager.addTransform(taskFactory,
                 scope,
                 FilterClassTransform())
+                .ifPresent {
+                    it.dependsOn(scope.getRealScope().taskContainer.compileTask)
+                }
     }
 
     fun createUploadTask(scope: PluginVariantScope) {
@@ -317,6 +321,15 @@ class TaskManager(private val project: Project) {
                 mainResJar,
                 scope.getVariantConfiguration()::getPackageFromManifest,
                 true)
+
+        val mergeJniLibFoldersTask = project.tasks.findByName(scope.getRealScope().getTaskName("merge", "JniLibFolders"))
+        val realTaskContainer = scope.getRealScope().taskContainer
+        val externalNativeBuildTask = realTaskContainer.externalNativeBuildTask
+        if (externalNativeBuildTask != null) {
+            mergeJniLibFoldersTask?.dependsOn(realTaskContainer.externalNativeBuildTask)
+            realTaskContainer.compileTask.dependsOn(mergeJniLibFoldersTask)
+        }
+
         //add class file transform to jar file Task
         transformManager.addTransform(
                 taskFactory,
@@ -329,7 +342,6 @@ class TaskManager(private val project: Project) {
                     PluginArtifactsHolder.appendArtifact(
                             InternalArtifactType.LIBRARY_JAVA_RES,
                             mainResJar)
-//                    componentTaskContainer.add(it)
                 }
 
         transformManager.addStream(
@@ -337,7 +349,6 @@ class TaskManager(private val project: Project) {
                         .addContentType(ExtendedContentType.NATIVE_LIBS)
                         .addScope(QualifiedContent.Scope.PROJECT)
                         .setFileCollection(project.files(scope.getMergeNativeLibsOutputDir()))
-//                        .setDependency(mergeJniLibFoldersTask.getName())
                         .build())
 
         // create a stream that contains the content of the local NDK build
@@ -348,8 +359,23 @@ class TaskManager(private val project: Project) {
                         .setFileCollection(project.files(scope.getNdkSoFolder()))
 //                        .setDependency(getNdkBuildable(variantScope.getVariantData()))
                         .build())
-
         // create a stream that contains the content of the local external native build
+        if (scope.getRealScope().taskContainer.externalNativeJsonGenerator != null) {
+            transformManager.addStream(
+                    OriginalStream.builder(project, "external-native-build")
+                            .addContentType(ExtendedContentType.NATIVE_LIBS)
+                            .addScope(QualifiedContent.Scope.PROJECT)
+                            .setFileCollection(project.files(scope.getRealScope().taskContainer.externalNativeJsonGenerator?.objFolder))
+                            .build())
+        }
+        // compute the scopes that need to be merged.
+        val mergeScopes = getResMergingScopes(scope.getRealScope())
+        // Create the merge transform
+        val mergeTransform = MergeJavaResourcesTransform(
+                scope.getRealScope().globalScope.extension.packagingOptions,
+                mergeScopes, ExtendedContentType.NATIVE_LIBS, "mergeJniLibs", scope)
+        transformManager
+                .addTransform(taskFactory, scope, mergeTransform)
     }
 
     private fun createAarJarsTransform(classesJar: File, libsDir: File, scope: PluginVariantScope, transformManager: TransformManager) {
@@ -374,43 +400,41 @@ class TaskManager(private val project: Project) {
                 }
     }
 
-    private fun createMergeJavaResTransform(scope: PluginVariantScope, transformManager: TransformManager) {
-
-        // Compute the scopes that need to be merged.
-        val mergeScopes = getResMergingScopes(scope)
-
-        // Create the merge transform.
+//    private fun createMergeJavaResTransform(scope: PluginVariantScope, transformManager: TransformManager) {
+//
+//        // Compute the scopes that need to be merged.
+//        val mergeScopes = getResMergingScopes(scope.getRealScope())
+//
+//        // Create the merge transform.
 //        val mergeTransform = MergeJavaResourcesTransform(
 //                scope.globalScope.extension.packagingOptions,
 //                mergeScopes,
 //                QualifiedContent.DefaultContentType.RESOURCES,
 //                "mergeJavaRes",
-//                variantScope)
+//                scope)
 //        val transformTask = transformManager.addTransform(taskFactory, scope, mergeTransform)
 ////        variantScope.getTaskContainer().mergeJavaResourcesTask = transformTask.orElse(null)
 //
 //        val mergeJavaResOutput = FileUtils.join(
-//                globalScope.getIntermediatesDir(),
+//                scope.getIntermediatesDir(),
 //                "transforms",
 //                "mergeJavaRes",
-//                variantScope.getVariantConfiguration().getDirName(),
+//                scope.getVariantConfiguration().getDirName(),
 //                "0.jar")
 //
 //        if (transformTask.isPresent) {
-//            scope
-//                    .getArtifacts()
+//            scope.getArtifacts()
 //                    .appendArtifact(
 //                            InternalArtifactType.FEATURE_AND_RUNTIME_DEPS_JAVA_RES,
 //                            ImmutableList.of<File>(mergeJavaResOutput),
 //                            transformTask.get())
 //        }
-    }
+//    }
 
-    private fun getResMergingScopes(variantScope: PluginVariantScope): MutableSet<in QualifiedContent.ScopeType>? {
-//        return if (variantScope. != null) {
-//            TransformManager.SCOPE_FULL_PROJECT
-//        } else TransformManager.PROJECT_ONLY
-        return TransformManager.PROJECT_ONLY
+    private fun getResMergingScopes(variantScope: VariantScope): MutableSet<in QualifiedContent.Scope> {
+        return if (variantScope.testedVariantData != null) {
+            TransformManager.SCOPE_FULL_PROJECT
+        } else TransformManager.PROJECT_ONLY
     }
 
     private fun createMergeResourcesTask(

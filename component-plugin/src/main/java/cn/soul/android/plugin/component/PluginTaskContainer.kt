@@ -25,4 +25,5 @@ class PluginTaskContainer(container: TaskContainer) : TaskContainer by container
     //anchor task
     var resourceGenTask: Task? = null
     var assetGenTask: Task? = null
+    var sourceGenTask: Task? = null
 }

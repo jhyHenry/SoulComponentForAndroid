@@ -12,28 +12,27 @@ import com.android.builder.files.FileCacheByPath
 import com.android.builder.merge.*
 import com.android.utils.FileUtils
 import com.android.utils.ImmutableCollectors
+import com.google.common.base.Preconditions.checkNotNull
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSet
 import java.io.*
-import java.util.ArrayList
-import java.util.HashMap
+import java.util.*
+import java.util.function.Consumer
 import java.util.function.Predicate
 import java.util.regex.Pattern
 import java.util.stream.Collectors
-import com.google.common.base.Preconditions.checkNotNull
-import java.util.function.Consumer
 
 /**
  * @author panxinghai
  *
  * date : 2019-07-17 10:48
  */
-open class MergeJavaResourcesTransform(val packagingOptions: PackagingOptions,
-                                  val mergeScopes: MutableSet<in QualifiedContent.Scope>,
-                                  val mergedType: QualifiedContent.ContentType,
-                                  private val name: String,
-                                  val scope: PluginVariantScope) : Transform() {
+open class MergeJavaResourcesTransform(private val packagingOptions: PackagingOptions,
+                                       private val mergeScopes: MutableSet<in QualifiedContent.Scope>,
+                                       mergedType: QualifiedContent.ContentType,
+                                       private val name: String,
+                                       val scope: PluginVariantScope) : Transform() {
     private val JAR_ABI_PATTERN = Pattern.compile("lib/([^/]+)/[^/]+")
     private val ABI_FILENAME_PATTERN = Pattern.compile(".*\\.so")
 
@@ -189,30 +188,30 @@ open class MergeJavaResourcesTransform(val packagingOptions: PackagingOptions,
          */
 
         // Sort inputs to move project scopes to the start.
-//        inputs.sort { i0, i1 ->
-//            val v0 = if (contentMap[i0]!!.scopes.contains(QualifiedContent.Scope.PROJECT)) 0 else 1
-//            val v1 = if (contentMap[i1]!!.scopes.contains(QualifiedContent.Scope.PROJECT)) 0 else 1
-//            v0 - v1
-//        }
+        inputs.sortedWith(Comparator { i0, i1 ->
+            val v0 = if (contentMap[i0]!!.scopes.contains(QualifiedContent.Scope.PROJECT)) 0 else 1
+            val v1 = if (contentMap[i1]!!.scopes.contains(QualifiedContent.Scope.PROJECT)) 0 else 1
+            v0 - v1
+        })
 
         // Prefix libraries with "lib/" if we're doing libraries.
         assert(mMergedType.size == 1)
         val mergedType = this.mMergedType.iterator().next()
         if (mergedType === ExtendedContentType.NATIVE_LIBS) {
-//            inputs = inputs.stream()
-//                    .map { i ->
-//                        val qc = contentMap[i]
-//                        if (qc!!.file.isDirectory) {
-//                            i = RenameIncrementalFileMergerInput(
-//                                    i,
-//                                    { s -> "lib/$s" },
-//                                    { s -> s.substring("lib/".length) })
-//                            contentMap[i] = qc
-//                        }
-//
-//                        i
-//                    }
-//                    .collect(Collectors.toList())
+            inputs = inputs.stream()
+                    .map {
+                        var input = it
+                        val qc = contentMap[input]
+                        if (qc!!.file.isDirectory) {
+                            input = RenameIncrementalFileMergerInput(
+                                    it,
+                                    { s -> "lib/$s" },
+                                    { s -> s.substring("lib/".length) })
+                            contentMap[it] = qc
+                        }
+                        input
+                    }
+                    .collect(Collectors.toList())
         }
 
         // Filter inputs.
@@ -220,7 +219,11 @@ open class MergeJavaResourcesTransform(val packagingOptions: PackagingOptions,
         inputs = inputs.stream()
                 .map<IncrementalFileMergerInput> { i ->
                     val i2 = FilterIncrementalFileMergerInput(i, inputFilter)
-                    contentMap[i2] = contentMap[i]!!
+//                    contentMap[i2] = contentMap[i]
+                    val value = contentMap[i]
+                    if (value != null) {
+                        contentMap[i2] = value
+                    }
                     i2
                 }
                 .collect(Collectors.toList())
@@ -244,15 +247,15 @@ open class MergeJavaResourcesTransform(val packagingOptions: PackagingOptions,
         }
 
         /*
-                * Create an output that uses the algorithm. This is not the final output because,
-                * unfortunately, we still have the complexity of the project scope overriding other scopes
-                * to solve.
-                *
-                * When resources inside a jar file are extracted to a directory, the results may not be
-                * expected on Windows if the file names end with "." (bug 65337573), or if there is an
-                * uppercase/lowercase conflict. To work around this issue, we copy these resources to a
-                * jar file.
-                */
+        * Create an output that uses the algorithm. This is not the final output because,
+        * unfortunately, we still have the complexity of the project scope overriding other scopes
+        * to solve.
+        *
+        * When resources inside a jar file are extracted to a directory, the results may not be
+        * expected on Windows if the file names end with "." (bug 65337573), or if there is an
+        * uppercase/lowercase conflict. To work around this issue, we copy these resources to a
+        * jar file.
+        */
         val baseOutput: IncrementalFileMergerOutput
         if (mergedType === QualifiedContent.DefaultContentType.RESOURCES) {
             val outputLocation = outputProvider.getContentLocation(
@@ -289,10 +292,6 @@ open class MergeJavaResourcesTransform(val packagingOptions: PackagingOptions,
                     prevInputNames: List<String>,
                     inputs: List<IncrementalFileMergerInput>) {
                 super.update(path, prevInputNames, filter(path, inputs))
-            }
-
-            override fun remove(path: String) {
-                super.remove(path)
             }
 
             private fun filter(

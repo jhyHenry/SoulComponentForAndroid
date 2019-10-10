@@ -123,8 +123,9 @@ class PluginVariantScopeImpl(private val scope: VariantScope,
         return intermediate("packaged-classes", "libs")
     }
 
+    //this output directly use AppPlugin's result
     override fun getMergeNativeLibsOutputDir(): File {
-        return FileUtils.join(getIntermediatesDir(), "/jniLibs/$dirName")
+        return scope.mergeNativeLibsOutputDir
     }
 
     override fun getNdkSoFolder(): Collection<File> {

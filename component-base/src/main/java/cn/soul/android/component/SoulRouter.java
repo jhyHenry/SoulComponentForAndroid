@@ -55,7 +55,7 @@ public class SoulRouter {
         return sInstance;
     }
 
-    public void inject(Object target) {
+    public static void inject(Object target) {
         if (target instanceof IInjectable) {
             ((IInjectable) target).autoSynthetic$FieldInjectSoulComponent();
         }
