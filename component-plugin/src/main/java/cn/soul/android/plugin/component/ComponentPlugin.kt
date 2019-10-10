@@ -170,6 +170,8 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.createGenerateSymbolTask(pluginVariantScope)
 
+            taskManager.createLibraryAssetsTask(pluginVariantScope)
+
             val lastTransform = extension.transforms[extension.transforms.lastIndex]
             val task = project.tasks.getByName(getTransformTaskName(lastTransform, pluginVariantScope.getFullName()))
 

@@ -152,7 +152,9 @@ open class BundleAar : Zip() {
                     prependToCopyPath(SdkConstants.FD_ADDON_LIBS)
             )
             //bundle f:assets|LIBRARY_ASSETS|intermediates/library_assets/debug/packageDebugAssets/out
-
+            val assets = artifacts.getFinalArtifactFiles(InternalArtifactType.LIBRARY_ASSETS)
+            bundle.from(assets,
+                    prependToCopyPath(SdkConstants.FD_ASSETS))
         }
 
 

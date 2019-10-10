@@ -2,6 +2,7 @@ package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.tasks.*
 import com.android.build.gradle.internal.scope.TaskContainer
+import com.android.build.gradle.tasks.MergeSourceSetFolders
 import org.gradle.api.Task
 
 
@@ -21,6 +22,7 @@ class PluginTaskContainer(container: TaskContainer) : TaskContainer by container
     var pluginUploadTask: Task? = null
     var pluginGenerateSymbol: GenerateSymbol? = null
     var pluginGenInterface: GenerateInterfaceArtifact? = null
+    var pluginMergeAssetsTask: MergeSourceSetFolders? = null
 
     //anchor task
     var resourceGenTask: Task? = null

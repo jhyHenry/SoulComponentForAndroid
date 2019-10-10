@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.transforms.LibraryAarJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryIntermediateJarsTransform
 import com.android.build.gradle.internal.transforms.LibraryJniLibsTransform
 import com.android.build.gradle.internal.variant.VariantHelper
+import com.android.build.gradle.tasks.MergeSourceSetFolders
 import com.android.utils.FileUtils
 import com.google.common.base.MoreObjects
 import com.google.common.base.Preconditions
@@ -155,6 +156,11 @@ class TaskManager(private val project: Project) {
                 task)
         task.dependsOn(scope.getTaskContainer().pluginMergeResourcesTask)
         scope.getTaskContainer().pluginPrefixResources = task
+    }
+
+    fun createLibraryAssetsTask(scope: PluginVariantScope) {
+        val mergeAssetsTask = taskFactory.create(MergeSourceSetFolders.LibraryAssetConfigAction(scope.getRealScope()))
+        scope.getTaskContainer().pluginMergeAssetsTask = mergeAssetsTask
     }
 
     fun crateGenInterfaceArtifactTask(scope: PluginVariantScope) {
