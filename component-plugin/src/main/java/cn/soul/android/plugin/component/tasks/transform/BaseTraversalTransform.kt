@@ -21,6 +21,7 @@ abstract class BaseTraversalTransform : BaseTransform() {
         preTraversal(transformInvocation)
         inputs.forEach { input ->
             input.directoryInputs.forEach { dirInput ->
+                println(dirInput.file.absolutePath)
                 InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
             }
             input.jarInputs.forEach {

@@ -55,7 +55,6 @@ class ComponentPlugin : Plugin<Project> {
         mRouterCompileTransform = RouterCompileTransform(project)
         mPrefixRTransform = PrefixRTransform(project)
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mRouterCompileTransform)
-        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mPrefixRTransform)
         project.afterEvaluate {
             pluginExtension.ensureComponentExtension(project)
 
@@ -102,7 +101,8 @@ class ComponentPlugin : Plugin<Project> {
     private fun isRunComponentTaskOnly(): Boolean {
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
-        return taskNames.size == 1 && taskManager.isComponentTask(taskNames[0])
+        return taskNames.size == 1 &&
+                taskManager.isComponentTask(Descriptor.getTaskNameWithoutModule(taskNames[0]))
     }
 
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
@@ -177,7 +177,15 @@ class ComponentPlugin : Plugin<Project> {
 
             val transformTask = task as TransformTask
             val javaOutputs = project.files(transformTask.streamOutputFolder).builtBy(transformTask)
+
             taskManager.addJavacClassesStream(javaOutputs, pluginVariantScope)
+
+            taskManager.createFilterClassTransform(pluginVariantScope, transformManager)
+
+            val prefixRTransform = mPrefixRTransform
+            if (prefixRTransform != null) {
+                taskManager.addPluginTransform(pluginVariantScope, prefixRTransform)
+            }
 
             taskManager.transform(pluginVariantScope)
 

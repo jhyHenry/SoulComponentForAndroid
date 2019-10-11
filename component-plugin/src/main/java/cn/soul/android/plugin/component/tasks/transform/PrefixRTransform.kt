@@ -34,7 +34,7 @@ class PrefixRTransform(private val project: Project) : TypeTraversalTransform() 
         (appPlugin.extension as AppExtension).applicationVariants.all {
             if (it.name == variantName) {
                 applicationId = it.applicationId
-                println("applicationId:$applicationId")
+                Log.d("applicationId:$applicationId")
             }
         }
         val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
@@ -56,7 +56,7 @@ class PrefixRTransform(private val project: Project) : TypeTraversalTransform() 
     }
 
     override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
-        return false
+        return true
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {

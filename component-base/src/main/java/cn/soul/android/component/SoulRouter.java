@@ -32,13 +32,13 @@ public class SoulRouter {
         void onArrival(RouterNode node);
     }
 
-    public void init(SoulRouterConfig config) {
+    public static void init(SoulRouterConfig config) {
         if (isInit) {
             return;
         }
         isInit = true;
+        instance().mNavigateCallback = config.navigateCallback;
         sContext = config.context;
-        mNavigateCallback = config.navigateCallback;
     }
 
     public static SoulRouter instance() {

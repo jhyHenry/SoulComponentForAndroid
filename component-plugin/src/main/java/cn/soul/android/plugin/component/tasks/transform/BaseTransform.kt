@@ -13,7 +13,7 @@ import java.io.File
 abstract class BaseTransform : Transform() {
 
     override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
-        return TransformManager.CONTENT_CLASS
+        return TransformManager.CONTENT_JARS
     }
 
     override fun isIncremental(): Boolean {

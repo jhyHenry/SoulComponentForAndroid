@@ -6,6 +6,7 @@ import cn.soul.android.plugin.component.tasks.transform.MergeJavaResourcesTransf
 import cn.soul.android.plugin.component.utils.Descriptor
 import com.android.SdkConstants.*
 import com.android.build.api.transform.QualifiedContent
+import com.android.build.api.transform.Transform
 import com.android.build.gradle.internal.InternalScope
 import com.android.build.gradle.internal.TaskFactory
 import com.android.build.gradle.internal.TaskFactoryImpl
@@ -219,10 +220,10 @@ class TaskManager(private val project: Project) {
 
     fun addJavacClassesStream(javaOutputs: FileCollection, scope: PluginVariantScope) {
         val artifacts = scope.getArtifacts()
-
         Preconditions.checkNotNull(javaOutputs)
         // create separate streams for the output of JAVAC and for the pre/post javac
-        // bytecode hooks
+        // bytecode hooks.
+        // in here, use applicationTransform output, so just need javac-output
         scope.getTransformManager()
                 .addStream(
                         OriginalStream.builder(project, "javac-output")
@@ -233,46 +234,10 @@ class TaskManager(private val project: Project) {
                                 .addScope(QualifiedContent.Scope.PROJECT)
                                 .setFileCollection(javaOutputs)
                                 .build())
-
-        scope.getTransformManager()
-                .addStream(
-                        OriginalStream.builder(project, "pre-javac-generated-bytecode")
-                                .addContentTypes(
-                                        QualifiedContent.DefaultContentType.CLASSES, QualifiedContent.DefaultContentType.RESOURCES)
-                                .addScope(QualifiedContent.Scope.PROJECT)
-                                .setFileCollection(
-                                        scope.getVariantData().allPreJavacGeneratedBytecode)
-                                .build())
-
-        scope.getTransformManager()
-                .addStream(
-                        OriginalStream.builder(project, "post-javac-generated-bytecode")
-                                .addContentTypes(
-                                        QualifiedContent.DefaultContentType.CLASSES, QualifiedContent.DefaultContentType.RESOURCES)
-                                .addScope(QualifiedContent.Scope.PROJECT)
-                                .setFileCollection(
-                                        scope.getVariantData().allPostJavacGeneratedBytecode)
-                                .build())
-
-        if (artifacts.hasArtifact(InternalArtifactType.RUNTIME_R_CLASS_CLASSES)) {
-            scope.getTransformManager()
-                    .addStream(
-                            OriginalStream.builder(project, "final-r-classes")
-                                    .addContentTypes(
-                                            QualifiedContent.DefaultContentType.CLASSES,
-                                            QualifiedContent.DefaultContentType.RESOURCES)
-                                    .addScope(QualifiedContent.Scope.PROJECT)
-                                    .setFileCollection(
-                                            artifacts.getFinalArtifactFiles(
-                                                    InternalArtifactType.RUNTIME_R_CLASS_CLASSES)
-                                                    .get())
-                                    .build())
-        }
     }
 
     fun transform(scope: PluginVariantScope) {
         val transformManager = scope.getTransformManager()
-        createFilterClassTransform(scope, transformManager)
 
         val jarOutputFolder = scope.getIntermediateJarOutputFolder()
         val mainClassJar = File(jarOutputFolder, FN_CLASSES_JAR)
@@ -289,13 +254,14 @@ class TaskManager(private val project: Project) {
         createSyncJniLibsTransform(scope, transformManager)
     }
 
-    private fun createFilterClassTransform(scope: PluginVariantScope, transformManager: TransformManager) {
+    fun addPluginTransform(scope: PluginVariantScope, transform: Transform) {
+        scope.getTransformManager().addTransform(taskFactory, scope, transform)
+    }
+
+    fun createFilterClassTransform(scope: PluginVariantScope, transformManager: TransformManager) {
         transformManager.addTransform(taskFactory,
                 scope,
                 FilterClassTransform())
-                .ifPresent {
-                    it.dependsOn(scope.getRealScope().taskContainer.compileTask)
-                }
     }
 
     fun createUploadTask(scope: PluginVariantScope) {
@@ -381,7 +347,9 @@ class TaskManager(private val project: Project) {
                 scope.getRealScope().globalScope.extension.packagingOptions,
                 mergeScopes, ExtendedContentType.NATIVE_LIBS, "mergeJniLibs", scope)
         transformManager
-                .addTransform(taskFactory, scope, mergeTransform)
+                .addTransform(taskFactory, scope, mergeTransform).ifPresent {
+                    it.dependsOn(realTaskContainer.compileTask)
+                }
     }
 
     private fun createAarJarsTransform(classesJar: File, libsDir: File, scope: PluginVariantScope, transformManager: TransformManager) {

@@ -27,10 +27,6 @@ class FilterClassTransform : BaseTransform() {
         }
     }
 
-    override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
-        return TransformManager.CONTENT_JARS
-    }
-
     override fun getName(): String {
         return "filterClass"
     }

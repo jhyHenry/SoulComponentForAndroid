@@ -17,10 +17,7 @@ import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.pipeline.TransformManager
-import javassist.ClassClassPath
-import javassist.CtClass
-import javassist.CtField
-import javassist.CtMethod
+import javassist.*
 import javassist.bytecode.FieldInfo
 import javassist.bytecode.SignatureAttribute
 import org.gradle.api.GradleException
@@ -101,7 +98,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             }
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterFactory::class.java))
-            Log.e("gen lazy loader")
+            Log.d("generate lazy loader")
             genRouterLazyLoaderImpl(dest, groupMap)
         }
     }
@@ -115,6 +112,10 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         val classPool = InjectHelper.instance.getClassPool()
         ctClass.declaredFields.forEach {
             var inject = it.getAnnotation(Inject::class.java) ?: return@forEach
+            if (Modifier.isFinal(it.modifiers)) {
+                Log.d("skip field ${ctClass.simpleName}.${it.name} inject: cannot inject value for final field.")
+                return@forEach
+            }
             inject = inject as Inject
             val annotationName = if (inject.name != "") {
                 inject.name
