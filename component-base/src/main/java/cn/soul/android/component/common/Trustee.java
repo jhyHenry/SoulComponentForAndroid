@@ -116,10 +116,7 @@ public class Trustee {
                 return null;
             }
             RouterNode node = nodeMap.get(path.hashCode());
-            if (node == null) {
-                return null;
-            }
-            if (!node.getPath().equals(path)) {
+            if (node != null && !node.getPath().equals(path)) {
                 throw new HashCollisionException(path, node.getPath());
             }
             return node;

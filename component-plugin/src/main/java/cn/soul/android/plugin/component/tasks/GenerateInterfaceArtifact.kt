@@ -1,6 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
-import cn.soul.android.component.ComponentService
+import cn.soul.android.component.IComponentService
 import cn.soul.android.plugin.component.PluginVariantScope
 import cn.soul.android.plugin.component.utils.InjectHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -18,7 +18,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 //fun main() {
-//    val text = "java.util.List<Gender, AynscTask<A,B,C>,Triple<TestA, TestB, TestC<Pair<TypeA, TypeB>>>>"
+//    val text = "java.util.List<Gender, AsyncTask<A,B,C>,Triple<TestA, TestB, TestC<Pair<TypeA, TypeB>>>>"
 //    GenerateInterfaceArtifact.extractGenericClass(text).forEach {
 //        println(it)
 //    }
@@ -43,7 +43,7 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
         InjectHelper.instance.processFiles(source)
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .classFilter { ctClass ->
-                    ctClass.classFile2.interfaces.contains(ComponentService::class.java.name)
+                    ctClass.classFile2.interfaces.contains(IComponentService::class.java.name)
                 }.forEach {
                     refSet.add(it.name)
                     retrieveRefClass(it)
@@ -120,7 +120,7 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
 
     private fun isSuitableRef(ref: String, ctClass: CtClass): Boolean {
         return ref != ctClass.name
-                && ref != ComponentService::class.java.name
+                && ref != IComponentService::class.java.name
                 && !needIgnore(ref)
                 && !refSet.contains(ref)
     }

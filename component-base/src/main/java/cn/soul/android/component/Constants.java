@@ -16,6 +16,6 @@ public class Constants {
     public final static String ACTIVITY_NODE_CLASSNAME = ActivityNode.class.getName();
     public final static String ROUTER_LAZY_LOADER_CLASSNAME = IRouterLazyLoader.class.getName();
     public final static String ROUTER_FACTORY_CLASSNAME = IRouterFactory.class.getName();
-    public final static String COMPONENT_SERVICE_CLASSNAME = ComponentService.class.getName();
+    public final static String COMPONENT_SERVICE_CLASSNAME = IComponentService.class.getName();
     public final static String INJECTABLE_CLASSNAME = IInjectable.class.getName();
 }

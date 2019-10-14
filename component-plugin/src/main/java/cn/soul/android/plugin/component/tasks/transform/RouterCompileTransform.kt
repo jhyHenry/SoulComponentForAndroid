@@ -414,7 +414,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                 "long", "java.lang.Long" -> LONG.ordinal
                 "short", "java.lang.Short" -> SHORT.ordinal
 
-                //keep these for abstract field
+                //keep these for abstract type field
                 "java.io.Serializable" -> SERIALIZABLE.ordinal
                 "android.os.Parcelable" -> PARCELABLE.ordinal
                 "java.lang.CharSequence" -> CHAR_SEQUENCE.ordinal

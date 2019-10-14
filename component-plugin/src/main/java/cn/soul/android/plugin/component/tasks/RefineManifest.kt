@@ -35,11 +35,19 @@ open class RefineManifest : AndroidVariantTask() {
         //remove uses-sdk tag
         root.remove(root.element("uses-sdk"))
 
+        //get packageName
+        val packageAttr = root.attribute("package")
+        val packageName = if (packageAttr == null) "" else packageAttr.value
+
         val applicationElement = root.element(AndroidXmlHelper.TAG_APPLICATION)
         //remove application all attributes
         val attributeNameList = mutableListOf<QName>()
+        var applicationName = ""
         applicationElement.attributes().forEach {
             attributeNameList.add(it.qName)
+            if (it.qName == AndroidXmlHelper.getAndroidQName("name")) {
+                applicationName = packageName + it.value
+            }
         }
         attributeNameList.forEach {
             applicationElement.remove(applicationElement.attribute(it))

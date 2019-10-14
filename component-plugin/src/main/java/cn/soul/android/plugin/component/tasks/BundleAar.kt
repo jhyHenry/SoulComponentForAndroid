@@ -46,7 +46,7 @@ open class BundleAar : Zip() {
         }
         copySpec.sourcePaths.forEach { artifact ->
             if (artifact is File) {
-                Log.d("others", artifact.absolutePath)
+                Log.d(artifact.name, artifact.absolutePath)
 
             } else {
                 val clazz = artifact.javaClass.kotlin
