@@ -11,7 +11,7 @@ import com.android.build.api.transform.TransformInvocation
  *
  * date : 2019-10-14 20:14
  */
-class CementTransform : TypeTraversalTransform() {
+class CementLibTransform : TypeTraversalTransform() {
     private val mTaskNameList = arrayListOf<String>()
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
         val initTaskCtClass = InjectHelper.instance.getClassPool()[InitTask::class.java.name]
@@ -33,6 +33,6 @@ class CementTransform : TypeTraversalTransform() {
     }
 
     override fun getName(): String {
-        return "cementCommon"
+        return "cementLib"
     }
 }

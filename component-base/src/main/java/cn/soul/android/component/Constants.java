@@ -18,4 +18,5 @@ public class Constants {
     public final static String ROUTER_FACTORY_CLASSNAME = IRouterFactory.class.getName();
     public final static String COMPONENT_SERVICE_CLASSNAME = IComponentService.class.getName();
     public final static String INJECTABLE_CLASSNAME = IInjectable.class.getName();
+    public final static String REPLACE_META_NAME = "cement_replace_real_app";
 }

@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import cn.soul.android.component.combine.InitTask;
-import cn.soul.android.component.combine.TaskManager;
+import cn.soul.android.component.combine.InitTaskManager;
 
 /**
  * @author panxinghai
@@ -18,7 +18,7 @@ public class Cement {
     private volatile static Cement sInstance;
     private List<InitTask> mComponentTasks;
     private HashMap<String, IComponentService> mServiceMap;
-    private TaskManager mTaskManager = new TaskManager();
+    private InitTaskManager mTaskManager = new InitTaskManager();
 
 
     public static Cement instance() {
@@ -32,7 +32,7 @@ public class Cement {
         return sInstance;
     }
 
-    public TaskManager getTaskManager() {
+    public InitTaskManager getTaskManager() {
         return mTaskManager;
     }
 }

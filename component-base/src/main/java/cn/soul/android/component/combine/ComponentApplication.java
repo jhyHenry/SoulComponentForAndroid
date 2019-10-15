@@ -4,12 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.ComponentCallbacks;
 import android.content.Context;
-import android.content.res.Configuration;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import cn.soul.android.component.Cement;
 
 /**
  * @author panxinghai
@@ -20,10 +14,14 @@ import cn.soul.android.component.Cement;
 abstract public class ComponentApplication extends Application
         implements InitTask {
     private Application mHost;
-    private List<ComponentApplication> mComponentApplications;
+    private boolean mIsRunAsApplication = false;
 
     public void setHostApplication(Application application) {
         mHost = application;
+    }
+
+    public void setRunAsApplication(boolean runAsApplication) {
+        mIsRunAsApplication = runAsApplication;
     }
 
     public abstract void initAsApplication();
@@ -41,62 +39,26 @@ abstract public class ComponentApplication extends Application
     }
 
     @Override
+    public void dependsOn(Object... dep) {
+
+    }
+
+    @Override
+    public Object[] getDependencies() {
+        return new Object[0];
+    }
+
+    @Override
+    public InitTask[] getDependencyTasks() {
+        return new InitTask[0];
+    }
+
+    @Override
     public void onExecute() {
-        if (mHost == null) {
+        if (mIsRunAsApplication) {
             initAsApplication();
         } else {
             initAsComponent(mHost);
-        }
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        if (mHost != null) {
-            return;
-        }
-        mComponentApplications = new ArrayList<>();
-        List<InitTask> tasks = Cement.instance().getTaskManager().gatherTasks();
-        for (InitTask task : tasks) {
-            if (task instanceof ComponentApplication) {
-                ComponentApplication componentApplication = (ComponentApplication) task;
-                componentApplication.setHostApplication(this);
-                mComponentApplications.add(componentApplication);
-            }
-            task.onExecute();
-        }
-    }
-
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        for (ComponentApplication component : mComponentApplications) {
-            component.onConfigurationChanged(newConfig);
-        }
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        for (ComponentApplication component : mComponentApplications) {
-            component.onLowMemory();
-        }
-    }
-
-    @Override
-    public void onTerminate() {
-        super.onTerminate();
-        for (ComponentApplication component : mComponentApplications) {
-            component.onTerminate();
-        }
-    }
-
-    @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-        for (ComponentApplication component : mComponentApplications) {
-            component.onTrimMemory(level);
         }
     }
 
@@ -109,9 +71,7 @@ abstract public class ComponentApplication extends Application
     public void registerActivityLifecycleCallbacks(ActivityLifecycleCallbacks callback) {
         if (mHost != null) {
             mHost.registerActivityLifecycleCallbacks(callback);
-            return;
         }
-        super.registerActivityLifecycleCallbacks(callback);
     }
 
     @Override
@@ -119,7 +79,6 @@ abstract public class ComponentApplication extends Application
         if (mHost != null) {
             mHost.registerComponentCallbacks(callback);
         }
-        super.registerComponentCallbacks(callback);
     }
 
     @Override
@@ -127,7 +86,6 @@ abstract public class ComponentApplication extends Application
         if (mHost != null) {
             mHost.unregisterComponentCallbacks(callback);
         }
-        super.unregisterComponentCallbacks(callback);
     }
 
     @Override
@@ -135,24 +93,19 @@ abstract public class ComponentApplication extends Application
         if (mHost != null) {
             mHost.unregisterActivityLifecycleCallbacks(callback);
         }
-        super.unregisterActivityLifecycleCallbacks(callback);
     }
 
     @Override
     public void registerOnProvideAssistDataListener(OnProvideAssistDataListener callback) {
         if (mHost != null) {
             mHost.registerOnProvideAssistDataListener(callback);
-            return;
         }
-        super.registerOnProvideAssistDataListener(callback);
     }
 
     @Override
     public void unregisterOnProvideAssistDataListener(OnProvideAssistDataListener callback) {
         if (mHost != null) {
             mHost.unregisterOnProvideAssistDataListener(callback);
-            return;
         }
-        super.unregisterOnProvideAssistDataListener(callback);
     }
 }

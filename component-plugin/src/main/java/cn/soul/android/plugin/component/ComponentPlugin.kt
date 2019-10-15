@@ -4,6 +4,7 @@ import cn.soul.android.plugin.component.action.RFileAction
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.manager.StatusManager
+import cn.soul.android.plugin.component.tasks.transform.CementAppTransform
 import cn.soul.android.plugin.component.tasks.transform.PrefixRTransform
 import cn.soul.android.plugin.component.tasks.transform.RouterCompileTransform
 import cn.soul.android.plugin.component.utils.Descriptor
@@ -42,6 +43,7 @@ class ComponentPlugin : Plugin<Project> {
 
     private var mPrefixRTransform: PrefixRTransform? = null
     private var mRouterCompileTransform: RouterCompileTransform? = null
+    private var mCementTransform: CementAppTransform? = null
 
     override fun apply(p: Project) {
         project = p
@@ -54,7 +56,9 @@ class ComponentPlugin : Plugin<Project> {
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         mRouterCompileTransform = RouterCompileTransform(project)
         mPrefixRTransform = PrefixRTransform(project)
+        mCementTransform = CementAppTransform()
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mRouterCompileTransform)
+        project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mCementTransform)
         project.afterEvaluate {
             pluginExtension.ensureComponentExtension(project)
 
@@ -83,6 +87,7 @@ class ComponentPlugin : Plugin<Project> {
                 mPrefixRTransform?.setPrefix(pluginExtension.resourcePrefix)
                 mPrefixRTransform?.setTaskBuildType(buildType)
                 mRouterCompileTransform?.setTaskBuildType(buildType)
+                mCementTransform?.setTaskBuildType(buildType)
             }
         }
     }

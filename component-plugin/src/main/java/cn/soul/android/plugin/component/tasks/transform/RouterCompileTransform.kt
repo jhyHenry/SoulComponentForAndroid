@@ -9,6 +9,7 @@ import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.manager.InjectType.*
+import cn.soul.android.plugin.component.resolve.ZipHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
@@ -23,7 +24,6 @@ import javassist.bytecode.SignatureAttribute
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import java.io.File
-import java.util.zip.ZipFile
 
 /**
  * All router relative code is in here.This class help inject code for Router Jump
@@ -64,14 +64,11 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
 
     override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
         if (buildType == BuildType.APPLICATION) {
-            val zip = ZipFile(jarInput.file)
-            zip.use {
-                it.entries().iterator().forEach { entry ->
-                    if (entry.name.startsWith(Constants.GEN_FILE_PACKAGE_NAME_SPLIT_WITH_SLASH)) {
-                        groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
-                            arrayListOf()
-                        }.add(getNameWithEntryName(entry.name))
-                    }
+            ZipHelper.traversalZip(jarInput.file) { entry ->
+                if (entry.name.startsWith(Constants.GEN_FILE_PACKAGE_NAME_SPLIT_WITH_SLASH)) {
+                    groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
+                        arrayListOf()
+                    }.add(getNameWithEntryName(entry.name))
                 }
             }
         }

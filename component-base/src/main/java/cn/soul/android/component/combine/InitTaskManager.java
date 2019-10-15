@@ -7,8 +7,8 @@ import java.util.List;
  * <p>
  * date : 2019-10-14 23:01
  */
-public class TaskManager implements ITaskCollector{
-    public TaskManager() {
+public class InitTaskManager implements ITaskCollector{
+    public InitTaskManager() {
     }
 
     @Override
