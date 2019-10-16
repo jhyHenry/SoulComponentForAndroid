@@ -23,11 +23,11 @@ class InjectHelper private constructor() {
     }
 
     fun appendClassPath(path: String) {
-        mClassPool?.insertClassPath(path)
+        getClassPool().insertClassPath(path)
     }
 
     fun appendClassPath(path: ClassClassPath) {
-        mClassPool?.appendClassPath(path)
+        getClassPool().appendClassPath(path)
     }
 
     fun getClassPool(): ClassPool {

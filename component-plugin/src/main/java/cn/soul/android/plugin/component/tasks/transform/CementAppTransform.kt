@@ -8,6 +8,7 @@ import cn.soul.android.plugin.component.utils.InjectHelper
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
+import javassist.ClassClassPath
 import javassist.CtClass
 import java.lang.reflect.Modifier
 
@@ -25,15 +26,21 @@ class CementAppTransform : TypeTraversalTransform() {
         }
     }
 
+    private lateinit var mInitTaskCtClass: CtClass
+
+    override fun preTransform(transformInvocation: TransformInvocation) {
+        mClassPool.appendClassPath(ClassClassPath(InitTask::class.java))
+        mInitTaskCtClass = mClassPool[InitTask::class.java.name]
+    }
+
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
         if (buildType == BuildType.COMPONENT) {
             return false
         }
-        val initTaskCtClass = mClassPool[InitTask::class.java.name]
         InjectHelper.instance.processFiles(dirInput.file)
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .classFilter { ctClass ->
-                    ctClass.interfaces.contains(initTaskCtClass)
+                    ctClass.subtypeOf(mInitTaskCtClass)
                 }.forEach {
                     mTaskNameListProvider.invoke(it)
                 }

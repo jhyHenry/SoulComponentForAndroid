@@ -264,6 +264,14 @@ class TaskManager(private val project: Project) {
                 FilterClassTransform())
     }
 
+    fun createReplaceManifestTask(scope: PluginVariantScope) {
+        val manifestFile = scope.getRealScope().taskContainer.packageAndroidTask?.manifests?.single()
+                ?: return
+        val task = taskFactory.create(ReplaceManifest.ConfigAction(scope, File(manifestFile, "AndroidManifest.xml")))
+        scope.getRealScope().taskContainer.processAndroidResTask?.dependsOn(task)
+        task.dependsOn(scope.getRealScope().taskContainer.processManifestTask)
+    }
+
     fun createUploadTask(scope: PluginVariantScope) {
         if (scope.getVariantConfiguration().buildType.name != "release") {
             return

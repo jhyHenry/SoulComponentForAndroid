@@ -196,6 +196,8 @@ class ComponentPlugin : Plugin<Project> {
 
             taskManager.createRefineManifestTask(pluginVariantScope)
 
+            taskManager.createReplaceManifestTask(pluginVariantScope)
+
             taskManager.createBundleTask(pluginVariantScope)
 
             taskManager.crateGenInterfaceArtifactTask(pluginVariantScope)

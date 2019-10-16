@@ -65,7 +65,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
         if (buildType == BuildType.APPLICATION) {
             ZipHelper.traversalZip(jarInput.file) { entry ->
-                if (entry.name.startsWith(Constants.GEN_FILE_PACKAGE_NAME_SPLIT_WITH_SLASH)) {
+                if (entry.name.startsWith(Constants.ROUTER_GEN_FILE_FOLDER)) {
                     groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
                         arrayListOf()
                     }.add(getNameWithEntryName(entry.name))
@@ -252,7 +252,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     private fun genRouterFactoryImpl(dir: File, group: String, nodeList: List<Pair<String, String>>) {
         try {
             val classPool = InjectHelper.instance.getClassPool()
-            val name = Constants.GEN_FILE_PACKAGE_NAME + genRouterClassName(group)
+            val name = Constants.ROUTER_GEN_FILE_PACKAGE + genRouterClassName(group)
             var genClass: CtClass? = classPool.getOrNull(name)
             if (genClass == null) {
                 genClass = classPool.makeClass(name)
@@ -297,7 +297,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     private fun genRouterLazyLoaderImpl(dir: File, groupMap: MutableMap<String, ArrayList<String>>) {
         try {
             val classPool = InjectHelper.instance.getClassPool()
-            val name = Constants.GEN_FILE_PACKAGE_NAME + Constants.LAZY_LOADER_IMPL_NAME
+            val name = Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME
             var genClass: CtClass? = classPool.getOrNull(name)
             if (genClass == null) {
                 genClass = classPool.makeClass(name)
@@ -338,7 +338,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                 val group = it.key
                 sb.append("case ${group.hashCode()}:{")
                 it.value.forEach { name ->
-                    sb.append("result.add(new ${Constants.GEN_FILE_PACKAGE_NAME}$name());")
+                    sb.append("result.add(new ${Constants.ROUTER_GEN_FILE_PACKAGE}$name());")
                 }
                 sb.append("return result;}")
             }

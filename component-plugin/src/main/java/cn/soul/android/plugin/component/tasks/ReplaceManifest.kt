@@ -1,7 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.component.Constants
-import cn.soul.android.component.combine.CementApplication
 import cn.soul.android.plugin.component.PluginVariantScope
 import cn.soul.android.plugin.component.utils.AndroidXmlHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -33,7 +32,8 @@ open class ReplaceManifest : AndroidVariantTask() {
         element.addAttribute(AndroidXmlHelper.getAndroidQName("name"), Constants.REPLACE_META_NAME)
         element.addAttribute(AndroidXmlHelper.getAndroidQName("value"), attribute.value)
 
-        attribute.value = CementApplication::class.java.name
+        attribute.value = Constants.REPLACE_APPLICATION_NAME
+        println(attribute.value)
         FileWriter(manifestFile!!).use {
             XMLWriter(it).apply {
                 write(root)
@@ -45,7 +45,7 @@ open class ReplaceManifest : AndroidVariantTask() {
     class ConfigAction(private val scope: PluginVariantScope,
                        private val manifestFile: File) : TaskConfigAction<ReplaceManifest> {
         override fun getName(): String {
-            return scope.getTaskName("Refine", "Manifest")
+            return scope.getTaskName("Replace", "Manifest")
         }
 
         override fun getType(): Class<ReplaceManifest> {

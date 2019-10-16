@@ -79,7 +79,7 @@ public class Trustee {
     private synchronized void loadNode(String group, RouterTable table) {
         if (mLazyLoader == null) {
             try {
-                mLazyLoader = (IRouterLazyLoader) Class.forName(Constants.GEN_FILE_PACKAGE_NAME + Constants.LAZY_LOADER_IMPL_NAME)
+                mLazyLoader = (IRouterLazyLoader) Class.forName(Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME)
                         .newInstance();
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
