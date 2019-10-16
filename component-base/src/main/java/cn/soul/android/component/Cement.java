@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import java.util.HashMap;
 import java.util.List;
 
+import cn.soul.android.component.combine.ComponentApplication;
 import cn.soul.android.component.combine.InitTask;
 import cn.soul.android.component.combine.InitTaskManager;
 
@@ -30,6 +31,18 @@ public class Cement {
             }
         }
         return sInstance;
+    }
+
+    public void registerService(String name, IComponentService service) {
+
+    }
+
+    public <T extends ComponentApplication> T service(Class<T> clazz) {
+        return null;
+    }
+
+    public IComponentService service(String name) {
+        return null;
     }
 
     public InitTaskManager getTaskManager() {

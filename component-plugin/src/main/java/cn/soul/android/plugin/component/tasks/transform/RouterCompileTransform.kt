@@ -16,7 +16,6 @@ import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
-import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.*
 import javassist.bytecode.FieldInfo
@@ -38,8 +37,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     override fun preTraversal(transformInvocation: TransformInvocation) {
         super.preTraversal(transformInvocation)
         InjectHelper.instance.refresh()
-        val extension = project.extensions.getByName("android") as AppExtension
-        InjectHelper.instance.appendClassPath(File(extension.sdkDirectory, "platforms/${extension.compileSdkVersion}/android.jar").absolutePath)
+        InjectHelper.instance.appendAndroidPlatformPath(project)
     }
 
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {

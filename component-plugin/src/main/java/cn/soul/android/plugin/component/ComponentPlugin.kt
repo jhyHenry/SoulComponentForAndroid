@@ -56,7 +56,7 @@ class ComponentPlugin : Plugin<Project> {
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         mRouterCompileTransform = RouterCompileTransform(project)
         mPrefixRTransform = PrefixRTransform(project)
-        mCementTransform = CementAppTransform()
+        mCementTransform = CementAppTransform(project)
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mRouterCompileTransform)
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mCementTransform)
         project.afterEvaluate {

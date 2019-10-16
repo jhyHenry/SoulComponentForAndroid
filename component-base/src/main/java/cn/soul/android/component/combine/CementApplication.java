@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.soul.android.component.Cement;
+import cn.soul.android.component.Constants;
 
 /**
  * @author panxinghai
@@ -86,7 +87,7 @@ public class CementApplication extends Application {
         try {
             ApplicationInfo appInfo = getPackageManager().getApplicationInfo(getPackageName(),
                     PackageManager.GET_META_DATA);
-            return appInfo.metaData.getString("api_key");
+            return appInfo.metaData.getString(Constants.REPLACE_META_NAME);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }

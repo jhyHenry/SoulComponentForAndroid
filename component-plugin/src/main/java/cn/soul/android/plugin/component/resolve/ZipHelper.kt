@@ -1,11 +1,13 @@
 package cn.soul.android.plugin.component.resolve
 
+import cn.soul.android.component.Constants
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -68,6 +70,6 @@ object ZipHelper {
     }
 
     fun entryNameToClassName(entryName: String): String {
-        return entryName.trim().replace('/', '.')
+        return entryName.trim().replace('/', '.').substring(0, entryName.length - 6)
     }
 }
