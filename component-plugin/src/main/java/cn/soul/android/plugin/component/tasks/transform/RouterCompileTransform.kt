@@ -46,7 +46,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         InjectHelper.instance.processFiles(dirInput.file)
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .classFilter { ctClass ->
-                    ctClass.getAnnotation(Router::class.java) != null
+                    ctClass.hasAnnotation(Router::class.java)
                 }.forEach {
                     val routerAnnotation = it.getAnnotation(Router::class.java) as Router
                     val path = routerAnnotation.path

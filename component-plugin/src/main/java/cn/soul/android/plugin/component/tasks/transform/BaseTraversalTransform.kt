@@ -47,17 +47,37 @@ abstract class BaseTraversalTransform : BaseTransform() {
         Log.p("transform time cost: ${timeCost}ms")
     }
 
+    /**
+     * @param dirInput directory of transform input
+     * @param transformInvocation transformInvocation of transform
+     * @return if return false , sub class will not consume file input, [BaseTraversalTransform]
+     * will write result to target directory for next transform. Otherwise [BaseTraversalTransform]
+     * will ignore build result.
+     */
     abstract fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean
 
+    /**
+     * see [onDirVisited]
+     */
     abstract fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean
 
+    /**
+     * [BaseTraversalTransform] will traversal first to load all input files to Javassist ClassPool,
+     * this method run before the traversal.
+     */
     protected open fun preTraversal(transformInvocation: TransformInvocation) {
 
     }
 
+    /**
+     * called before all [onDirVisited] and [onJarVisited]
+     */
     protected open fun preTransform(transformInvocation: TransformInvocation) {
 
     }
 
+    /**
+     * called after all [onDirVisited] and [onJarVisited]
+     */
     abstract fun postTransform(transformInvocation: TransformInvocation)
 }

@@ -1,10 +1,13 @@
 package cn.soul.android.component.combine;
 
+import cn.soul.android.component.annotation.TaskIgnore;
+
 /**
  * @author panxinghai
  * <p>
  * date : 2019-10-14 21:11
  */
+@TaskIgnore
 public class DefaultComponentTask implements InitTask {
     @Override
     public void onDependency() {

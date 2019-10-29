@@ -12,15 +12,19 @@ public class Constants {
     public final static String FRAME_NAME = "cement";
     public final static String GEN_PACKAGE_NAME = "cn.soul.android." + FRAME_NAME + ".gen.";
     public final static String GEN_FOLDER_NAME = "cn/soul/android/" + FRAME_NAME + "/gen/";
+
     public final static String ROUTER_GEN_FILE_PACKAGE = GEN_PACKAGE_NAME + "router.";
     public final static String ROUTER_GEN_FILE_FOLDER = GEN_FOLDER_NAME + "router/";
-
     public final static String INIT_TASK_GEN_FILE_PACKAGE = GEN_PACKAGE_NAME + "task.";
     public final static String INIT_TASK_GEN_FILE_FOLDER = GEN_FOLDER_NAME + "task/";
+    public final static String INIT_SERVICE_GEN_FILE_PACKAGE = GEN_FOLDER_NAME + "service/";
+    public final static String INIT_SERVICE_GEN_FILE_FOLDER = GEN_FOLDER_NAME + "service/";
 
     public final static String LAZY_LOADER_IMPL_NAME = "SoulRouterLazyLoaderImpl";
     public final static String INIT_TASK_COLLECTOR_IMPL_NAME = "InitTaskCollectorImpl";
     public final static String TASK_PROVIDER_IMPL_NAME = "TaskProviderImpl";
+    public final static String SERVICE_COLLECTOR_IMPL_NAME = "ServiceCollectorImpl";
+    public final static String SERVICE_PROVIDER_IMPL_NAME = "ServiceProviderImpl";
 
     public final static String SOUL_ROUTER_CLASSNAME = SoulRouter.class.getName();
     public final static String ACTIVITY_NODE_CLASSNAME = ActivityNode.class.getName();
