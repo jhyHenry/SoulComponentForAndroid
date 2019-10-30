@@ -7,11 +7,13 @@ import cn.soul.android.component.annotation.TaskIgnore
 import cn.soul.android.component.combine.IComponentTaskProvider
 import cn.soul.android.component.combine.ITaskCollector
 import cn.soul.android.component.combine.InitTask
+import cn.soul.android.component.template.IServiceCollector
+import cn.soul.android.component.template.IServiceProvider
+import cn.soul.android.plugin.component.exception.ClassGenerateException
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.resolve.ZipHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
-import cn.soul.android.plugin.component.utils.Log
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.Format
@@ -20,7 +22,6 @@ import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.ClassClassPath
 import javassist.CtClass
-import javassist.CtMethod
 import org.gradle.api.Project
 import java.io.File
 import java.lang.reflect.Modifier
@@ -31,16 +32,19 @@ import java.lang.reflect.Modifier
  * date : 2019-10-14 22:35
  */
 class CementAppTransform(private val project: Project) : TypeTraversalTransform() {
+    private lateinit var mInitTaskCtClass: CtClass
+    private lateinit var mComponentServiceCtClass: CtClass
+
     private val mTaskNameList = arrayListOf<String>()
-    private val mServiceNameList = arrayListOf<String>()
     private val mTaskNameListProvider: (CtClass) -> Unit = {
         if (!Modifier.isAbstract(it.modifiers) && !it.hasAnnotation(TaskIgnore::class.java)) {
             mTaskNameList.add(it.name)
         }
     }
 
-    private lateinit var mInitTaskCtClass: CtClass
-    private lateinit var mComponentServiceCtClass: CtClass
+    private val mServiceAliasList = mutableMapOf<String, String>()
+    private val mServiceClassList = mutableMapOf<String, String>()
+
     private val mComponentTaskProviderList = arrayListOf<String>()
     private val mComponentServiceProviderList = arrayListOf<String>()
 
@@ -56,10 +60,27 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
         InjectHelper.instance.processFiles(dirInput.file)
                 .nameFilter { file -> file.name.endsWith(".class") }
-                .classFilter { ctClass ->
-                    ctClass.subtypeOf(mInitTaskCtClass)
-                }.forEach {
-                    mTaskNameListProvider.invoke(it)
+                .forEach {
+                    //for task auto gather and inject
+                    if (it.subtypeOf(mInitTaskCtClass)) {
+                        mTaskNameListProvider.invoke(it)
+                        return@forEach
+                    }
+                    if (it.hasAnnotation(ServiceInject::class.java)) {
+                        if (it.isInterface || Modifier.isAbstract(it.modifiers) || !it.subtypeOf(mComponentServiceCtClass)) {
+                            throw ClassGenerateException("ServiceInject must annotate non-abstract class which implement IComponentService")
+                        }
+                        val serviceInject = it.getAnnotation(ServiceInject::class.java) as ServiceInject
+                        if (serviceInject.alias != "") {
+                            mServiceAliasList[serviceInject.alias] = it.name
+                        }
+                        it.interfaces.forEach interfaceForEach@{ i ->
+                            if (!i.subtypeOf(mComponentServiceCtClass)) {
+                                return@interfaceForEach
+                            }
+                            mServiceClassList[i.name] = it.name
+                        }
+                    }
                 }
         return false
     }
@@ -70,7 +91,12 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
         }
         ZipHelper.traversalZip(jarInput.file) {
             if (it.name.startsWith(Constants.INIT_TASK_GEN_FILE_FOLDER)) {
-                mComponentTaskProviderList.add(getNameWithEntryName(it.name))
+                mComponentTaskProviderList.add(getClassNameWithEntryName(it.name))
+                return@traversalZip
+            }
+            if (it.name.startsWith(Constants.SERVICE_GEN_FILE_FOLDER)) {
+                mComponentServiceProviderList.add(getClassNameWithEntryName(it.name))
+                return@traversalZip
             }
         }
         return false
@@ -86,10 +112,16 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
             if (mTaskNameList.isNotEmpty()) {
                 genComponentTaskProviderImpl(dest)
             }
+            if (mServiceAliasList.isNotEmpty() || mServiceClassList.isNotEmpty()) {
+                genServiceProviderImpl(dest)
+            }
             return
         }
         if (mTaskNameList.isNotEmpty() || mComponentTaskProviderList.isNotEmpty()) {
             genTaskCollectorImpl(dest)
+        }
+        if (mServiceClassList.isNotEmpty() || mServiceAliasList.isNotEmpty() || mComponentServiceProviderList.isNotEmpty()) {
+            genServiceCollectorImpl(dest)
         }
     }
 
@@ -98,38 +130,12 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
      * @param dir target directory to save transform result
      */
     private fun genComponentTaskProviderImpl(dir: File) {
-        try {
-            val classPool = InjectHelper.instance.getClassPool()
-            val name = Constants.INIT_TASK_GEN_FILE_PACKAGE + genComponentTaskProviderClassName()
-            var genClass: CtClass? = classPool.getOrNull(name)
-            if (genClass == null) {
-                genClass = classPool.makeClass(name)
-                genClass.addInterface(classPool.get(IComponentTaskProvider::class.java.name))
-                genClass.addMethod(genGatherComponentTasksMethod(genClass))
-            } else {
-                if (genClass.isFrozen) {
-                    genClass.defrost()
-                }
-                genClass.getDeclaredMethod("gatherComponentTasks")
-                        .setBody(genGatherComponentTaskMethodBody())
-            }
-            genClass?.writeFile(dir.absolutePath)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            if (e.message != null) {
-                Log.e(e.message!!)
-            }
-        }
-    }
-
-
-    private fun genGatherComponentTasksMethod(genClass: CtClass): CtMethod {
-        return CtMethod.make(gatherComponentTasksSrc(), genClass)
-    }
-
-    private fun gatherComponentTasksSrc(): String {
-        return "public java.util.List gatherComponentTasks()" +
-                genGatherComponentTaskMethodBody()
+        MethodGen(Constants.INIT_TASK_GEN_FILE_PACKAGE + genComponentTaskProviderClassName())
+                .signature(returnStatement = "public java.util.List",
+                        name = "getComponentTasks")
+                .interfaces(IComponentTaskProvider::class.java)
+                .body { genGatherComponentTaskMethodBody() }
+                .gen()?.writeFile(dir.absolutePath)
     }
 
     private fun genGatherComponentTaskMethodBody(): String {
@@ -146,37 +152,12 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
      * @param dir target directory to save transform result
      */
     private fun genTaskCollectorImpl(dir: File) {
-        try {
-            val classPool = InjectHelper.instance.getClassPool()
-            val name = Constants.INIT_TASK_GEN_FILE_PACKAGE + Constants.INIT_TASK_COLLECTOR_IMPL_NAME
-            var genClass: CtClass? = classPool.getOrNull(name)
-            if (genClass == null) {
-                genClass = classPool.makeClass(name)
-                genClass.addInterface(classPool.get(ITaskCollector::class.java.name))
-                genClass.addMethod(genGatherTasksMethod(genClass))
-            } else {
-                if (genClass.isFrozen) {
-                    genClass.defrost()
-                }
-                genClass.getDeclaredMethod("gatherTasks")
-                        .setBody(genGatherTaskMethodBody())
-            }
-            genClass?.writeFile(dir.absolutePath)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            if (e.message != null) {
-                Log.e(e.message!!)
-            }
-        }
-    }
-
-    private fun genGatherTasksMethod(genClass: CtClass): CtMethod {
-        return CtMethod.make(gatherTasksSrc(), genClass)
-    }
-
-    private fun gatherTasksSrc(): String {
-        return "public java.util.List gatherTasks()" +
-                genGatherTaskMethodBody()
+        MethodGen(Constants.INIT_TASK_GEN_FILE_PACKAGE + Constants.INIT_TASK_COLLECTOR_IMPL_NAME)
+                .signature(returnStatement = "public java.util.List",
+                        name = "gatherTasks")
+                .interfaces(ITaskCollector::class.java)
+                .body { genGatherTaskMethodBody() }
+                .gen()?.writeFile(dir.absolutePath)
     }
 
     private fun genGatherTaskMethodBody(): String {
@@ -185,29 +166,86 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
             sb.append("list.add(new $it());")
         }
         mComponentTaskProviderList.forEach {
-            sb.append("list.addAll(new ${Constants.INIT_TASK_GEN_FILE_PACKAGE}$it().gatherComponentTasks());")
+            sb.append("list.addAll(new $it().getComponentTasks());")
         }
         sb.append("return list;}")
         return sb.toString()
     }
 
     private fun genServiceProviderImpl(dir: File) {
-        MethodGen(Constants.INIT_SERVICE_GEN_FILE_PACKAGE + Constants.SERVICE_PROVIDER_IMPL_NAME)
-                .signature(returnStatement = "public java.util.List",
-                        name = "gatherComponentServices")
+        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + genComponentServiceProviderClassName())
+                .signature(returnStatement = "public java.util.HashMap",
+                        name = "getComponentServices")
+                .interfaces(IServiceProvider::class.java)
                 .body {
-                    "{}"
+                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
+                    mServiceClassList.forEach {
+                        sb.append("result.put(${it.key}.class, new ${it.value}());")
+                    }
+                    sb.append("return result;}")
+                    sb.toString()
+                }
+                .gen()
+        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + genComponentServiceProviderClassName())
+                .signature(returnStatement = "public java.util.HashMap",
+                        name = "getAliasComponentServices")
+                .body {
+                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
+                    mServiceAliasList.forEach {
+                        sb.append("result.put(\"${it.key}\", new ${it.value}());")
+                    }
+                    sb.append("return result;}")
+                    sb.toString()
                 }
                 .gen()?.writeFile(dir.absolutePath)
     }
 
-    private fun getNameWithEntryName(name: String): String {
-        return name.split('/').last().split('.')[0]
+    private fun genServiceCollectorImpl(dir: File) {
+        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + Constants.SERVICE_COLLECTOR_IMPL_NAME)
+                .interfaces(IServiceCollector::class.java)
+                .signature(returnStatement = "public java.util.HashMap",
+                        name = "gatherServices")
+                .body {
+                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
+                    mServiceClassList.forEach {
+                        sb.append("result.put(${it.key}.class, new ${it.value}());")
+                    }
+                    mComponentServiceProviderList.forEach {
+                        sb.append("result.putAll(new $it().getComponentServices());")
+                    }
+                    sb.append("return result;}")
+                    sb.toString()
+                }
+                .gen()
+        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + Constants.SERVICE_COLLECTOR_IMPL_NAME)
+                .signature(returnStatement = "public java.util.HashMap",
+                        name = "gatherAliasServices")
+                .body {
+                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
+                    mServiceAliasList.forEach {
+                        sb.append("result.put(\"${it.key}\", new ${it.value}());")
+                    }
+                    mComponentServiceProviderList.forEach {
+                        sb.append("result.putAll(new $it().getAliasComponentServices());")
+                    }
+                    sb.append("return result;}")
+                    sb.toString()
+                }
+                .gen()?.writeFile(dir.absolutePath)
+    }
+
+    private fun getClassNameWithEntryName(name: String): String {
+        return name.split('.').first().replace('/', '.')
     }
 
     private fun genComponentTaskProviderClassName(): String {
         val componentName = getComponentExtension().componentName
         return "\$$componentName\$TaskProvider"
+    }
+
+    private fun genComponentServiceProviderClassName(): String {
+        val componentName = getComponentExtension().componentName
+        return "\$$componentName\$ServiceProvider"
     }
 
     private fun getComponentExtension(): ComponentExtension {

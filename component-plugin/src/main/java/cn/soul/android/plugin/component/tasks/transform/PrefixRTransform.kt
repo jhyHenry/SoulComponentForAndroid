@@ -73,6 +73,7 @@ class PrefixRTransform(private val project: Project) : TypeTraversalTransform() 
     }
 
     private fun prefixCustomCtClassField(ctClass: CtClass) {
+        Log.d("prefix R.class field access. which class is: ${ctClass.name}")
         ctClass.nestedClasses.forEach {
             it.fields.forEach { ctField ->
                 if (it.isFrozen) {
@@ -91,7 +92,7 @@ class PrefixRTransform(private val project: Project) : TypeTraversalTransform() 
             return
         }
         if (isRFile(ctClass.simpleName)) {
-            Log.d("skip prefix R.class field access. which class is: ${ctClass.name}")
+            //skip R.class's field access prefix
             return
         }
         if (ctClass.isFrozen) {

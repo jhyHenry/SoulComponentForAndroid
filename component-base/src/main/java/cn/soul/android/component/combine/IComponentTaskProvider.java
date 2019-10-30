@@ -8,5 +8,5 @@ import java.util.List;
  * date : 2019-10-16 17:58
  */
 public interface IComponentTaskProvider {
-    List<InitTask> gatherComponentTasks();
+    List<InitTask> getComponentTasks();
 }

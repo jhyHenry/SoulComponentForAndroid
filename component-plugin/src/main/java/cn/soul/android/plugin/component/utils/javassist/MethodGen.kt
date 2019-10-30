@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.utils.javassist
 
+import cn.soul.android.plugin.component.exception.ClassGenerateException
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import javassist.CtClass
@@ -15,7 +16,8 @@ class MethodGen(private val className: String) {
     private var name = ""
     private var paramsStatement = ""
     private var methodBodyProvider: () -> String = { "{}" }
-    private var interfaces: Array<out CtClass> = arrayOf()
+    private var interfaces = mutableListOf<CtClass>()
+    private val classPool = InjectHelper.instance.getClassPool()
 
     fun signature(returnStatement: String = "void", name: String, paramsStatement: String = "()"): MethodGen {
         this.returnStatement = returnStatement
@@ -33,27 +35,36 @@ class MethodGen(private val className: String) {
         return this
     }
 
-    fun interfaces(vararg interfaces: CtClass) {
-        this.interfaces = interfaces
+    fun interfaces(vararg interfaces: Class<out Any>): MethodGen {
+        interfaces.forEach {
+            val ctClass = classPool.getOrNull(it.name)
+                    ?: throw ClassGenerateException("cannot get ctClass of ${it.name}.")
+            this.interfaces.add(ctClass)
+        }
+        return this
     }
 
     fun gen(): CtClass? {
         try {
-            val classPool = InjectHelper.instance.getClassPool()
             var genClass: CtClass? = classPool.getOrNull(className)
             if (genClass == null) {
                 genClass = classPool.makeClass(className)
                 interfaces.forEach {
                     genClass.addInterface(it)
                 }
-                genClass.addMethod(genGatherTasksMethod(genClass))
-            } else {
-                if (genClass.isFrozen) {
-                    genClass.defrost()
-                }
-                genClass.getDeclaredMethod(name)
-                        .setBody(methodBodyProvider.invoke())
             }
+            if (genClass == null) {
+                throw ClassGenerateException("cannot make class: $className.")
+            }
+            var method = getDeclaredMethod(genClass, name)
+            if (method == null) {
+                method = genCtMethod(genClass)
+                genClass.addMethod(method)
+            }
+            if (genClass.isFrozen) {
+                genClass.defrost()
+            }
+            method.setBody(methodBodyProvider.invoke())
             return genClass
         } catch (e: Exception) {
             e.printStackTrace()
@@ -64,11 +75,20 @@ class MethodGen(private val className: String) {
         return null
     }
 
-    private fun genGatherTasksMethod(genClass: CtClass): CtMethod {
-        return CtMethod.make(gatherTasksSrc(), genClass)
+    private fun genCtMethod(genClass: CtClass): CtMethod {
+        return CtMethod.make(tasksSrc(), genClass)
     }
 
-    private fun gatherTasksSrc(): String {
+    private fun tasksSrc(): String {
         return "$returnStatement $name$paramsStatement${methodBodyProvider.invoke()}"
+    }
+
+    private fun getDeclaredMethod(ctClass: CtClass, name: String): CtMethod? {
+        ctClass.declaredMethods.forEach {
+            if (it.name == name) {
+                return it
+            }
+        }
+        return null
     }
 }

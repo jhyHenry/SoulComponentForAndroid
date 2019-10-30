@@ -41,7 +41,6 @@ open class RefineManifest : AndroidVariantTask() {
         var applicationName = ""
         applicationElement.attributes().forEach {
             attributeNameList.add(it.qName)
-            println(it.qName)
             if (it.qName == AndroidXmlHelper.getAndroidQName("name")) {
                 applicationName = it.value
             }

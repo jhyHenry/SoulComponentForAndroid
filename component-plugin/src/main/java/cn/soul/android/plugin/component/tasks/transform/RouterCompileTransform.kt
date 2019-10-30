@@ -12,6 +12,7 @@ import cn.soul.android.plugin.component.manager.InjectType.*
 import cn.soul.android.plugin.component.resolve.ZipHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
+import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.JarInput
@@ -248,37 +249,12 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     }
 
     private fun genRouterFactoryImpl(dir: File, group: String, nodeList: List<Pair<String, String>>) {
-        try {
-            val classPool = InjectHelper.instance.getClassPool()
-            val name = Constants.ROUTER_GEN_FILE_PACKAGE + genRouterClassName(group)
-            var genClass: CtClass? = classPool.getOrNull(name)
-            if (genClass == null) {
-                genClass = classPool.makeClass(name)
-                genClass.addInterface(classPool.get(IRouterFactory::class.java.name))
-                genClass.addMethod(genProduceNodesMethod(genClass, nodeList))
-            } else {
-                if (genClass.isFrozen) {
-                    genClass.defrost()
-                }
-                genClass.getDeclaredMethod("produceRouterNodes")
-                        .setBody(produceNodesMethodBodySrc(nodeList))
-            }
-            genClass?.writeFile(dir.absolutePath)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            if (e.message != null) {
-                Log.e(e.message!!)
-            }
-        }
-    }
-
-    private fun genProduceNodesMethod(declaringClass: CtClass, nodeList: List<Pair<String, String>>): CtMethod {
-        return CtMethod.make(produceNodesMethodSrc(nodeList), declaringClass)
-    }
-
-    private fun produceNodesMethodSrc(nodeList: List<Pair<String, String>>): String {
-        return "public java.util.List produceRouterNodes() " +
-                produceNodesMethodBodySrc(nodeList)
+        MethodGen(Constants.ROUTER_GEN_FILE_PACKAGE + genRouterClassName(group))
+                .interfaces(IRouterFactory::class.java)
+                .signature(returnStatement = "public java.util.List",
+                        name = "produceRouterNodes")
+                .body { produceNodesMethodBodySrc(nodeList) }
+                .gen()?.writeFile(dir.absolutePath)
     }
 
     private fun produceNodesMethodBodySrc(nodeList: List<Pair<String, String>>): String {
