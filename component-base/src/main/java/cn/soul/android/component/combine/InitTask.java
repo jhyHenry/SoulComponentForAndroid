@@ -1,5 +1,7 @@
 package cn.soul.android.component.combine;
 
+import java.util.Set;
+
 /**
  * @author panxinghai
  * <p>
@@ -12,9 +14,11 @@ public interface InitTask {
 
     void onExecute();
 
-    void dependsOn(Object... dep);
+    InitTask dependsOn(Object... dep);
 
-    Object[] getDependencies();
+    Set<Object> getDependsOn();
 
-    InitTask[] getDependencyTasks();
+    Set<InitTask> getDependencyTasks();
+
+    String getName();
 }

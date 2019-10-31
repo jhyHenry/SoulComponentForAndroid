@@ -32,4 +32,6 @@ public class Constants {
     public final static String INJECTABLE_CLASSNAME = IInjectable.class.getName();
     public final static String REPLACE_META_NAME = "cement_replace_real_app";
     public final static String REPLACE_APPLICATION_NAME = "cn.soul.android.component.combine.CementApplication";
+
+    public final static String COMPONENT_APPLICATION_NAME = "cn.soul.android.component.combine.ComponentApplication";
 }

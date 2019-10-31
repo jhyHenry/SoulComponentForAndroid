@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +26,10 @@ public class CementApplication extends Application {
     public void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         mComponentApplications = new ArrayList<>();
-        mInitTasks = Cement.instance().getTaskManager().gatherTasks();
+        mInitTasks = Cement.instance().getTaskManager().getExecuteTaskList();
         String realAppName = getRealAppName();
         for (InitTask task : mInitTasks) {
+            Log.e("SoulCement", "execute init task:" + task.getName());
             if (task instanceof ComponentApplication) {
                 ComponentApplication componentApplication = (ComponentApplication) task;
                 if (componentApplication.getClass().getName().equals(realAppName)) {

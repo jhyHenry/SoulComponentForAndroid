@@ -5,19 +5,38 @@ import android.app.Application;
 import android.content.ComponentCallbacks;
 import android.content.Context;
 
+import java.util.Set;
+
 /**
  * @author panxinghai
  * <p>
  * date : 2019-10-12 11:22
  */
 @SuppressLint("NewApi")
+@SuppressWarnings("unused")
 abstract public class ComponentApplication extends Application
         implements InitTask {
     private Application mHost;
     private boolean mIsRunAsApplication = false;
+    private DefaultInitTask mDelegate;
+    private String mName;
+
+    public ComponentApplication() {
+        mDelegate = new DefaultInitTask() {
+            @Override
+            public String getName() {
+                return "";
+            }
+        };
+    }
+
 
     public void setHostApplication(Application application) {
         mHost = application;
+    }
+
+    public void setNameByComponentName(String name) {
+        mName = name;
     }
 
     public void setRunAsApplication(boolean runAsApplication) {
@@ -39,18 +58,23 @@ abstract public class ComponentApplication extends Application
     }
 
     @Override
-    public void dependsOn(Object... dep) {
-
+    public Set<Object> getDependsOn() {
+        return mDelegate.getDependsOn();
     }
 
     @Override
-    public Object[] getDependencies() {
-        return new Object[0];
+    public String getName() {
+        return mName;
     }
 
     @Override
-    public InitTask[] getDependencyTasks() {
-        return new InitTask[0];
+    public InitTask dependsOn(Object... dep) {
+        return mDelegate.dependsOn(dep);
+    }
+
+    @Override
+    public Set<InitTask> getDependencyTasks() {
+        return mDelegate.getDependencyTasks();
     }
 
     @Override

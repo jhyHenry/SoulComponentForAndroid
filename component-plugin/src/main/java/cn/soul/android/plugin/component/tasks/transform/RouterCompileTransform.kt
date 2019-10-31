@@ -269,37 +269,14 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     }
 
     private fun genRouterLazyLoaderImpl(dir: File, groupMap: MutableMap<String, ArrayList<String>>) {
-        try {
-            val classPool = InjectHelper.instance.getClassPool()
-            val name = Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME
-            var genClass: CtClass? = classPool.getOrNull(name)
-            if (genClass == null) {
-                genClass = classPool.makeClass(name)
-                genClass.addInterface(classPool.get(IRouterLazyLoader::class.java.name))
-                genClass.addMethod(genLazyLoadFactoryByGroupMethod(groupMap, genClass))
-            } else {
-                if (genClass.isFrozen) {
-                    genClass.defrost()
-                }
-                genClass.getDeclaredMethod("lazyLoadFactoryByGroup")
-                        .setBody(produceLazyLoadFactoryBodySrc(groupMap))
-            }
-            genClass?.writeFile(dir.absolutePath)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            if (e.message != null) {
-                Log.e(e.message!!)
-            }
-        }
-    }
-
-    private fun genLazyLoadFactoryByGroupMethod(groupMap: MutableMap<String, ArrayList<String>>, genClass: CtClass): CtMethod {
-        return CtMethod.make(lazyLoadFactorySrc(groupMap), genClass)
-    }
-
-    private fun lazyLoadFactorySrc(groupMap: MutableMap<String, ArrayList<String>>): String {
-        return "public java.util.List lazyLoadFactoryByGroup(String arg)" +
-                produceLazyLoadFactoryBodySrc(groupMap)
+        val name = Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME
+        MethodGen(name)
+                .interfaces(IRouterLazyLoader::class.java)
+                .signature("public java.util.List",
+                        "lazyLoadFactoryByGroup",
+                        "(String group)")
+                .body { produceLazyLoadFactoryBodySrc(groupMap) }
+                .gen()?.writeFile(dir.absolutePath)
     }
 
     private fun produceLazyLoadFactoryBodySrc(groupMap: MutableMap<String, ArrayList<String>>): String {

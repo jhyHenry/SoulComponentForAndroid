@@ -35,10 +35,10 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
     private lateinit var mInitTaskCtClass: CtClass
     private lateinit var mComponentServiceCtClass: CtClass
 
-    private val mTaskNameList = arrayListOf<String>()
+    private val mTaskClassList = arrayListOf<CtClass>()
     private val mTaskNameListProvider: (CtClass) -> Unit = {
         if (!Modifier.isAbstract(it.modifiers) && !it.hasAnnotation(TaskIgnore::class.java)) {
-            mTaskNameList.add(it.name)
+            mTaskClassList.add(it)
         }
     }
 
@@ -109,7 +109,7 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
                 TransformManager.SCOPE_FULL_PROJECT,
                 Format.DIRECTORY)
         if (buildType == BuildType.COMPONENT) {
-            if (mTaskNameList.isNotEmpty()) {
+            if (mTaskClassList.isNotEmpty()) {
                 genComponentTaskProviderImpl(dest)
             }
             if (mServiceAliasList.isNotEmpty() || mServiceClassList.isNotEmpty()) {
@@ -117,7 +117,7 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
             }
             return
         }
-        if (mTaskNameList.isNotEmpty() || mComponentTaskProviderList.isNotEmpty()) {
+        if (mTaskClassList.isNotEmpty() || mComponentTaskProviderList.isNotEmpty()) {
             genTaskCollectorImpl(dest)
         }
         if (mServiceClassList.isNotEmpty() || mServiceAliasList.isNotEmpty() || mComponentServiceProviderList.isNotEmpty()) {
@@ -140,8 +140,14 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
 
     private fun genGatherComponentTaskMethodBody(): String {
         val sb = StringBuilder("{java.util.ArrayList list = new java.util.ArrayList();")
-        mTaskNameList.forEach {
-            sb.append("list.add(new $it());")
+        mTaskClassList.forEach {
+            if (isSubtypeOf(it, Constants.COMPONENT_APPLICATION_NAME)) {
+                sb.append("${it.name} \$_ = new ${it.name}();")
+                        .append("\$_.setNameByComponentName(\"${getComponentExtension().componentName}\");")
+                        .append("list.add(\$_);")
+            } else {
+                sb.append("list.add(new ${it.name}());")
+            }
         }
         sb.append("return list;}")
         return sb.toString()
@@ -162,14 +168,31 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
 
     private fun genGatherTaskMethodBody(): String {
         val sb = StringBuilder("{java.util.ArrayList list = new java.util.ArrayList();")
-        mTaskNameList.forEach {
-            sb.append("list.add(new $it());")
+        mTaskClassList.forEach {
+            if (isSubtypeOf(it, Constants.COMPONENT_APPLICATION_NAME)) {
+                sb.append("${it.name} \$_ = new ${it.name}();")
+                        .append("\$_.setNameByComponentName(\"${getComponentExtension().componentName}\");")
+                        .append("list.add(\$_);")
+            } else {
+                sb.append("list.add(new ${it.name}());")
+            }
         }
         mComponentTaskProviderList.forEach {
             sb.append("list.addAll(new $it().getComponentTasks());")
         }
         sb.append("return list;}")
         return sb.toString()
+    }
+
+    private fun isSubtypeOf(ctClass: CtClass, superType: String): Boolean {
+        var ct = ctClass
+        while (ct.superclass.name != "java.lang.Object") {
+            if (ct.name == superType) {
+                return true
+            }
+            ct = ct.superclass
+        }
+        return false
     }
 
     private fun genServiceProviderImpl(dir: File) {
@@ -240,12 +263,12 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
 
     private fun genComponentTaskProviderClassName(): String {
         val componentName = getComponentExtension().componentName
-        return "\$$componentName\$TaskProvider"
+        return "$componentName\$\$TaskProvider"
     }
 
     private fun genComponentServiceProviderClassName(): String {
         val componentName = getComponentExtension().componentName
-        return "\$$componentName\$ServiceProvider"
+        return "$componentName\$\$ServiceProvider"
     }
 
     private fun getComponentExtension(): ComponentExtension {

@@ -3,9 +3,7 @@ package cn.soul.android.component;
 import android.annotation.SuppressLint;
 
 import java.util.HashMap;
-import java.util.List;
 
-import cn.soul.android.component.combine.InitTask;
 import cn.soul.android.component.combine.InitTaskManager;
 import cn.soul.android.component.template.IServiceCollector;
 
@@ -20,7 +18,7 @@ public class Cement {
     private volatile static Cement sInstance;
     private HashMap<String, IComponentService> mServiceAliasMap;
     private HashMap<Class<? extends IComponentService>, IComponentService> mServiceClassMap;
-    private InitTaskManager mTaskManager = new InitTaskManager();
+    private InitTaskManager mTaskManager = InitTaskManager.instance();
 
     public static Cement instance() {
         if (sInstance == null) {
