@@ -58,7 +58,7 @@ abstract public class ComponentApplication extends Application
     }
 
     @Override
-    public Set<Object> getDependsOn() {
+    final public Set<Object> getDependsOn() {
         return mDelegate.getDependsOn();
     }
 
@@ -68,12 +68,12 @@ abstract public class ComponentApplication extends Application
     }
 
     @Override
-    public InitTask dependsOn(Object... dep) {
+    final public InitTask dependsOn(Object... dep) {
         return mDelegate.dependsOn(dep);
     }
 
     @Override
-    public Set<InitTask> getDependencyTasks() {
+    final public Set<InitTask> getDependencyTasks() {
         return mDelegate.getDependencyTasks();
     }
 

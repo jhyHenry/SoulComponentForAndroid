@@ -5,7 +5,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
+import androidx.fragment.app.Fragment;
+
 import cn.soul.android.component.common.Trustee;
+import cn.soul.android.component.node.FragmentNode;
 import cn.soul.android.component.node.RouterNode;
 import cn.soul.android.component.template.IInjectable;
 
@@ -69,14 +72,14 @@ public class SoulRouter {
         Trustee.instance().putRouterNode(node);
     }
 
-    void navigate(int requestCode, Context context, Navigator guide, NavigateCallback callback) {
+    Object navigate(int requestCode, Context context, Navigator guide, NavigateCallback callback) {
         RouterNode node = Trustee.instance().getRouterNode(guide.path);
         NavigateCallback navigateCallback = callback == null ? mNavigateCallback : callback;
         if (node == null) {
             if (navigateCallback != null) {
                 navigateCallback.onLost(guide.path);
             }
-            return;
+            return null;
         }
         if (navigateCallback != null) {
             navigateCallback.onFound(node);
@@ -84,9 +87,31 @@ public class SoulRouter {
         if (context == null) {
             context = sContext;
         }
-        if (node.getType() == RouterNode.ACTIVITY) {
-            startActivity(requestCode, context, node, guide);
+        switch (node.getType()) {
+            case RouterNode.ACTIVITY:
+                startActivity(requestCode, context, node, guide);
+                break;
+            case RouterNode.FRAGMENT:
+                return getFragmentInstance((FragmentNode) node, guide);
+            case RouterNode.SERVICE:
+                break;
+            default:
+                break;
         }
+        return null;
+    }
+
+    private Fragment getFragmentInstance(FragmentNode routerNode, Navigator guide) {
+        try {
+            Fragment fragment = (Fragment) routerNode.getTarget().newInstance();
+            fragment.setArguments(guide.bundle);
+            return fragment;
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private void startActivity(int requestCode, Context context, RouterNode node, Navigator guide) {

@@ -50,7 +50,7 @@ class ComponentPlugin : Plugin<Project> {
         projectOptions = ProjectOptions(p)
         threadRecorder = ThreadRecorder.get()
         taskManager = TaskManager(p)
-        Log.p(msg = "apply component plugin.")
+        Log.p("apply component plugin. ")
         p.plugins.apply("maven")
 
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
@@ -82,6 +82,7 @@ class ComponentPlugin : Plugin<Project> {
             )
             //if only run component task, skip some time consuming operations
             StatusManager.isRunComponentTaskOnly = isRunComponentTaskOnly()
+            Log.d("component run as:${if (StatusManager.isRunComponentTaskOnly) "component" else "app"}")
             val buildType = if (StatusManager.isRunComponentTaskOnly) BuildType.COMPONENT else BuildType.APPLICATION
             if (StatusManager.isRunComponentTaskOnly) {
                 mPrefixRTransform?.setPrefix(pluginExtension.resourcePrefix)

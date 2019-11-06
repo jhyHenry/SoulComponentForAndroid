@@ -53,7 +53,6 @@ public class InitTaskManagerTest {
         manager.addInitTask(new DefaultInitTask() {
             @Override
             public void onDependency() {
-                dependsOn("a");
             }
 
             @Override

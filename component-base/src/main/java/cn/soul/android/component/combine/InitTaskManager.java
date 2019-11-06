@@ -37,7 +37,6 @@ public class InitTaskManager {
 
     private InitTaskManager() {
         mTasks = new HashMap<>();
-
     }
 
     public InitTask findByName(String name) {
@@ -54,14 +53,13 @@ public class InitTaskManager {
 
     public List<InitTask> getExecuteTaskList() {
         List<InitTask> tasks = gatherTasks();
-        if (tasks == null) {
-            return new ArrayList<>();
-        }
-        for (InitTask task : tasks) {
-            if (task.getName() == null || task.getName().equals("")) {
-                continue;
+        if (tasks != null) {
+            for (InitTask task : tasks) {
+                if (task.getName() == null || task.getName().equals("")) {
+                    continue;
+                }
+                mTasks.put(task.getName(), task);
             }
-            mTasks.put(task.getName(), task);
         }
         return resolveTasksDependency();
     }

@@ -24,6 +24,7 @@ import javassist.bytecode.SignatureAttribute
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import java.io.File
+import java.util.*
 
 /**
  * All router relative code is in here.This class help inject code for Router Jump
@@ -68,6 +69,9 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                     groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
                         arrayListOf()
                     }.add(getNameWithEntryName(entry.name))
+                    groupMap.forEach {
+                        Log.d("${it.key} : ${Arrays.toString(it.value.toArray())}")
+                    }
                 }
             }
         }

@@ -8,9 +8,9 @@ import android.text.TextUtils;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class RouterNode {
-    public static int ACTIVITY = 0x0;
-    public static int SERVICE = 0x1;
-    public static int FRAGMENT = 0x2;
+    final public static int ACTIVITY = 0x0;
+    final public static int SERVICE = 0x1;
+    final public static int FRAGMENT = 0x2;
     protected String mSchema;
     protected String mGroup;
     protected String mPath;

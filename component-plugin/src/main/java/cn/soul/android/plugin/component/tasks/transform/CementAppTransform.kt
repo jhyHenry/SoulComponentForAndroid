@@ -14,6 +14,7 @@ import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.resolve.ZipHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
+import cn.soul.android.plugin.component.utils.Log
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.Format
@@ -91,10 +92,12 @@ class CementAppTransform(private val project: Project) : TypeTraversalTransform(
         }
         ZipHelper.traversalZip(jarInput.file) {
             if (it.name.startsWith(Constants.INIT_TASK_GEN_FILE_FOLDER)) {
+                Log.d("find task:${it.name}")
                 mComponentTaskProviderList.add(getClassNameWithEntryName(it.name))
                 return@traversalZip
             }
             if (it.name.startsWith(Constants.SERVICE_GEN_FILE_FOLDER)) {
+                Log.d("find service:${it.name}")
                 mComponentServiceProviderList.add(getClassNameWithEntryName(it.name))
                 return@traversalZip
             }

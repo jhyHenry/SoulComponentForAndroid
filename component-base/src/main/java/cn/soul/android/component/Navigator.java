@@ -169,19 +169,19 @@ public class Navigator {
         return this;
     }
 
-    public void navigate() {
-        navigate(null);
+    public Object navigate() {
+        return navigate(null);
     }
 
-    public void navigate(Context context) {
-        navigate(0, context, null);
+    public Object navigate(Context context) {
+        return navigate(0, context, null);
     }
 
-    public void navigate(Context context, SoulRouter.NavigateCallback callback) {
-        navigate(0, context, callback);
+    public Object navigate(Context context, SoulRouter.NavigateCallback callback) {
+        return navigate(0, context, callback);
     }
 
-    public void navigate(int requestCode, Context context, SoulRouter.NavigateCallback navigateCallback) {
-        SoulRouter.instance().navigate(requestCode, context, this, navigateCallback);
+    public Object navigate(int requestCode, Context context, SoulRouter.NavigateCallback navigateCallback) {
+        return SoulRouter.instance().navigate(requestCode, context, this, navigateCallback);
     }
 }
