@@ -8,13 +8,10 @@ import android.text.TextUtils;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class RouterNode {
-    final public static int ACTIVITY = 0x0;
-    final public static int SERVICE = 0x1;
-    final public static int FRAGMENT = 0x2;
     protected String mSchema;
     protected String mGroup;
     protected String mPath;
-    protected int mType;
+    protected NodeType mType;
     protected Class<?> mTarget;
     protected Bundle mBundle;
 
@@ -29,7 +26,7 @@ public abstract class RouterNode {
         mGroup = group;
     }
 
-    public abstract int getType();
+    public abstract NodeType getType();
 
     public String getPath() {
         return mPath;

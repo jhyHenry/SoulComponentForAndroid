@@ -4,8 +4,9 @@ import cn.soul.android.component.Constants
 import cn.soul.android.component.annotation.Inject
 import cn.soul.android.component.annotation.Router
 import cn.soul.android.component.exception.InjectTypeException
-import cn.soul.android.component.template.IRouterFactory
+import cn.soul.android.component.node.NodeType
 import cn.soul.android.component.template.IRouterLazyLoader
+import cn.soul.android.component.template.IRouterNodeProvider
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.manager.InjectType.*
@@ -33,7 +34,7 @@ import java.util.*
  * date : 2019-07-19 18:09
  */
 class RouterCompileTransform(private val project: Project) : TypeTraversalTransform() {
-    private val nodeMapByGroup = mutableMapOf<String, ArrayList<Pair<String, String>>>()
+    private val nodeMapByGroup = mutableMapOf<String, ArrayList<NodeInfo>>()
     private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
@@ -54,7 +55,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                     val path = routerAnnotation.path
                     nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, it.name)) {
                         arrayListOf()
-                    }.add(Pair(path, it.name))
+                    }.add(NodeInfo(path, it))
                     if (insertInjectImplement(it)) {
                         it.writeFile(dirInput.file.absolutePath)
                     }
@@ -64,14 +65,15 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
 
     override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
         if (buildType == BuildType.APPLICATION) {
-            ZipHelper.traversalZip(jarInput.file) { entry ->
-                if (entry.name.startsWith(Constants.ROUTER_GEN_FILE_FOLDER)) {
-                    groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
-                        arrayListOf()
-                    }.add(getNameWithEntryName(entry.name))
-                    groupMap.forEach {
-                        Log.d("${it.key} : ${Arrays.toString(it.value.toArray())}")
-                    }
+            return false
+        }
+        ZipHelper.traversalZip(jarInput.file) { entry ->
+            if (entry.name.startsWith(Constants.ROUTER_GEN_FILE_FOLDER)) {
+                groupMap.computeIfAbsent(getGroupWithEntryName(entry.name)) {
+                    arrayListOf()
+                }.add(getNameWithEntryName(entry.name))
+                groupMap.forEach {
+                    Log.d("${it.key} : ${Arrays.toString(it.value.toArray())}")
                 }
             }
         }
@@ -87,7 +89,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
 
         if (nodeMapByGroup.isNotEmpty()) {
             nodeMapByGroup.forEach {
-                genRouterFactoryImpl(dest, it.key, it.value)
+                genRouterProviderImpl(dest, it.key, it.value)
             }
         }
         if (buildType == BuildType.APPLICATION) {
@@ -97,7 +99,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                 }.add(genRouterClassName(it.key))
             }
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
-            InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterFactory::class.java))
+            InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterNodeProvider::class.java))
             Log.d("generate lazy loader")
             genRouterLazyLoaderImpl(dest, groupMap)
         }
@@ -113,7 +115,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         ctClass.declaredFields.forEach {
             var inject = it.getAnnotation(Inject::class.java) ?: return@forEach
             if (Modifier.isFinal(it.modifiers)) {
-                Log.d("skip field ${ctClass.simpleName}.${it.name} inject: cannot inject value for final field.")
+                Log.e("skip field ${ctClass.simpleName}.${it.name} inject: cannot inject value for final field.")
                 return@forEach
             }
             inject = inject as Inject
@@ -252,20 +254,20 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         }
     }
 
-    private fun genRouterFactoryImpl(dir: File, group: String, nodeList: List<Pair<String, String>>) {
+    private fun genRouterProviderImpl(dir: File, group: String, nodeList: List<NodeInfo>) {
         MethodGen(Constants.ROUTER_GEN_FILE_PACKAGE + genRouterClassName(group))
-                .interfaces(IRouterFactory::class.java)
+                .interfaces(IRouterNodeProvider::class.java)
                 .signature(returnStatement = "public java.util.List",
-                        name = "produceRouterNodes")
+                        name = "getRouterNodes")
                 .body { produceNodesMethodBodySrc(nodeList) }
                 .gen()?.writeFile(dir.absolutePath)
     }
 
-    private fun produceNodesMethodBodySrc(nodeList: List<Pair<String, String>>): String {
+    private fun produceNodesMethodBodySrc(nodeList: List<NodeInfo>): String {
         val builder = StringBuilder("{")
                 .append("java.util.ArrayList list = new java.util.ArrayList();")
         nodeList.forEach {
-            builder.append("list.add(new ${Constants.ACTIVITY_NODE_CLASSNAME}(\"${it.first}\", ${it.second}.class));")
+            //            builder.append("list.add(new ${Constants.ACTIVITY_NODE_CLASSNAME}(\"${it.first}\", ${it.second}.class));")
         }
         builder.append("return list;")
                 .append("}")
@@ -332,6 +334,25 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     override fun getName(): String {
         return "routerCompile"
     }
+
+    private fun getNodeType(ctClass: CtClass): NodeType {
+        val classPool = InjectHelper.instance.getClassPool()
+        NodeType.values().forEach { nodeType ->
+            nodeType.supportClasses().forEach support@{
+                if (it == "") {
+                    return@support
+                }
+                val supportClass = classPool[it]
+                if (ctClass.subtypeOf(supportClass)) {
+                    return nodeType
+                }
+            }
+        }
+        return NodeType.UNSPECIFIED
+    }
+
+    data class NodeInfo(val path: String,
+                        val ctClass: CtClass)
 
     data class InjectInfo(val ctField: CtField,
                           val annotationName: String,

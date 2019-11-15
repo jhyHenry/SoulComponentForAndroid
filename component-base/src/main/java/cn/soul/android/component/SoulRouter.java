@@ -88,12 +88,12 @@ public class SoulRouter {
             context = sContext;
         }
         switch (node.getType()) {
-            case RouterNode.ACTIVITY:
+            case ACTIVITY:
                 startActivity(requestCode, context, node, guide);
                 break;
-            case RouterNode.FRAGMENT:
+            case FRAGMENT:
                 return getFragmentInstance((FragmentNode) node, guide);
-            case RouterNode.SERVICE:
+            case COMPONENT_SERVICE:
                 break;
             default:
                 break;

@@ -7,7 +7,7 @@ import java.util.List;
 import cn.soul.android.component.Constants;
 import cn.soul.android.component.exception.HashCollisionException;
 import cn.soul.android.component.node.RouterNode;
-import cn.soul.android.component.template.IRouterFactory;
+import cn.soul.android.component.template.IRouterNodeProvider;
 import cn.soul.android.component.template.IRouterLazyLoader;
 
 /**
@@ -92,9 +92,9 @@ public class Trustee {
                 return;
             }
         }
-        List<IRouterFactory> list = mLazyLoader.lazyLoadFactoryByGroup(group);
-        for (IRouterFactory factory : list) {
-            List<RouterNode> nodes = factory.produceRouterNodes();
+        List<IRouterNodeProvider> list = mLazyLoader.lazyLoadFactoryByGroup(group);
+        for (IRouterNodeProvider factory : list) {
+            List<RouterNode> nodes = factory.getRouterNodes();
             for (RouterNode node : nodes) {
                 table.putNode(node);
             }

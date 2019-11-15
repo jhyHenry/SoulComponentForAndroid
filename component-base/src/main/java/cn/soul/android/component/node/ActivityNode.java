@@ -10,7 +10,7 @@ public class ActivityNode extends RouterNode {
     }
 
     @Override
-    public int getType() {
-        return ACTIVITY;
+    public NodeType getType() {
+        return NodeType.ACTIVITY;
     }
 }

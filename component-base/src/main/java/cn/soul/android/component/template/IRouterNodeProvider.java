@@ -7,6 +7,6 @@ import cn.soul.android.component.node.RouterNode;
 /**
  * Created by nebula on 2019-07-21
  */
-public interface IRouterFactory {
-    List<RouterNode> produceRouterNodes();
+public interface IRouterNodeProvider {
+    List<RouterNode> getRouterNodes();
 }

@@ -8,5 +8,5 @@ import java.util.List;
  * date : 2019-09-04 15:56
  */
 public interface IRouterLazyLoader {
-    List<IRouterFactory> lazyLoadFactoryByGroup(String group);
+    List<IRouterNodeProvider> lazyLoadFactoryByGroup(String group);
 }
