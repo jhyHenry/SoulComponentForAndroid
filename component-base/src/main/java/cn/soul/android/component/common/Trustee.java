@@ -3,8 +3,10 @@ package cn.soul.android.component.common;
 import android.util.SparseArray;
 
 import java.util.List;
+import java.util.Map;
 
 import cn.soul.android.component.Constants;
+import cn.soul.android.component.IComponentService;
 import cn.soul.android.component.exception.HashCollisionException;
 import cn.soul.android.component.node.RouterNode;
 import cn.soul.android.component.template.IRouterNodeProvider;
@@ -20,6 +22,7 @@ public class Trustee {
 
     private SparseArray<RouterTable> mRouterMapByGroup;
     private IRouterLazyLoader mLazyLoader;
+    private Map<Class<? extends IComponentService>, IComponentService> mComponentServiceContainer;
 
     private Trustee() {
         mRouterMapByGroup = new SparseArray<>();
@@ -46,6 +49,12 @@ public class Trustee {
         String group = getGroupByPath(path);
         RouterTable table = getRouterTable(group);
         return table.getNode(path);
+    }
+
+    public synchronized void release() {
+        mComponentServiceContainer = null;
+        mRouterMapByGroup = null;
+        mLazyLoader = null;
     }
 
     private RouterTable getRouterTable(String group) {

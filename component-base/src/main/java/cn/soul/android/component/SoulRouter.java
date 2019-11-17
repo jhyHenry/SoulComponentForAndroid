@@ -32,7 +32,7 @@ public class SoulRouter {
 
         void onLost(String path);
 
-        void onArrival(RouterNode node);
+        void onError(RouterNode node, Exception e);
     }
 
     public static void init(SoulRouterConfig config) {
@@ -96,13 +96,19 @@ public class SoulRouter {
                 break;
             case FRAGMENT:
                 try {
-                    return  getFragmentInstance((FragmentNode) node, guide);
+                    return getFragmentInstance((FragmentNode) node, guide);
                 } catch (InstantiationException e) {
+                    if (callback != null) {
+                        callback.onError(node, e);
+                    }
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
+                    if (callback != null) {
+                        callback.onError(node, e);
+                    }
                     e.printStackTrace();
                 }
-                return  null;
+                return null;
             case COMPONENT_SERVICE:
                 break;
             default:
