@@ -2,6 +2,8 @@ package cn.soul.android.component;
 
 import cn.soul.android.component.node.ActivityNode;
 import cn.soul.android.component.node.FragmentNode;
+import cn.soul.android.component.node.NodeType;
+import cn.soul.android.component.node.RouterNodeFactory;
 import cn.soul.android.component.template.IInjectable;
 import cn.soul.android.component.template.IRouterNodeProvider;
 import cn.soul.android.component.template.IRouterLazyLoader;
@@ -28,8 +30,10 @@ public class Constants {
     public final static String SOUL_ROUTER_CLASSNAME = SoulRouter.class.getName();
     public final static String ACTIVITY_NODE_CLASSNAME = ActivityNode.class.getName();
     public final static String FRAGMENT_NODE_CLASSNAME = FragmentNode.class.getName();
+    public final static String NODE_TYPE_CLASSNAME = NodeType.class.getName();
+    public final static String NODE_FACTORY_CLASSNAME = RouterNodeFactory.class.getName();
     public final static String ROUTER_LAZY_LOADER_CLASSNAME = IRouterLazyLoader.class.getName();
-    public final static String ROUTER_FACTORY_CLASSNAME = IRouterNodeProvider.class.getName();
+    public final static String ROUTER_PROVIDER_CLASSNAME = IRouterNodeProvider.class.getName();
     public final static String COMPONENT_SERVICE_CLASSNAME = IComponentService.class.getName();
     public final static String INJECTABLE_CLASSNAME = IInjectable.class.getName();
     public final static String REPLACE_META_NAME = "cement_replace_real_app";

@@ -1,10 +1,7 @@
 package cn.soul.android.component.combine;
 
-import org.jgrapht.Graph;
-import org.jgrapht.alg.cycle.SzwarcfiterLauerSimpleCycles;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.traverse.TopologicalOrderIterator;
+import com.google.common.graph.GraphBuilder;
+import com.google.common.graph.MutableGraph;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +11,7 @@ import java.util.Map;
 
 import cn.soul.android.component.Constants;
 import cn.soul.android.component.exception.InitTaskExecuteException;
+import cn.soul.android.component.graph.Graphs;
 
 /**
  * @author panxinghai
@@ -79,40 +77,60 @@ public class InitTaskManager {
         return null;
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     private List<InitTask> resolveTasksDependency() throws InitTaskExecuteException {
-        Graph<InitTask, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        MutableGraph<InitTask> graph = GraphBuilder.directed()
+                .build();
         for (InitTask task : mTasks.values()) {
-            graph.addVertex(task);
+            graph.addNode(task);
             task.onConfigure();
             task.onDependency();
         }
         for (InitTask task : mTasks.values()) {
             for (InitTask depTask : task.getDependencyTasks()) {
-                graph.addEdge(depTask, task);
+                graph.putEdge(depTask, task);
             }
         }
+        Iterator<InitTask> iterator = Graphs.topologicallySortedNodes(graph).iterator();
+        List<InitTask> result = new ArrayList<>();
+        while (iterator.hasNext()) {
+            result.add(iterator.next());
+        }
+        return result;
 
-        Iterator<InitTask> iterator = new TopologicalOrderIterator<>(graph);
-        try {
-            List<InitTask> result = new ArrayList<>();
-            while (iterator.hasNext()) {
-                result.add(iterator.next());
-            }
-            return result;
-        } catch (Exception e) {
-            SzwarcfiterLauerSimpleCycles<InitTask, DefaultEdge> simpleCycles = new SzwarcfiterLauerSimpleCycles<>(graph);
-            List<List<InitTask>> cycles = simpleCycles.findSimpleCycles();
-            StringBuilder sb = new StringBuilder("detect initTasks dependency cycle(s):\n");
-            for (List<InitTask> cycle : cycles) {
-                sb.append("\t");
-                for (InitTask task : cycle) {
-                    sb.append(task.getName()).append(" -> ");
-                }
-                sb.append(cycle.get(0).getName())
-                        .append("\n");
-            }
-            sb.delete(sb.length() - 1, sb.length());
-            throw new InitTaskExecuteException(sb.toString());
-        }
+//        Graph<InitTask, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+//        for (InitTask task : mTasks.values()) {
+//            graph.addVertex(task);
+//            task.onConfigure();
+//            task.onDependency();
+//        }
+//        for (InitTask task : mTasks.values()) {
+//            for (InitTask depTask : task.getDependencyTasks()) {
+//                graph.addEdge(depTask, task);
+//            }
+//        }
+//
+//        Iterator<InitTask> iterator = new TopologicalOrderIterator<>(graph);
+//        try {
+//            List<InitTask> result = new ArrayList<>();
+//            while (iterator.hasNext()) {
+//                result.add(iterator.next());
+//            }
+//            return result;
+//        } catch (Exception e) {
+//            SzwarcfiterLauerSimpleCycles<InitTask, DefaultEdge> simpleCycles = new SzwarcfiterLauerSimpleCycles<>(graph);
+//            List<List<InitTask>> cycles = simpleCycles.findSimpleCycles();
+//            StringBuilder sb = new StringBuilder("detect initTasks dependency cycle(s):\n");
+//            for (List<InitTask> cycle : cycles) {
+//                sb.append("\t");
+//                for (InitTask task : cycle) {
+//                    sb.append(task.getName()).append(" -> ");
+//                }
+//                sb.append(cycle.get(0).getName())
+//                        .append("\n");
+//            }
+//            sb.delete(sb.length() - 1, sb.length());
+//            throw new InitTaskExecuteException(sb.toString());
+//        }
     }
 }

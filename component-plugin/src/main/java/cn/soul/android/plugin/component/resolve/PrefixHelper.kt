@@ -91,16 +91,16 @@ class PrefixHelper {
             }.add(attribute.value)
         }
         componentResMap.forEach {
-            Log.e("${it.key}:")
+            Log.d("${it.key}:")
             it.value.forEach { value ->
-                Log.e("\t $value")
+                Log.d("\t $value")
             }
         }
-        Log.e("end")
+        Log.d("end")
     }
 
     fun prefixResourceFile(file: File) {
-        Log.e("prefix: ${file.name}")
+        Log.d("prefix: ${file.name}")
         if (file.name.split('.')[1] != "xml") {
             return
         }

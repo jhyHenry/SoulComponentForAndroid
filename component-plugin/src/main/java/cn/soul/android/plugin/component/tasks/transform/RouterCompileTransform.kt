@@ -53,10 +53,11 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
                 }.forEach {
                     val routerAnnotation = it.getAnnotation(Router::class.java) as Router
                     val path = routerAnnotation.path
+                    val nodeInfo = NodeInfo(path, it)
                     nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, it.name)) {
                         arrayListOf()
-                    }.add(NodeInfo(path, it))
-                    if (insertInjectImplement(it)) {
+                    }.add(nodeInfo)
+                    if (insertInjectImplement(nodeInfo)) {
                         it.writeFile(dirInput.file.absolutePath)
                     }
                 }
@@ -64,7 +65,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
     }
 
     override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
-        if (buildType == BuildType.APPLICATION) {
+        if (buildType == BuildType.COMPONENT) {
             return false
         }
         ZipHelper.traversalZip(jarInput.file) { entry ->
@@ -96,7 +97,7 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             nodeMapByGroup.forEach {
                 groupMap.computeIfAbsent(it.key) {
                     arrayListOf()
-                }.add(genRouterClassName(it.key))
+                }.add(genRouterProviderClassName(it.key))
             }
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterNodeProvider::class.java))
@@ -109,9 +110,15 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
      *
      * @return if return true, this class need writeFile()
      */
-    private fun insertInjectImplement(ctClass: CtClass): Boolean {
+    private fun insertInjectImplement(nodeInfo: NodeInfo): Boolean {
         val injectInfoList = arrayListOf<InjectInfo>()
         val classPool = InjectHelper.instance.getClassPool()
+        if (nodeInfo.type != NodeType.ACTIVITY && nodeInfo.type != NodeType.FRAGMENT) {
+            //one inject for activity and fragment
+            return false
+        }
+
+        val ctClass = nodeInfo.ctClass
         ctClass.declaredFields.forEach {
             var inject = it.getAnnotation(Inject::class.java) ?: return@forEach
             if (Modifier.isFinal(it.modifiers)) {
@@ -127,29 +134,34 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
             injectInfoList.add(InjectInfo(it, annotationName, ctClass))
         }
         if (injectInfoList.size > 0) {
+            val isFragment = nodeInfo.type == NodeType.FRAGMENT
             try {
                 val method = ctClass.getDeclaredMethod("autoSynthetic\$FieldInjectSoulComponent")
-                method.setBody(produceInjectMethod(injectInfoList))
+                method.setBody(produceInjectMethod(isFragment, injectInfoList))
             } catch (e: Exception) {
                 ctClass.addInterface(classPool[Constants.INJECTABLE_CLASSNAME])
-                ctClass.addMethod(genAutoSyntheticInjectMethod(injectInfoList, ctClass))
+                ctClass.addMethod(genAutoSyntheticInjectMethod(isFragment, injectInfoList, ctClass))
             }
         }
         return injectInfoList.size > 0
     }
 
-    private fun genAutoSyntheticInjectMethod(infoList: ArrayList<InjectInfo>, ctClass: CtClass): CtMethod {
-        return CtMethod.make("public void autoSynthetic\$FieldInjectSoulComponent()${produceInjectMethod(infoList)}", ctClass)
+    private fun genAutoSyntheticInjectMethod(isFragment: Boolean, infoList: ArrayList<InjectInfo>, ctClass: CtClass): CtMethod {
+        return CtMethod.make("public void autoSynthetic\$FieldInjectSoulComponent()${produceInjectMethod(isFragment, infoList)}", ctClass)
     }
 
-    private fun produceInjectMethod(infoList: ArrayList<InjectInfo>): String {
+    private fun produceInjectMethod(isFragment: Boolean, infoList: ArrayList<InjectInfo>): String {
         val stringBuilder = StringBuilder("{")
         if (infoList.size > 0) {
             stringBuilder.append("if(!(\$0 instanceof ${Constants.INJECTABLE_CLASSNAME})){return;}")
+            stringBuilder.append(
+                    if (!isFragment) "android.content.Intent var = getIntent()"
+                    else "android.os.Bundle var = getArguments();")
+                    .append("if(var == null){return;}")
             infoList.forEach {
                 stringBuilder.append("${it.fieldName} = ")
                         .append(getPrefixStatement(it))
-                        .append(getExtraStatement(it))
+                        .append(getExtraStatement(isFragment, it))
             }
         }
         stringBuilder.append("}")
@@ -160,102 +172,129 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         val type = injectInfo.type
         val classType = injectInfo.classType
         return when (values()[type]) {
-            SERIALIZABLE, PARCELABLE_ARRAY, PARCELABLE -> "(${classType.name})getIntent()."
-            else -> "getIntent()."
+            SERIALIZABLE, PARCELABLE_ARRAY, PARCELABLE -> "(${classType.name})var."
+            else -> "var."
         }
     }
 
-    private fun getExtraStatement(injectInfo: InjectInfo): String {
+    private fun getExtraStatement(isFragment: Boolean, injectInfo: InjectInfo): String {
         val type = injectInfo.type
         val annotationName = injectInfo.annotationName
         val fieldName = injectInfo.fieldName
         return when (values()[type]) {
             INTEGER -> {
-                "getIntExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getInt(\"$annotationName\", $fieldName);"
+                else "getIntExtra(\"$annotationName\", $fieldName);"
             }
             INT_ARRAY -> {
-                "getIntArrayExtra(\"$annotationName\");"
+                if (isFragment) "getIntArray(\"$annotationName\");"
+                else "getIntArrayExtra(\"$annotationName\");"
             }
             INT_LIST -> {
-                "getIntegerArrayListExtra(\"$annotationName\");"
+                if (isFragment) "getIntegerArrayList(\"$annotationName\");"
+                else "getIntegerArrayListExtra(\"$annotationName\");"
             }
             BOOLEAN -> {
-                "getBooleanExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getBoolean(\"$annotationName\", $fieldName);"
+                else "getBooleanExtra(\"$annotationName\", $fieldName);"
             }
             BOOLEAN_ARRAY -> {
-                "getBooleanArrayExtra(\"$annotationName\");"
+                if (isFragment) "getBooleanArray(\"$annotationName\");"
+                else "getBooleanArrayExtra(\"$annotationName\");"
             }
             STRING -> {
-                "getStringExtra(\"$annotationName\");"
+                if (isFragment) "getString(\"$annotationName\");"
+                else "getStringExtra(\"$annotationName\");"
             }
             STRING_ARRAY -> {
-                "getStringArrayExtra(\"$annotationName\");"
+                if (isFragment) "getStringArray(\"$annotationName\");"
+                else "getStringArrayExtra(\"$annotationName\");"
             }
             STRING_LIST -> {
-                "getStringArrayListExtra(\"$annotationName\");"
+                if (isFragment) "getStringArrayList(\"$annotationName\");"
+                else "getStringArrayListExtra(\"$annotationName\");"
             }
             CHARACTER -> {
-                "getCharExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getChar(\"$annotationName\", $fieldName);"
+                else "getCharExtra(\"$annotationName\", $fieldName);"
             }
             CHAR_ARRAY -> {
-                "getCharArrayExtra(\"$annotationName\");"
+                if (isFragment) "getCharArray(\"$annotationName\");"
+                else "getCharArrayExtra(\"$annotationName\");"
             }
             SERIALIZABLE -> {
-                "getSerializableExtra(\"$annotationName\");"
+                if (isFragment) "getSerializable(\"$annotationName\");"
+                else "getSerializableExtra(\"$annotationName\");"
             }
             PARCELABLE -> {
-                "getParcelableExtra(\"$annotationName\");"
+                if (isFragment) "getParcelable(\"$annotationName\");"
+                else "getParcelableExtra(\"$annotationName\");"
             }
             PARCELABLE_ARRAY -> {
-                "getParcelableArrayExtra(\"$annotationName\");"
+                if (isFragment) "getParcelableArray(\"$annotationName\");"
+                else "getParcelableArrayExtra(\"$annotationName\");"
             }
             PARCELABLE_LIST -> {
-                "getParcelableArrayListExtra(\"$annotationName\");"
+                if (isFragment) "getParcelableArrayList(\"$annotationName\");"
+                else "getParcelableArrayListExtra(\"$annotationName\");"
             }
             BYTE -> {
-                "getByteExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getByte(\"$annotationName\", $fieldName);"
+                else "getByteExtra(\"$annotationName\", $fieldName);"
             }
             BYTE_ARRAY -> {
-                "getByteArrayExtra(\"$annotationName\");"
+                if (isFragment) "getByteArray(\"$annotationName\");"
+                else "getByteArrayExtra(\"$annotationName\");"
             }
             DOUBLE -> {
-                "getDoubleExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getDouble(\"$annotationName\", $fieldName);"
+                else "getDoubleExtra(\"$annotationName\", $fieldName);"
             }
             DOUBLE_ARRAY -> {
-                "getDoubleArrayExtra(\"$annotationName\");"
+                if (isFragment) "getDoubleArray(\"$annotationName\");"
+                else "getDoubleArrayExtra(\"$annotationName\");"
             }
             FLOAT -> {
-                "getFloatExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getFloat(\"$annotationName\", $fieldName);"
+                else "getFloatExtra(\"$annotationName\", $fieldName);"
             }
             FLOAT_ARRAY -> {
-                "getFloatArrayExtra(\"$annotationName\");"
+                if (isFragment) "getFloatArray(\"$annotationName\");"
+                else "getFloatArrayExtra(\"$annotationName\");"
             }
             LONG -> {
-                "getLongExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getLong(\"$annotationName\", $fieldName);"
+                else "getLongExtra(\"$annotationName\", $fieldName);"
             }
             LONG_ARRAY -> {
-                "getLongArrayExtra(\"$annotationName\");"
+                if (isFragment) "getLongArray(\"$annotationName\");"
+                else "getLongArrayExtra(\"$annotationName\");"
             }
             SHORT -> {
-                "getShortExtra(\"$annotationName\", $fieldName);"
+                if (isFragment) "getShort(\"$annotationName\", $fieldName);"
+                else "getShortExtra(\"$annotationName\", $fieldName);"
             }
             SHORT_ARRAY -> {
-                "getShortArrayExtra(\"$annotationName\");"
+                if (isFragment) "getShortArray(\"$annotationName\");"
+                else "getShortArrayExtra(\"$annotationName\");"
             }
             CHAR_SEQUENCE -> {
-                "getCharSequenceExtra(\"$annotationName\");"
+                if (isFragment) "getCharSequence(\"$annotationName\");"
+                else "getCharSequenceExtra(\"$annotationName\");"
             }
             CHAR_SEQUENCE_ARRAY -> {
-                "getCharSequenceArrayExtra(\"$annotationName\");"
+                if (isFragment) "getCharSequenceArray(\"$annotationName\");"
+                else "getCharSequenceArrayExtra(\"$annotationName\");"
             }
             CHAR_SEQUENCE_LIST -> {
-                "getCharSequenceArrayListExtra(\"$annotationName\");"
+                if (isFragment) "getCharSequenceArrayList(\"$annotationName\");"
+                else "getCharSequenceArrayListExtra(\"$annotationName\");"
             }
         }
     }
 
     private fun genRouterProviderImpl(dir: File, group: String, nodeList: List<NodeInfo>) {
-        MethodGen(Constants.ROUTER_GEN_FILE_PACKAGE + genRouterClassName(group))
+        MethodGen(Constants.ROUTER_GEN_FILE_PACKAGE + genRouterProviderClassName(group))
                 .interfaces(IRouterNodeProvider::class.java)
                 .signature(returnStatement = "public java.util.List",
                         name = "getRouterNodes")
@@ -267,7 +306,8 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         val builder = StringBuilder("{")
                 .append("java.util.ArrayList list = new java.util.ArrayList();")
         nodeList.forEach {
-            //            builder.append("list.add(new ${Constants.ACTIVITY_NODE_CLASSNAME}(\"${it.first}\", ${it.second}.class));")
+            val typeStr = "${Constants.NODE_TYPE_CLASSNAME}.${it.type}"
+            builder.append("list.add(${Constants.NODE_FACTORY_CLASSNAME}.produceRouterNode($typeStr, \"${it.path}\", ${it.ctClass.name}.class));")
         }
         builder.append("return list;")
                 .append("}")
@@ -305,14 +345,14 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         return sb.toString()
     }
 
-    private fun genRouterClassName(group: String): String {
+    private fun genRouterProviderClassName(group: String): String {
         val componentName = getComponentExtension().componentName
-        return "$group\$$componentName\$NodeFactory"
+        return "$group\$$componentName\$NodeProvider"
     }
 
     private fun getComponentExtension(): ComponentExtension {
         return project.extensions.findByType(ComponentExtension::class.java)
-                ?: throw RuntimeException("can not find ComponentExtension, please check your build.gradle file")
+                ?: throw GradleException("can not find ComponentExtension, please check your build.gradle file")
     }
 
     private fun getGroupWithPath(path: String, clazz: String): String {
@@ -335,24 +375,31 @@ class RouterCompileTransform(private val project: Project) : TypeTraversalTransf
         return "routerCompile"
     }
 
-    private fun getNodeType(ctClass: CtClass): NodeType {
-        val classPool = InjectHelper.instance.getClassPool()
-        NodeType.values().forEach { nodeType ->
-            nodeType.supportClasses().forEach support@{
-                if (it == "") {
-                    return@support
-                }
-                val supportClass = classPool[it]
-                if (ctClass.subtypeOf(supportClass)) {
-                    return nodeType
-                }
-            }
-        }
-        return NodeType.UNSPECIFIED
-    }
 
     data class NodeInfo(val path: String,
-                        val ctClass: CtClass)
+                        val ctClass: CtClass) {
+        val type = getNodeType(ctClass)
+
+        private fun getNodeType(ctClass: CtClass): NodeType {
+            val classPool = InjectHelper.instance.getClassPool()
+            NodeType.values().forEach { nodeType ->
+                nodeType.supportClasses().forEach support@{
+                    if (it == "") {
+                        return@support
+                    }
+                    try {
+                        val supportClass = classPool[it]
+                        if (ctClass.subtypeOf(supportClass)) {
+                            return nodeType
+                        }
+                    } catch (e: Exception) {
+                        Log.e("cannot got $it in ctClass when check node type. " + e.message)
+                    }
+                }
+            }
+            return NodeType.UNSPECIFIED
+        }
+    }
 
     data class InjectInfo(val ctField: CtField,
                           val annotationName: String,

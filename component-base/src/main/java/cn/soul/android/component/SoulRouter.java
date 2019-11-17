@@ -40,8 +40,11 @@ public class SoulRouter {
             return;
         }
         isInit = true;
-        instance().mNavigateCallback = config.navigateCallback;
+        if (config == null) {
+            throw new IllegalArgumentException("SoulRouterConfig cannot be null");
+        }
         sContext = config.context;
+        instance().mNavigateCallback = config.navigateCallback;
     }
 
     public static SoulRouter instance() {
@@ -92,7 +95,14 @@ public class SoulRouter {
                 startActivity(requestCode, context, node, guide);
                 break;
             case FRAGMENT:
-                return getFragmentInstance((FragmentNode) node, guide);
+                try {
+                    return  getFragmentInstance((FragmentNode) node, guide);
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                return  null;
             case COMPONENT_SERVICE:
                 break;
             default:
@@ -101,17 +111,10 @@ public class SoulRouter {
         return null;
     }
 
-    private Fragment getFragmentInstance(FragmentNode routerNode, Navigator guide) {
-        try {
-            Fragment fragment = (Fragment) routerNode.getTarget().newInstance();
-            fragment.setArguments(guide.bundle);
-            return fragment;
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        }
-        return null;
+    private Fragment getFragmentInstance(FragmentNode routerNode, Navigator guide) throws InstantiationException, IllegalAccessException {
+        Fragment fragment = (Fragment) routerNode.getTarget().newInstance();
+        fragment.setArguments(guide.bundle);
+        return fragment;
     }
 
     private void startActivity(int requestCode, Context context, RouterNode node, Navigator guide) {

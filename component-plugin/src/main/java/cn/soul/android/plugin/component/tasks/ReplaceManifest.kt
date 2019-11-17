@@ -27,11 +27,11 @@ open class ReplaceManifest : AndroidVariantTask() {
 
         val applicationElement = root.element(AndroidXmlHelper.TAG_APPLICATION)
         val attribute = applicationElement.attribute(AndroidXmlHelper.getAndroidQName("name"))
+                ?: return
 
         val element = applicationElement.addElement("meta-data")
         element.addAttribute("android:name", Constants.REPLACE_META_NAME)
         element.addAttribute("android:value", attribute.value)
-
         attribute.value = Constants.REPLACE_APPLICATION_NAME
         FileWriter(manifestFile!!).use {
             XMLWriter(it).apply {

@@ -138,7 +138,7 @@ open class PrefixResources : AndroidVariantTask() {
             val elements = element.elements(it.elementName())
             prefixElements(elements, it)
             elements.forEach { element ->
-                Log.e(element.name + ":" + it.elementName())
+                Log.d(element.name + ":" + it.elementName())
                 traversalElementByElementPrefix(element, it.childElementPrefixes())
             }
         }

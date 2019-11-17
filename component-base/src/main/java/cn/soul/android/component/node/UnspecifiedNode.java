@@ -12,6 +12,6 @@ public class UnspecifiedNode extends RouterNode{
 
     @Override
     public NodeType getType() {
-        return null;
+        return NodeType.UNSPECIFIED;
     }
 }
