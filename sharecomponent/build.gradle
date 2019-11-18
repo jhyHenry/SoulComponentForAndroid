@@ -11,8 +11,6 @@ android {
         versionName "1.0"
 
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [host: "share"]
@@ -37,7 +35,6 @@ android {
 
     configurations.all {
         resolutionStrategy {
-            force 'com.android.support:support-v4:28.0.0'
         }
     }
 
@@ -45,10 +42,6 @@ android {
 
 dependencies {
     annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }

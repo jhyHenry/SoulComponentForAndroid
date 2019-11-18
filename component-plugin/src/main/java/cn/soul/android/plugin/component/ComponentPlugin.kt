@@ -13,18 +13,13 @@ import com.android.build.api.transform.Transform
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.internal.TaskManager.createAndroidJarConfig
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
-import com.android.build.gradle.internal.scope.GlobalScope
-import com.android.build.gradle.options.ProjectOptions
-import com.android.builder.profile.Recorder
-import com.android.builder.profile.ThreadRecorder
 import com.android.utils.StringHelper
 import com.google.common.base.CaseFormat
-import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.util.*
 import java.util.stream.Collectors
 
 /**
@@ -36,10 +31,7 @@ class ComponentPlugin : Plugin<Project> {
     private lateinit var extension: BaseExtension
     private lateinit var pluginExtension: ComponentExtension
     private lateinit var project: Project
-    private lateinit var projectOptions: ProjectOptions
-    private lateinit var threadRecorder: Recorder
     private lateinit var taskManager: TaskManager
-    private var globalScope: GlobalScope? = null
 
     private var mPrefixRTransform: PrefixRTransform? = null
     private var mRouterCompileTransform: RouterCompileTransform? = null
@@ -47,11 +39,14 @@ class ComponentPlugin : Plugin<Project> {
 
     override fun apply(p: Project) {
         project = p
-        projectOptions = ProjectOptions(p)
-        threadRecorder = ThreadRecorder.get()
         taskManager = TaskManager(p)
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
+        if (isRunForAar()) {
+            p.plugins.apply("com.android.library")
+        } else {
+            p.plugins.apply("com.android.application")
+        }
 
         pluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         mRouterCompileTransform = RouterCompileTransform(project)
@@ -61,25 +56,8 @@ class ComponentPlugin : Plugin<Project> {
         project.extensions.findByType(BaseExtension::class.java)?.registerTransform(mCementTransform)
         project.afterEvaluate {
             pluginExtension.ensureComponentExtension(project)
+            configureProject()
 
-            threadRecorder.record(
-                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
-                    project.path,
-                    null,
-                    this::configureProject
-            )
-            threadRecorder.record(
-                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSION_CREATION,
-                    project.path,
-                    null,
-                    this::configureExtension
-            )
-            threadRecorder.record(
-                    GradleBuildProfileSpan.ExecutionType.BASE_PLUGIN_PROJECT_TASKS_CREATION,
-                    project.path,
-                    null,
-                    this::createTasks
-            )
             //if only run component task, skip some time consuming operations
             StatusManager.isRunComponentTaskOnly = isRunComponentTaskOnly()
             Log.d("component run as:${if (StatusManager.isRunComponentTaskOnly) "component" else "app"}")
@@ -104,6 +82,18 @@ class ComponentPlugin : Plugin<Project> {
         pluginExtension.dependencies.appendInterfaceApis(project, needAddDependencies)
     }
 
+    private fun isRunForAar(): Boolean {
+        val gradle = project.gradle
+        val taskNames = gradle.startParameter.taskNames
+        if (taskNames.size == 1) {
+            val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
+            return taskName == "uploadComponent" ||
+                    taskName.toLowerCase(Locale.getDefault()).startsWith("bundle") &&
+                    taskName.toLowerCase(Locale.getDefault()).endsWith("aar")
+        }
+        return false
+    }
+
     private fun isRunComponentTaskOnly(): Boolean {
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
@@ -119,27 +109,6 @@ class ComponentPlugin : Plugin<Project> {
             }
         }
         return false
-    }
-
-    private fun configureExtension() {
-        Log.p(msg = "configure extension.")
-        val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
-        val variantManager = appPlugin.variantManager
-        val scope = variantManager.variantScopes[0]
-        val realScope = scope.globalScope
-        globalScope = GlobalScope(
-                realScope.project,
-                realScope.filesProvider,
-                realScope.projectOptions,
-                realScope.dslScope,
-                realScope.androidBuilder,
-                realScope.sdkHandler,
-                realScope.toolingRegistry,
-                realScope.buildCache
-        )
-        globalScope?.setAndroidJarConfig(createAndroidJarConfig(project))
-        extension = scope.globalScope.extension as BaseExtension
-        globalScope?.extension = extension
     }
 
     private fun createTasks() {
