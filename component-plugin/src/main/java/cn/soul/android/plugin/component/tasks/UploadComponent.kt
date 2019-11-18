@@ -1,7 +1,7 @@
 package cn.soul.android.plugin.component.tasks
 
-import cn.soul.android.plugin.component.PluginVariantScope
 import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.MavenPlugin
@@ -14,10 +14,10 @@ import java.io.File
  * reference [MavenPlugin]
  */
 open class UploadComponent : Upload() {
-    class ConfigAction(private val scope: PluginVariantScope,
+    class ConfigAction(private val scope: VariantScope,
                        private val project: Project) : TaskConfigAction<UploadComponent> {
         override fun getName(): String {
-            return "uploadComponent${scope.getVariantConfiguration().flavorName.capitalize()}"
+            return "uploadComponent${scope.variantConfiguration.flavorName.capitalize()}"
         }
 
         override fun getType(): Class<UploadComponent> {

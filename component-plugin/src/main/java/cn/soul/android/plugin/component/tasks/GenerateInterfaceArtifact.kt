@@ -1,9 +1,9 @@
 package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.component.IComponentService
-import cn.soul.android.plugin.component.PluginVariantScope
 import cn.soul.android.plugin.component.utils.InjectHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.utils.FileUtils
 import javassist.CtClass
@@ -200,7 +200,7 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
     }
 
 
-    class ConfigAction(private val scope: PluginVariantScope,
+    class ConfigAction(private val scope: VariantScope,
                        private val sourceDir: File)
         : TaskConfigAction<GenerateInterfaceArtifact> {
         override fun getName(): String {
@@ -215,9 +215,9 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
             task.variantName = scope.fullVariantName
             task.sourceDir = sourceDir
             task.destDir = FileUtils.join(
-                    scope.getIntermediatesDir(),
+                    scope.globalScope.intermediatesDir,
                     "gen-interface-artifact",
-                    scope.getVariantConfiguration().dirName)
+                    scope.variantConfiguration.dirName)
 
         }
     }

@@ -1,6 +1,5 @@
 package cn.soul.android.plugin.component.tasks
 
-import cn.soul.android.plugin.component.PluginVariantScope
 import cn.soul.android.plugin.component.custom.AdaptiveIconPrefix
 import cn.soul.android.plugin.component.custom.BitmapPrefix
 import cn.soul.android.plugin.component.custom.IElementPrefix
@@ -8,6 +7,7 @@ import cn.soul.android.plugin.component.custom.SelectorPrefix
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import org.dom4j.Attribute
 import org.dom4j.Element
@@ -210,7 +210,7 @@ open class PrefixResources : AndroidVariantTask() {
     }
 
 
-    class ConfigAction(private val scope: PluginVariantScope,
+    class ConfigAction(private val scope: VariantScope,
                        private val packagedResFolder: File,
                        private val prefix: String) : TaskConfigAction<PrefixResources> {
         override fun getType(): Class<PrefixResources> {

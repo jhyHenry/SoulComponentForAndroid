@@ -1,9 +1,9 @@
 package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.component.Constants
-import cn.soul.android.plugin.component.PluginVariantScope
 import cn.soul.android.plugin.component.utils.AndroidXmlHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import org.dom4j.io.SAXReader
 import org.dom4j.io.XMLWriter
@@ -41,7 +41,7 @@ open class ReplaceManifest : AndroidVariantTask() {
 
     }
 
-    class ConfigAction(private val scope: PluginVariantScope,
+    class ConfigAction(private val scope: VariantScope,
                        private val manifestFile: File) : TaskConfigAction<ReplaceManifest> {
         override fun getName(): String {
             return scope.getTaskName("Replace", "Manifest")
@@ -53,7 +53,7 @@ open class ReplaceManifest : AndroidVariantTask() {
 
         override fun execute(task: ReplaceManifest) {
             task.manifestFile = manifestFile
-            task.variantName = scope.getFullName()
+            task.variantName = scope.fullVariantName
         }
     }
 }

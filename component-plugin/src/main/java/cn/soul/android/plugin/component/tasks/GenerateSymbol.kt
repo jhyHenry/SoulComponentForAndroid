@@ -1,12 +1,12 @@
 package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.plugin.component.ComponentArtifactType
-import cn.soul.android.plugin.component.PluginVariantScope
 import com.android.build.api.artifact.BuildableArtifact
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.ExistingBuildElements
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.TaskInputHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ProcessAndroidResources
@@ -133,7 +133,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
 
 
     class ConfigAction(
-            private val variantScope: PluginVariantScope,
+            private val variantScope: VariantScope,
             private val symbolFile: File,
             private val symbolsWithPackageNameOutputFile: File
     ) : TaskConfigAction<GenerateSymbol> {

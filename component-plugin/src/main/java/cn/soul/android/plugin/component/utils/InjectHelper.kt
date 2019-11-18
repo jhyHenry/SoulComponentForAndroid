@@ -1,6 +1,6 @@
 package cn.soul.android.plugin.component.utils
 
-import com.android.build.gradle.AppExtension
+import com.android.build.gradle.BaseExtension
 import javassist.ClassClassPath
 import javassist.ClassPool
 import javassist.CtClass
@@ -29,7 +29,7 @@ class InjectHelper private constructor() {
     }
 
     fun appendAndroidPlatformPath(project: Project) {
-        val extension = project.extensions.getByName("android") as AppExtension
+        val extension = project.extensions.getByName("android") as BaseExtension
         getClassPool().appendClassPath(File(extension.sdkDirectory, "platforms/${extension.compileSdkVersion}/android.jar").absolutePath)
     }
 

@@ -1,12 +1,10 @@
 package cn.soul.android.plugin.component.tasks
 
-import cn.soul.android.plugin.component.PluginVariantScope
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.AndroidXmlHelper
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
-import com.google.common.collect.ImmutableList
 import org.dom4j.QName
 import org.dom4j.io.SAXReader
 import org.dom4j.io.XMLWriter
@@ -15,6 +13,8 @@ import java.io.File
 import java.io.FileWriter
 
 /**
+ * refine manifest, remove all attributes which will define in application's manifest. This task only
+ * run in component package.
  * @author panxinghai
  *
  * date : 2019-07-18 15:20
@@ -83,7 +83,7 @@ open class RefineManifest : AndroidVariantTask() {
 
     }
 
-    class ConfigAction(private val scope: PluginVariantScope,
+    class ConfigAction(private val scope: VariantScope,
                        private val manifestFile: File) : TaskConfigAction<RefineManifest> {
         override fun getName(): String {
             return scope.getTaskName("Refine", "Manifest")
@@ -95,17 +95,11 @@ open class RefineManifest : AndroidVariantTask() {
 
         override fun execute(task: RefineManifest) {
             task.manifestFile = manifestFile
-            task.variantName = scope.getFullName()
+            task.variantName = scope.fullVariantName
 
-            scope.getTaskContainer().pluginRefineManifest = task
-            task.dependsOn(scope.getTaskContainer().pluginPrefixResources)
-            task.dependsOn(scope.getTaskContainer().pluginProcessManifest)
-
-            scope.getArtifacts()
-                    .appendArtifact(
-                            InternalArtifactType.LIBRARY_MANIFEST,
-                            ImmutableList.of(manifestFile),
-                            task)
+//            scope.taskContainer.pluginRefineManifest = task
+//            task.dependsOn(scope.taskContainer.pluginPrefixResources)
+            task.dependsOn(scope.taskContainer.processManifestTask)
         }
     }
 }

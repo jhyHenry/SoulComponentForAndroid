@@ -1,14 +1,13 @@
 package cn.soul.android.plugin.component.tasks.transform
 
-import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.LibraryPlugin
 import javassist.CtClass
 import javassist.expr.ExprEditor
 import javassist.expr.FieldAccess
@@ -17,7 +16,7 @@ import org.gradle.api.Project
 /**
  * Created by nebula on 2019-08-20
  */
-class PrefixRTransform(private val project: Project) : TypeTraversalTransform() {
+class PrefixRTransform(private val project: Project) : LibraryTraversalTransform() {
     private var applicationId = ""
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
@@ -25,13 +24,10 @@ class PrefixRTransform(private val project: Project) : TypeTraversalTransform() 
     }
 
     override fun preTransform(transformInvocation: TransformInvocation) {
-        if (buildType == BuildType.APPLICATION) {
-            return
-        }
         val p = project
         val variantName = transformInvocation.context.variantName
-        val appPlugin = p.plugins.getPlugin(AppPlugin::class.java) as AppPlugin
-        (appPlugin.extension as AppExtension).applicationVariants.all {
+        val libPlugin = p.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
+        (libPlugin.extension as LibraryExtension).libraryVariants.all {
             if (it.name == variantName) {
                 applicationId = it.applicationId
                 Log.d("applicationId:$applicationId")
@@ -42,9 +38,6 @@ class PrefixRTransform(private val project: Project) : TypeTraversalTransform() 
     }
 
     override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
-        if (buildType == BuildType.APPLICATION) {
-            return false
-        }
         InjectHelper.instance.processFiles(dirInput.file)
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .forEach {
