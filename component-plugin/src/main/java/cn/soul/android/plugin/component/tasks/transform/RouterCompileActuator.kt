@@ -14,9 +14,9 @@ import cn.soul.android.plugin.component.utils.Log
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.TransformInvocation
-import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import javassist.*
 import javassist.bytecode.FieldInfo
 import javassist.bytecode.SignatureAttribute
@@ -27,7 +27,8 @@ import java.util.*
 import java.util.zip.ZipEntry
 
 /**
- * All router relative code is in here.This class help inject code for Router Jump
+ * All router relative code is in here.This class help inject code for Router Jump.
+ * This actuator support Activity, Fragment, IComponentService Node now.
  * @author panxinghai
  *
  * date : 2019-11-18 18:44
@@ -46,15 +47,19 @@ class RouterCompileActuator(private val project: Project,
         val variantName = transformInvocation.context.variantName
         println(variantName)
         val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
-        (libPlugin.extension as LibraryExtension).libraryVariants.all {
-            if (it.name != variantName) {
-                return@all
+        //cannot got jar file input in library Transform, so got them by variantManager
+        libPlugin.variantManager.variantScopes.forEach {
+            if (it.fullVariantName != variantName) {
+                return@forEach
             }
-            println("233333")
-            it.compileConfiguration.resolve().forEach { file ->
-                println(file.absolutePath)
-                InjectHelper.instance.appendClassPath(file.absolutePath)
-            }
+            it.getArtifactCollection(
+                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+                    AndroidArtifacts.ArtifactScope.EXTERNAL,
+                    AndroidArtifacts.ArtifactType.CLASSES)
+                    .artifactFiles.files
+                    .forEach { file ->
+                        InjectHelper.instance.appendClassPath(file.absolutePath)
+                    }
         }
     }
 
@@ -63,6 +68,8 @@ class RouterCompileActuator(private val project: Project,
 
     override fun onClassVisited(ctClass: CtClass,
                                 transformInvocation: TransformInvocation): Boolean {
+        //traversal all .class file and find the class which annotate by Router, record router path
+        //and Class for RouterNode construction
         if (!ctClass.hasAnnotation(Router::class.java)) {
             return false
         }
@@ -165,7 +172,7 @@ class RouterCompileActuator(private val project: Project,
         if (infoList.size > 0) {
             stringBuilder.append("if(!(\$0 instanceof ${Constants.INJECTABLE_CLASSNAME})){return;}")
             stringBuilder.append(
-                    if (!isFragment) "android.content.Intent var = getIntent()"
+                    if (!isFragment) "android.content.Intent var = getIntent();"
                     else "android.os.Bundle var = getArguments();")
                     .append("if(var == null){return;}")
             infoList.forEach {

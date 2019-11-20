@@ -1,13 +1,13 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.extesion.ComponentExtension
-import cn.soul.android.plugin.component.manager.BuildType
 import cn.soul.android.plugin.component.manager.StatusManager
 import cn.soul.android.plugin.component.tasks.transform.CementAppTransform
 import cn.soul.android.plugin.component.tasks.transform.CementLibTransform
 import cn.soul.android.plugin.component.tasks.transform.PrefixRTransform
 import cn.soul.android.plugin.component.utils.Descriptor
 import cn.soul.android.plugin.component.utils.Log
+import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
@@ -26,26 +26,24 @@ class ComponentPlugin : Plugin<Project> {
     private lateinit var taskManager: TaskManager
 
     private var mPrefixRTransform: PrefixRTransform? = null
-    private var mCementTransform: CementAppTransform? = null
 
     override fun apply(p: Project) {
         project = p
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
         if (isRunForAar()) {
-            Log.d("run for aar")
             p.plugins.apply("com.android.library")
             mPrefixRTransform = PrefixRTransform(project)
             val extension = project.extensions.findByType(BaseExtension::class.java)
             extension?.registerTransform(mPrefixRTransform)
             extension?.registerTransform(CementLibTransform(project))
         } else {
-            Log.d("run for app")
             p.plugins.apply("com.android.application")
+            val extension = project.extensions.findByType(BaseExtension::class.java)
+            extension?.registerTransform(CementAppTransform(project))
         }
         mPluginExtension = project.extensions.create("component", ComponentExtension::class.java)
         taskManager = TaskManager(p, mPluginExtension)
-        mCementTransform = CementAppTransform(project)
         project.afterEvaluate {
             mPluginExtension.ensureComponentExtension(project)
             configureProject()
@@ -54,11 +52,6 @@ class ComponentPlugin : Plugin<Project> {
             //if only run component task, skip some time consuming operations
             StatusManager.isRunComponentTaskOnly = isRunComponentTaskOnly()
             Log.d("component run as:${if (StatusManager.isRunComponentTaskOnly) "component" else "app"}")
-            val buildType = if (StatusManager.isRunComponentTaskOnly) BuildType.COMPONENT else BuildType.APPLICATION
-            if (StatusManager.isRunComponentTaskOnly) {
-                mPrefixRTransform?.setPrefix(mPluginExtension.resourcePrefix)
-                mCementTransform?.setTaskBuildType(buildType)
-            }
         }
     }
 
@@ -107,7 +100,6 @@ class ComponentPlugin : Plugin<Project> {
         if (isRunForAar()) {
             val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
-
             variantManager.variantScopes.forEach {
                 val variantType = it.variantData.type
                 if (variantType.isTestComponent) {
@@ -124,42 +116,17 @@ class ComponentPlugin : Plugin<Project> {
 
                 taskManager.createRefineManifestTask(it)
 
-//                taskManager.createReplaceManifestTask(pluginVariantScope)
-//
                 taskManager.crateGenInterfaceArtifactTask(it)
-//
+
                 taskManager.createUploadTask(it)
             }
         } else {
-//            val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
-//            val variantManager = appPlugin.variantManager
-//
-//            variantManager.variantScopes.forEach {
-//                val variantType = it.variantData.type
-//                if (variantType.isTestComponent) {
-//                    //这里是continue,不给test的variant创建task
-//                    return@forEach
-//                }
-//
-//                it.processResourcesTask.doLast { _ ->
-//                    val outDir = it.processResourcesTask.sourceOutputDir
-//                    RFileAction.removeRFileFinalModifier(outDir)
-//                }
-//
-//                taskManager.createPrefixResourcesTask(pluginVariantScope)
-//
-//                taskManager.createGenerateSymbolTask(pluginVariantScope)
-//
-//                taskManager.createRefineManifestTask(pluginVariantScope)
-//
-//                taskManager.createReplaceManifestTask(pluginVariantScope)
-//
-//                taskManager.createBundleTask(pluginVariantScope)
-//
-//                taskManager.crateGenInterfaceArtifactTask(pluginVariantScope)
-//
-//                taskManager.createUploadTask(pluginVariantScope)
-//            }
+            val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
+            val variantManager = appPlugin.variantManager
+            variantManager.variantScopes.forEach {
+
+                //                taskManager.createReplaceManifestTask(pluginVariantScope)
+            }
         }
     }
 }
