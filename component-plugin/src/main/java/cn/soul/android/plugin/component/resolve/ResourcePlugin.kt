@@ -21,8 +21,8 @@ class ResourcePlugin : Plugin<Project> {
         appExtension.applicationVariants.all {
             val variantData = (it as ApplicationVariantImpl).variantData
             val task = variantData.taskContainer.packageAndroidTask
-            task?.doFirst {
-                val resourceArtifact = task.resourceFiles
+            task?.get()?.doFirst {
+                val resourceArtifact = task.get().resourceFiles
                 resourceArtifact.files.forEach { file ->
                     replaceDuplicateResource(file)
                 }

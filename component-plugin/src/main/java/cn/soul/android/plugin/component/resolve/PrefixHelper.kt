@@ -55,7 +55,7 @@ class PrefixHelper {
 
     private val componentResMap = hashMapOf<String, HashSet<String>>()
     private val reader: SAXReader = SAXReader()
-    private var prefix = ""
+    var prefix = ""
 
     fun initWithPackagedRes(prefix: String, dir: File) {
         this.prefix = prefix

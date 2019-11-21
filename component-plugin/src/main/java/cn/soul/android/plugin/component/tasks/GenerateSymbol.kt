@@ -1,13 +1,12 @@
 package cn.soul.android.plugin.component.tasks
 
-import cn.soul.android.plugin.component.ComponentArtifactType
 import com.android.build.api.artifact.BuildableArtifact
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.ExistingBuildElements
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.TaskInputHelper
+import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.builder.symbols.processLibraryMainSymbolTable
@@ -93,6 +92,10 @@ open class GenerateSymbol : ProcessAndroidResources() {
     lateinit var inputResourcesDir: BuildableArtifact
         private set
 
+    @get:Input
+    var namespacedRClass: Boolean = false
+        private set
+
     @Throws(IOException::class)
     override fun doFullTaskAction() {
         val manifest = Iterables.getOnlyElement(
@@ -117,7 +120,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
                 proguardOut = proguardOutputFile,
                 mergedResources = inputResourcesDir.single(),
                 platformSymbols = androidAttrSymbol,
-                disableMergeInLib = true)
+                namespacedRClass = namespacedRClass)
 
         SymbolIo.writeSymbolListWithPackageName(
                 textSymbolOutputFile.toPath(),
@@ -131,24 +134,56 @@ open class GenerateSymbol : ProcessAndroidResources() {
             else
                 SymbolTable.builder().tablePackage("android").build()
 
-
-    class ConfigAction(
-            private val variantScope: VariantScope,
+    class CreationAction(
+            variantScope: VariantScope,
             private val symbolFile: File,
             private val symbolsWithPackageNameOutputFile: File
-    ) : TaskConfigAction<GenerateSymbol> {
+    ) : VariantTaskCreationAction<GenerateSymbol>(variantScope) {
 
-        override fun getName(): String = variantScope.getTaskName("generate", "RTxt")
+        override val name: String
+            get() = variantScope.getTaskName("generate", "PrefixRFile")
+        override val type: Class<GenerateSymbol>
+            get() = GenerateSymbol::class.java
 
-        override fun getType() = GenerateSymbol::class.java
+        private lateinit var rClassOutputJar: File
+        private lateinit var sourceOutputDirectory: File
 
-        override fun execute(task: GenerateSymbol) {
-            task.variantName = variantScope.fullVariantName
+        override fun preConfigure(taskName: String) {
+            super.preConfigure(taskName)
+
+            if (variantScope.globalScope.projectOptions.get(BooleanOption.ENABLE_SEPARATE_R_CLASS_COMPILATION)) {
+                rClassOutputJar = variantScope.artifacts
+                        .appendArtifact(InternalArtifactType.COMPILE_ONLY_NOT_NAMESPACED_R_CLASS_JAR,
+                                taskName,
+                                "R.jar")
+            } else {
+                sourceOutputDirectory = variantScope.artifacts
+                        .appendArtifact(InternalArtifactType.NOT_NAMESPACED_R_CLASS_SOURCES, taskName)
+            }
+
+            if (generatesProguardOutputFile(variantScope)) {
+                variantScope
+                        .artifacts
+                        .appendArtifact(
+                                InternalArtifactType.AAPT_PROGUARD_FILE,
+                                listOf(variantScope.processAndroidResourcesProguardOutputFile),
+                                taskName)
+            }
+
+        }
+
+        override fun handleProvider(taskProvider: TaskProvider<out GenerateSymbol>) {
+            super.handleProvider(taskProvider)
+            variantScope.taskContainer.processAndroidResTask = taskProvider
+        }
+
+        override fun configure(task: GenerateSymbol) {
+            super.configure(task)
 
             task.platformAttrRTxt = variantScope.globalScope.platformAttrs
 
             task.applicationIdSupplier = TaskInputHelper.memoize {
-                variantScope.getVariantData().variantConfiguration.applicationId
+                variantScope.variantData.variantConfiguration.applicationId
             }
 
             task.dependencies = variantScope.getArtifactFileCollection(
@@ -156,42 +191,30 @@ open class GenerateSymbol : ProcessAndroidResources() {
                     AndroidArtifacts.ArtifactScope.ALL,
                     AndroidArtifacts.ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME)
             if (variantScope.globalScope.projectOptions.get(BooleanOption.ENABLE_SEPARATE_R_CLASS_COMPILATION)) {
-                task.rClassOutputJar = variantScope.getArtifacts()
-                        .appendArtifact(InternalArtifactType.COMPILE_ONLY_NOT_NAMESPACED_R_CLASS_JAR,
-                                task,
-                                "R.jar")
+                task.rClassOutputJar = rClassOutputJar
             } else {
-                task.sourceOutputDirectory = variantScope.getArtifacts()
-                        .appendArtifact(ComponentArtifactType.COMPONENT_NOT_NAMESPACE_R_CLASS_SOURCES, task)
+                task.sourceOutputDirectory = sourceOutputDirectory
             }
             task.textSymbolOutputFile = symbolFile
             task.symbolsWithPackageNameOutputFile = symbolsWithPackageNameOutputFile
 
-//            if (generatesProguardOutputFile(variantScope)) {
-//                task.proguardOutputFile = variantScope.processAndroidResourcesProguardOutputFile
-//                variantScope
-//                        .artifacts
-//                        .appendArtifact(
-//                                InternalArtifactType.AAPT_PROGUARD_FILE,
-//                                listOf(variantScope.processAndroidResourcesProguardOutputFile),
-//                                task)
-//            }
-
-            task.packageForRSupplier = TaskInputHelper.memoize {
-                Strings.nullToEmpty(variantScope.getVariantConfiguration().originalApplicationId)
+            if (generatesProguardOutputFile(variantScope)) {
+                task.proguardOutputFile = variantScope.processAndroidResourcesProguardOutputFile
             }
 
-            task.manifestFiles = variantScope.getArtifacts().getFinalArtifactFiles(
+            task.packageForRSupplier = TaskInputHelper.memoize {
+                Strings.nullToEmpty(variantScope.variantConfiguration.originalApplicationId)
+            }
+
+            task.manifestFiles = variantScope.artifacts.getFinalArtifactFiles(
                     InternalArtifactType.MERGED_MANIFESTS)
 
-            task.inputResourcesDir = variantScope.getArtifacts().getFinalArtifactFiles(
+            task.inputResourcesDir = variantScope.artifacts.getFinalArtifactFiles(
                     InternalArtifactType.PACKAGED_RES)
+
+            task.namespacedRClass = variantScope.globalScope.projectOptions[BooleanOption.NAMESPACED_R_CLASS]
 
             task.outputScope = variantScope.outputScope
         }
     }
-
-//    private fun generatesProguardOutputFile(variantScope: PluginVariantScope): Boolean {
-//        return variantScope.codeShrinker != null || variantScope.type.isFeatureSplit
-//    }
 }

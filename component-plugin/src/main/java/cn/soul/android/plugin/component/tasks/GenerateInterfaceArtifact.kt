@@ -2,9 +2,9 @@ package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.component.IComponentService
 import cn.soul.android.plugin.component.utils.InjectHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
+import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.utils.FileUtils
 import javassist.CtClass
 import javassist.bytecode.FieldInfo
@@ -202,23 +202,20 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
 
     class ConfigAction(private val scope: VariantScope,
                        private val sourceDir: File)
-        : TaskConfigAction<GenerateInterfaceArtifact> {
-        override fun getName(): String {
-            return scope.getTaskName("gen", "interfaceArtifact")
-        }
+        : VariantTaskCreationAction<GenerateInterfaceArtifact>(scope) {
+        override val name: String
+            get() = scope.getTaskName("gen", "interfaceArtifact")
+        override val type: Class<GenerateInterfaceArtifact>
+            get() = GenerateInterfaceArtifact::class.java
 
-        override fun getType(): Class<GenerateInterfaceArtifact> {
-            return GenerateInterfaceArtifact::class.java
-        }
-
-        override fun execute(task: GenerateInterfaceArtifact) {
+        override fun configure(task: GenerateInterfaceArtifact) {
+            super.configure(task)
             task.variantName = scope.fullVariantName
             task.sourceDir = sourceDir
             task.destDir = FileUtils.join(
                     scope.globalScope.intermediatesDir,
                     "gen-interface-artifact",
                     scope.variantConfiguration.dirName)
-
         }
     }
 }

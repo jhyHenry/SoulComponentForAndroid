@@ -25,17 +25,13 @@ class ComponentPlugin : Plugin<Project> {
     private lateinit var project: Project
     private lateinit var taskManager: TaskManager
 
-    private var mPrefixRTransform: PrefixRTransform? = null
-
     override fun apply(p: Project) {
         project = p
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
         if (isRunForAar()) {
             p.plugins.apply("com.android.library")
-            mPrefixRTransform = PrefixRTransform(project)
             val extension = project.extensions.findByType(BaseExtension::class.java)
-            extension?.registerTransform(mPrefixRTransform)
             extension?.registerTransform(CementLibTransform(project))
         } else {
             p.plugins.apply("com.android.application")
@@ -70,6 +66,11 @@ class ComponentPlugin : Plugin<Project> {
         val gradle = project.gradle
         val taskNames = gradle.startParameter.taskNames
         if (taskNames.size == 1) {
+            val module = Descriptor.getTaskModuleName(taskNames[0])
+            println("module:$module + name:${project.name}")
+            if (module != project.name) {
+                return false
+            }
             val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
             return taskName.startsWith("uploadComponent") ||
                     taskName.toLowerCase(Locale.getDefault()).startsWith("bundle") &&
@@ -95,12 +96,15 @@ class ComponentPlugin : Plugin<Project> {
         return false
     }
 
+    @Suppress("MISSING_DEPENDENCY_CLASS")
     private fun createTasks() {
         Log.p(msg = "create tasks.")
         if (isRunForAar()) {
             val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
+                //cannot access class, is a bug of kotlin plugin. issue track :
+                //https://youtrack.jetbrains.com/issue/KT-26535?_ga=2.269032241.1117822405.1574306246-1707679741.1559701832
                 val variantType = it.variantData.type
                 if (variantType.isTestComponent) {
                     //这里是continue,不给test的variant创建task

@@ -6,9 +6,9 @@ import cn.soul.android.plugin.component.custom.IElementPrefix
 import cn.soul.android.plugin.component.custom.SelectorPrefix
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.Log
-import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
+import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import org.dom4j.Attribute
 import org.dom4j.Element
 import org.dom4j.io.SAXReader
@@ -212,16 +212,17 @@ open class PrefixResources : AndroidVariantTask() {
 
     class ConfigAction(private val scope: VariantScope,
                        private val packagedResFolder: File,
-                       private val prefix: String) : TaskConfigAction<PrefixResources> {
-        override fun getType(): Class<PrefixResources> {
-            return PrefixResources::class.java
-        }
+                       private val prefix: String) :
+            VariantTaskCreationAction<PrefixResources>(scope) {
+        override val type: Class<PrefixResources>
+            get() = PrefixResources::class.java
 
-        override fun getName(): String {
-            return scope.getTaskName("prefix", "Resources")
-        }
 
-        override fun execute(task: PrefixResources) {
+        override val name: String
+            get() = scope.getTaskName("prefix", "Resources")
+
+        override fun configure(task: PrefixResources) {
+            super.configure(task)
             task.variantName = scope.fullVariantName
             task.packagedResFolder = packagedResFolder
             task.prefix = prefix

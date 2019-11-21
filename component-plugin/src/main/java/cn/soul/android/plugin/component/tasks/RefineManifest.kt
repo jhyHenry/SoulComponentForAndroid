@@ -2,9 +2,9 @@ package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.AndroidXmlHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
+import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import org.dom4j.QName
 import org.dom4j.io.SAXReader
 import org.dom4j.io.XMLWriter
@@ -84,16 +84,17 @@ open class RefineManifest : AndroidVariantTask() {
     }
 
     class ConfigAction(private val scope: VariantScope,
-                       private val manifestFile: File) : TaskConfigAction<RefineManifest> {
-        override fun getName(): String {
-            return scope.getTaskName("Refine", "Manifest")
-        }
+                       private val manifestFile: File) :
+            VariantTaskCreationAction<RefineManifest>(scope) {
+        override val name: String
+            get() = scope.getTaskName("Refine", "Manifest")
 
-        override fun getType(): Class<RefineManifest> {
-            return RefineManifest::class.java
-        }
 
-        override fun execute(task: RefineManifest) {
+        override val type: Class<RefineManifest>
+            get() = RefineManifest::class.java
+
+
+        override fun configure(task: RefineManifest) {
             task.manifestFile = manifestFile
             task.variantName = scope.fullVariantName
 

@@ -13,6 +13,7 @@ import org.gradle.api.Project
 class CementLibTransform(private val project: Project) : BaseActuatorSetTransform() {
     override fun getTransformActuatorSet(): Set<TransformActuator> {
         return ImmutableSet.of(
+                PrefixRActuator(project, true),
                 RouterCompileActuator(project, true),
                 InitTaskCompileActuator(project, true)
         )

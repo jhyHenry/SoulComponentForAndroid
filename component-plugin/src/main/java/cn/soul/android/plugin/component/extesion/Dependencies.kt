@@ -20,7 +20,7 @@ open class Dependencies {
         interfacesPath.add(path)
     }
 
-    internal fun appendDependencies(project: Project, addRuntimeDependencies: Boolean) {
+    fun appendDependencies(project: Project, addRuntimeDependencies: Boolean) {
         if (!addRuntimeDependencies) {
             return
         }
@@ -29,7 +29,7 @@ open class Dependencies {
         }
     }
 
-    internal fun appendInterfaceApis(project: Project, addRuntimeDependencies: Boolean) {
+    fun appendInterfaceApis(project: Project, addRuntimeDependencies: Boolean) {
         interfacesPath.forEach {
             project.dependencies.add("compileOnly", "$it@jar")
             if (addRuntimeDependencies) {

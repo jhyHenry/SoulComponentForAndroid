@@ -10,7 +10,7 @@ import org.gradle.api.Project
  * date : 2019-07-12 12:00
  */
 open class ComponentExtension {
-    internal val dependencies = Dependencies()
+    val dependencies = Dependencies()
     var componentName: String? = null
     var uploadPath: String? = null
     var repoPath: String? = null
@@ -23,7 +23,7 @@ open class ComponentExtension {
         action.execute(dependencies)
     }
 
-    internal fun ensureComponentExtension(project: Project) {
+    fun ensureComponentExtension(project: Project) {
         if (componentName == null) {
             componentName = project.name
         }

@@ -1,7 +1,7 @@
 package cn.soul.android.plugin.component.tasks
 
-import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.MavenPlugin
@@ -15,16 +15,16 @@ import java.io.File
  */
 open class UploadComponent : Upload() {
     class ConfigAction(private val scope: VariantScope,
-                       private val project: Project) : TaskConfigAction<UploadComponent> {
-        override fun getName(): String {
-            return "uploadComponent${scope.variantConfiguration.flavorName.capitalize()}"
-        }
+                       private val project: Project) :
+            TaskCreationAction<UploadComponent>() {
+        override val name: String
+            get() = "uploadComponent${scope.variantConfiguration.flavorName.capitalize()}"
 
-        override fun getType(): Class<UploadComponent> {
-            return UploadComponent::class.java
-        }
 
-        override fun execute(task: UploadComponent) {
+        override val type: Class<UploadComponent>
+            get() = UploadComponent::class.java
+
+        override fun configure(task: UploadComponent) {
             val config = this.project.configurations.getByName("archives")
             createUploadTask(task, config.uploadTaskName, config, project)
             val uploadArchives = project.tasks.withType(Upload::class.java).findByName("uploadArchives")

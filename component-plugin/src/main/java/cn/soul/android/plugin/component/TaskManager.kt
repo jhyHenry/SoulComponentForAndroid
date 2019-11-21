@@ -4,11 +4,13 @@ import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.utils.Descriptor
 import com.android.SdkConstants
-import com.android.build.gradle.internal.TaskFactory
-import com.android.build.gradle.internal.TaskFactoryImpl
+import com.android.build.gradle.internal.scope.BuildArtifactsHolder
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.tasks.factory.TaskFactory
+import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
 import com.android.build.gradle.internal.variant.VariantHelper
+import com.android.build.gradle.tasks.ProcessLibraryManifest
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import org.gradle.api.Project
@@ -23,7 +25,7 @@ import java.util.*
  */
 class TaskManager(private val project: Project,
                   private val extension: ComponentExtension) {
-    private var taskFactory: TaskFactory = PluginTaskFactory(TaskFactoryImpl(project.tasks), this)
+    private var taskFactory: TaskFactory = PluginTaskFactory(TaskFactoryImpl(project.tasks))
     val componentTaskContainer: MutableSet<Task> = mutableSetOf()
     var pluginTaskContainer: PluginTaskContainer? = null
 
@@ -38,11 +40,14 @@ class TaskManager(private val project: Project,
 
 
     fun createRefineManifestTask(scope: VariantScope) {
-        val manifestOutputDir = scope.taskContainer.processManifestTask?.manifestOutputDirectory
+        val processTask = scope.taskContainer.processManifestTask?.get()
+        if (processTask !is ProcessLibraryManifest) {
+            return
+        }
+        val manifestOutput = processTask.manifestOutputFile.get().asFile
                 ?: return
-        val processManifestFile = File(manifestOutputDir, SdkConstants.FN_ANDROID_MANIFEST_XML)
-        val task = taskFactory.create(RefineManifest.ConfigAction(scope, processManifestFile))
-        scope.taskContainer.bundleLibraryTask?.dependsOn(task)
+        val task = taskFactory.register(RefineManifest.ConfigAction(scope, manifestOutput))
+        scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
     }
 
     fun createPrefixResourcesTask(scope: VariantScope) {
@@ -51,10 +56,10 @@ class TaskManager(private val project: Project,
         if (prefix == null) {
             prefix = "${project.name}_"
         }
-        val task = taskFactory.create(PrefixResources.ConfigAction(scope, file, prefix))
-        task.dependsOn(scope.taskContainer.mergeResourcesTask)
-        pluginTaskContainer?.prefixResources = task
-        scope.taskContainer.bundleLibraryTask?.dependsOn(task)
+        val task = taskFactory.register(PrefixResources.ConfigAction(scope, file, prefix))
+        task.get().dependsOn(scope.taskContainer.mergeResourcesTask)
+        pluginTaskContainer?.prefixResources = task.get()
+        scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
     }
 
     fun createGenerateSymbolTask(scope: VariantScope) {
@@ -70,22 +75,28 @@ class TaskManager(private val project: Project,
                 "symbol-table-with-package",
                 scope.variantConfiguration.dirName,
                 "package-aware-r.txt")
-        val task = taskFactory.create(GenerateSymbol.ConfigAction(scope,
+        val task = taskFactory.register(GenerateSymbol.CreationAction(scope,
                 symbol,
                 symbolTableWithPackageName))
-        scope.artifacts.replaceArtifact(
+        scope.artifacts.createBuildableArtifact(
                 InternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME,
+                BuildArtifactsHolder.OperationType.TRANSFORM,
                 ImmutableList.of(symbol),
-                task)
-        task.dependsOn(pluginTaskContainer?.prefixResources)
-        scope.taskContainer.bundleLibraryTask?.dependsOn(task)
+                task.name
+        )
+//        scope.artifacts.replaceArtifact(
+//                InternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME,
+//                ImmutableList.of(symbol),
+//                task)
+        task.get().dependsOn(pluginTaskContainer?.prefixResources)
+        scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
     }
 
     fun crateGenInterfaceArtifactTask(scope: VariantScope) {
         val file = scope.artifacts.getFinalArtifactFiles(InternalArtifactType.JAVAC).single()
-        val task = taskFactory.create(GenerateInterfaceArtifact.ConfigAction(scope, file))
-        task.dependsOn(scope.taskContainer.bundleLibraryTask)
-        pluginTaskContainer?.genInterface = task
+        val task = taskFactory.register(GenerateInterfaceArtifact.ConfigAction(scope, file))
+        task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
+        pluginTaskContainer?.genInterface = task.get()
         if (scope.variantConfiguration.buildType.name != "release") {
             return
         }
@@ -97,17 +108,17 @@ class TaskManager(private val project: Project,
         if (startTaskName.startsWith(uploadTaskPrefix)) {
             val flavor = startTaskName.substring(uploadTaskPrefix.length)
             if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
-                project.artifacts.add("archives", File(task.destDir, "interface.jar"))
+                project.artifacts.add("archives", File(task.get().destDir, "interface.jar"))
             }
         }
     }
 
     fun createReplaceManifestTask(scope: VariantScope) {
-        val manifestFile = scope.taskContainer.packageAndroidTask?.manifests?.single()
+        val manifestFile = scope.taskContainer.packageAndroidTask?.get()?.manifests?.single()
                 ?: return
-        val task = taskFactory.create(ReplaceManifest.ConfigAction(scope, File(manifestFile, "AndroidManifest.xml")))
-        scope.taskContainer.processAndroidResTask?.dependsOn(task)
-        task.dependsOn(scope.taskContainer.processManifestTask)
+        val task = taskFactory.register(ReplaceManifest.ConfigAction(scope, File(manifestFile, "AndroidManifest.xml")))
+        scope.taskContainer.processAndroidResTask?.get()?.dependsOn(task.get())
+        task.get().dependsOn(scope.taskContainer.processManifestTask)
     }
 
     fun createUploadTask(scope: VariantScope) {
@@ -127,9 +138,9 @@ class TaskManager(private val project: Project,
                 project.artifacts.add("archives", scope.taskContainer.bundleLibraryTask!!)
             }
         }
-        val task = taskFactory.create(UploadComponent.ConfigAction(scope, project))
-        pluginTaskContainer?.uploadTask = task
-        task.dependsOn(scope.taskContainer.bundleLibraryTask)
-        task.dependsOn(pluginTaskContainer?.genInterface!!)
+        val task = taskFactory.register(UploadComponent.ConfigAction(scope, project))
+        pluginTaskContainer?.uploadTask = task.get()
+        task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
+        task.get().dependsOn(pluginTaskContainer?.genInterface!!)
     }
 }

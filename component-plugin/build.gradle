@@ -4,9 +4,10 @@ apply plugin: 'maven'
 
 
 dependencies {
+//    implementation fileTree(include: ['*.jar'], dir: 'libs')
     //noinspection GradleDependency
-    implementation 'com.android.tools.build:gradle:3.2.1'
-//    implementation 'com.android.tools.build:gradle-core:3.3.0'
+    implementation 'com.android.tools.build:gradle:3.3.0'
+    implementation 'com.android.tools.build:builder:3.3.0'
     implementation 'org.javassist:javassist:3.26.0-GA'
     implementation 'org.dom4j:dom4j:2.1.1'
 //    implementation project(":component-base")

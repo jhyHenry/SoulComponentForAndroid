@@ -10,5 +10,13 @@ class Descriptor {
         fun getTaskNameWithoutModule(name: String): String {
             return name.substring(name.lastIndexOf(':') + 1)
         }
+
+        fun getTaskModuleName(name: String): String {
+            val str = name.substring(0, name.lastIndexOf(':'))
+            if (str[0] == ':') {
+                return str.substring(1, str.length)
+            }
+            return str
+        }
     }
 }
