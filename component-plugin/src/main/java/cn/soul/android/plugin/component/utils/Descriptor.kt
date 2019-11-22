@@ -12,7 +12,11 @@ class Descriptor {
         }
 
         fun getTaskModuleName(name: String): String {
-            val str = name.substring(0, name.lastIndexOf(':'))
+            val index = name.lastIndexOf(':')
+            if (index == -1) {
+                return ""
+            }
+            val str = name.substring(0, index)
             if (str[0] == ':') {
                 return str.substring(1, str.length)
             }

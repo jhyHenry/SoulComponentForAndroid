@@ -64,6 +64,18 @@ class PrefixRActuator(private val project: Project,
                 }
             }
         }
+        ctClass.nestedClasses.forEach {
+            it.fields.forEach { ctField ->
+                if (it.isFrozen) {
+                    it.defrost()
+                }
+                if (it.simpleName != "R\$layout") {
+                    return@forEach
+                }
+                //eg:it.simpleName = "R$id"
+                println(ctField.fieldInfo.name + ":" + ctField.constantValue)
+            }
+        }
     }
 
     private fun prefixRClassFieldAccess(ctClass: CtClass, applicationId: String) {
@@ -77,15 +89,26 @@ class PrefixRActuator(private val project: Project,
         if (ctClass.isFrozen) {
             ctClass.defrost()
         }
+        println("traversal start")
         ctClass.instrument(object : ExprEditor() {
             override fun edit(f: FieldAccess?) {
-                super.edit(f)
                 if (f == null) {
                     return
                 }
+                println(f.isReader.toString() + ":" + f.className + ":" + f.fieldName)
                 if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
-                    f.replace("\$_ = ${f.className}.$prefix${f.fieldName};")
+                    println(":\$_ = ${f.className}.$prefix${f.fieldName};")
+                    f.replace("\${f.className}.$prefix${f.fieldName} ;")
                 }
+            }
+        })
+        println("traversal again")
+        ctClass.instrument(object : ExprEditor() {
+            override fun edit(f: FieldAccess?) {
+                if (f == null) {
+                    return
+                }
+                println(f.isReader.toString() + ":" + f.className + ":" + f.fieldName)
             }
         })
     }

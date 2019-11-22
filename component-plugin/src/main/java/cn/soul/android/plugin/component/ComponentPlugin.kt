@@ -67,7 +67,6 @@ class ComponentPlugin : Plugin<Project> {
         val taskNames = gradle.startParameter.taskNames
         if (taskNames.size == 1) {
             val module = Descriptor.getTaskModuleName(taskNames[0])
-            println("module:$module + name:${project.name}")
             if (module != project.name) {
                 return false
             }
@@ -116,7 +115,7 @@ class ComponentPlugin : Plugin<Project> {
 
                 taskManager.createPrefixResourcesTask(it)
 
-                taskManager.createGenerateSymbolTask(it)
+//                taskManager.createGenerateSymbolTask(it)
 
                 taskManager.createRefineManifestTask(it)
 

@@ -20,6 +20,7 @@ class PrefixRTransform(private val project: Project) : LibraryTraversalTransform
     private var applicationId = ""
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
+        prefix = PrefixHelper.instance.prefix
         InjectHelper.instance.refresh()
     }
 
