@@ -22,5 +22,9 @@ class Descriptor {
             }
             return str
         }
+
+        fun getClassNameByFileName(fileName: String): String {
+            return fileName.substring(0, fileName.indexOf('.')).replace('/', '.')
+        }
     }
 }

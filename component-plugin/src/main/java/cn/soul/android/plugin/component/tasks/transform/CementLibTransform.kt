@@ -1,6 +1,8 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import cn.soul.android.plugin.component.utils.InjectHelper
 import com.android.build.api.transform.QualifiedContent
+import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project
@@ -17,6 +19,11 @@ class CementLibTransform(private val project: Project) : BaseActuatorSetTransfor
                 RouterCompileActuator(project, true),
                 InitTaskCompileActuator(project, true)
         )
+    }
+
+    override fun preTraversal(transformInvocation: TransformInvocation) {
+        InjectHelper.instance.refresh()
+        super.preTraversal(transformInvocation)
     }
 
     override fun getName(): String {

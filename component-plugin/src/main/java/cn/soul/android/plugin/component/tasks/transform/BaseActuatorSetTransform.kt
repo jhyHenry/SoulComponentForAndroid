@@ -42,7 +42,7 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
                 it.onJarEntryVisited(entry, transformInvocation)
             }
         }
-        return false
+        return true
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {

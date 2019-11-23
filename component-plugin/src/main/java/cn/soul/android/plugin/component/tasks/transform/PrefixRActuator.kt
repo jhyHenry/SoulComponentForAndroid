@@ -36,8 +36,8 @@ class PrefixRActuator(private val project: Project,
                 Log.d("applicationId:$applicationId")
             }
         }
-        val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
-        prefixCustomCtClassField(rCtClass)
+//        val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
+//        prefixCustomCtClassField(rCtClass, transformInvocation)
     }
 
     override fun onClassVisited(ctClass: CtClass, transformInvocation: TransformInvocation): Boolean {
@@ -46,12 +46,13 @@ class PrefixRActuator(private val project: Project,
     }
 
     override fun onJarEntryVisited(zipEntry: ZipEntry, transformInvocation: TransformInvocation) {
+        println(zipEntry.name)
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {
     }
 
-    private fun prefixCustomCtClassField(ctClass: CtClass) {
+    private fun prefixCustomCtClassField(ctClass: CtClass, transformInvocation: TransformInvocation) {
         Log.d("prefix R.class field access. which class is: ${ctClass.name}")
         ctClass.nestedClasses.forEach {
             it.fields.forEach { ctField ->
@@ -62,18 +63,6 @@ class PrefixRActuator(private val project: Project,
                 if (PrefixHelper.instance.isRefNeedPrefix(it.simpleName.substring(2), ctField.name)) {
                     ctField.name = "$prefix${ctField.name}"
                 }
-            }
-        }
-        ctClass.nestedClasses.forEach {
-            it.fields.forEach { ctField ->
-                if (it.isFrozen) {
-                    it.defrost()
-                }
-                if (it.simpleName != "R\$layout") {
-                    return@forEach
-                }
-                //eg:it.simpleName = "R$id"
-                println(ctField.fieldInfo.name + ":" + ctField.constantValue)
             }
         }
     }
@@ -89,26 +78,19 @@ class PrefixRActuator(private val project: Project,
         if (ctClass.isFrozen) {
             ctClass.defrost()
         }
-        println("traversal start")
         ctClass.instrument(object : ExprEditor() {
             override fun edit(f: FieldAccess?) {
                 if (f == null) {
                     return
                 }
-                println(f.isReader.toString() + ":" + f.className + ":" + f.fieldName)
                 if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
-                    println(":\$_ = ${f.className}.$prefix${f.fieldName};")
-                    f.replace("\${f.className}.$prefix${f.fieldName} ;")
+                    val clazz = f.className
+                    val field = "$prefix${f.fieldName}"
+                    println("{\$_ = ${f.className}.$prefix${f.fieldName};}")
+                    f.replace("{\$_ = ${f.className}.$prefix${f.fieldName};}")
+//                    f.replace("\$_ = \$proceed(\$\$);")
+                    println(InjectHelper.instance.getClassPool()[clazz].getField(field).modifiers.toString())
                 }
-            }
-        })
-        println("traversal again")
-        ctClass.instrument(object : ExprEditor() {
-            override fun edit(f: FieldAccess?) {
-                if (f == null) {
-                    return
-                }
-                println(f.isReader.toString() + ":" + f.className + ":" + f.fieldName)
             }
         })
     }
