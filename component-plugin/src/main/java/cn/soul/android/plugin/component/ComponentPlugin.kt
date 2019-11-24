@@ -4,8 +4,6 @@ import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.StatusManager
 import cn.soul.android.plugin.component.tasks.transform.CementAppTransform
 import cn.soul.android.plugin.component.tasks.transform.CementLibTransform
-import cn.soul.android.plugin.component.tasks.transform.PrefixRTransform
-import cn.soul.android.plugin.component.tasks.transform.ReleaseRTransform
 import cn.soul.android.plugin.component.utils.Descriptor
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.AppPlugin
@@ -33,7 +31,6 @@ class ComponentPlugin : Plugin<Project> {
         if (isRunForAar()) {
             p.plugins.apply("com.android.library")
             val extension = project.extensions.findByType(BaseExtension::class.java)
-            extension?.registerTransform(ReleaseRTransform(project))
             extension?.registerTransform(CementLibTransform(project))
         } else {
             p.plugins.apply("com.android.application")

@@ -25,7 +25,7 @@ uploadArchives {
 
         pom.groupId = 'cn.soul.android.plugin'
         pom.artifactId = 'component-plugin'
-        pom.version = '1.0.1'
+        pom.version = '1.0.2'
     }
 }
 

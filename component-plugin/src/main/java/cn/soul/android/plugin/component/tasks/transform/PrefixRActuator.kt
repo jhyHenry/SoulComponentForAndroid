@@ -7,6 +7,7 @@ import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
 import javassist.CtClass
+import javassist.CtField
 import javassist.expr.ExprEditor
 import javassist.expr.FieldAccess
 import org.gradle.api.Project
@@ -36,8 +37,8 @@ class PrefixRActuator(private val project: Project,
                 Log.d("applicationId:$applicationId")
             }
         }
-//        val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
-//        prefixCustomCtClassField(rCtClass, transformInvocation)
+        val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
+        prefixCustomCtClassField(rCtClass)
     }
 
     override fun onClassVisited(ctClass: CtClass, transformInvocation: TransformInvocation): Boolean {
@@ -46,23 +47,40 @@ class PrefixRActuator(private val project: Project,
     }
 
     override fun onJarEntryVisited(zipEntry: ZipEntry, transformInvocation: TransformInvocation) {
-        println(zipEntry.name)
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {
     }
 
-    private fun prefixCustomCtClassField(ctClass: CtClass, transformInvocation: TransformInvocation) {
+    private fun prefixCustomCtClassField(ctClass: CtClass) {
         Log.d("prefix R.class field access. which class is: ${ctClass.name}")
+        val classInfo = arrayListOf<Pair<String, MutableList<String>>>()
         ctClass.nestedClasses.forEach {
+            val pair = Pair(it.name, arrayListOf<String>())
+
             it.fields.forEach { ctField ->
                 if (it.isFrozen) {
                     it.defrost()
                 }
                 //eg:it.simpleName = "R$id"
                 if (PrefixHelper.instance.isRefNeedPrefix(it.simpleName.substring(2), ctField.name)) {
-                    ctField.name = "$prefix${ctField.name}"
+                    pair.second.add("public static ${ctField.type.name} $prefix${ctField.name};")
+                } else {
+                    pair.second.add("public static ${ctField.type.name} ${ctField.name};")
                 }
+            }
+            classInfo.add(pair)
+        }
+        ctClass.detach()
+        /*with gradle 3.3.0, R file changed from .java file to .jar file, if directly use
+          fieldAccess replace, new access while inline by constant, so construct new ctclass
+          in javassist, it will be correct behavior
+          */
+        classInfo.forEach {
+            val newRClass = InjectHelper.instance.getClassPool().makeClass(it.first)
+            it.second.forEach { field ->
+                println("${it.first}:$field")
+                newRClass.addField(CtField.make(field, newRClass))
             }
         }
     }
@@ -84,12 +102,7 @@ class PrefixRActuator(private val project: Project,
                     return
                 }
                 if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
-                    val clazz = f.className
-                    val field = "$prefix${f.fieldName}"
-                    println("{\$_ = ${f.className}.$prefix${f.fieldName};}")
                     f.replace("{\$_ = ${f.className}.$prefix${f.fieldName};}")
-//                    f.replace("\$_ = \$proceed(\$\$);")
-                    println(InjectHelper.instance.getClassPool()[clazz].getField(field).modifiers.toString())
                 }
             }
         })
