@@ -39,6 +39,9 @@ class MethodGen(private val className: String) {
         interfaces.forEach {
             val ctClass = classPool.getOrNull(it.name)
                     ?: throw ClassGenerateException("cannot get ctClass of ${it.name}.")
+            if (!ctClass.isInterface) {
+                throw ClassGenerateException("class:${it.name} is not interface.")
+            }
             this.interfaces.add(ctClass)
         }
         return this

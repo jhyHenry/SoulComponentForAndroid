@@ -26,15 +26,15 @@ abstract class BaseChunk(var header: ChunkHeader) : SerializableResource {
         fun create(buff: ByteBuffer): BaseChunk {
             val result: BaseChunk
             val header = ChunkHeader.create(buff)
-            when (header.type) {
+            result = when (header.type) {
                 Type.TABLE.code -> {
-                    result = TableChunk(header)
+                    TableChunk(header)
                 }
                 Type.STRING_POOL.code -> {
-                    result = StringPoolChunk(header)
+                    StringPoolChunk(header)
                 }
                 else -> {
-                    result = UnprocessedChunk(header)
+                    UnprocessedChunk(header)
                 }
             }
             result.initContent(buff)

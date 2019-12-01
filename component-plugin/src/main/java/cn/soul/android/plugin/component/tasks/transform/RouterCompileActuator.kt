@@ -25,6 +25,7 @@ import org.gradle.api.Project
 import java.io.File
 import java.util.*
 import java.util.zip.ZipEntry
+import kotlin.collections.ArrayList
 
 /**
  * All router relative code is in here.This class help inject code for Router Jump.
@@ -35,8 +36,13 @@ import java.util.zip.ZipEntry
  */
 class RouterCompileActuator(private val project: Project,
                             isComponent: Boolean) : TypeActuator(isComponent) {
+    //map key: path, value: node info list
     private val nodeMapByGroup = mutableMapOf<String, ArrayList<NodeInfo>>()
+    //map key: group, value: node path list
     private val groupMap = mutableMapOf<String, ArrayList<String>>()
+
+    //pair first: super interface's class full name, second: node path
+    private val componentServiceAlias = arrayListOf<Pair<String, String>>()
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
         InjectHelper.instance.refresh()
@@ -58,6 +64,7 @@ class RouterCompileActuator(private val project: Project,
                     AndroidArtifacts.ArtifactType.CLASSES)
                     .artifactFiles.files
                     .forEach { file ->
+                        //here we can get all jar file for dependencies
                         InjectHelper.instance.appendClassPath(file.absolutePath)
                     }
         }
@@ -76,6 +83,12 @@ class RouterCompileActuator(private val project: Project,
         val routerAnnotation = ctClass.getAnnotation(Router::class.java) as Router
         val path = routerAnnotation.path
         val nodeInfo = NodeInfo(path, ctClass)
+        //additional info collect for component service
+        if (nodeInfo.type == NodeType.COMPONENT_SERVICE) {
+            ctClass.interfaces.forEach {
+                componentServiceAlias.add(Pair(it.name, path))
+            }
+        }
         nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, ctClass.name)) {
             arrayListOf()
         }.add(nodeInfo)
@@ -119,7 +132,7 @@ class RouterCompileActuator(private val project: Project,
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterNodeProvider::class.java))
             Log.d("generate lazy loader")
-            genRouterLazyLoaderImpl(dest, groupMap)
+            genRouterLazyLoaderImpl(dest, groupMap, componentServiceAlias)
         }
     }
 
@@ -331,7 +344,9 @@ class RouterCompileActuator(private val project: Project,
         return builder.toString()
     }
 
-    private fun genRouterLazyLoaderImpl(dir: File, groupMap: MutableMap<String, ArrayList<String>>) {
+    private fun genRouterLazyLoaderImpl(dir: File,
+                                        groupMap: MutableMap<String, ArrayList<String>>,
+                                        aliasInfoList: ArrayList<Pair<String, String>>) {
         val name = Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME
         MethodGen(name)
                 .interfaces(IRouterLazyLoader::class.java)
@@ -339,6 +354,11 @@ class RouterCompileActuator(private val project: Project,
                         "lazyLoadFactoryByGroup",
                         "(String group)")
                 .body { produceLazyLoadFactoryBodySrc(groupMap) }
+                .gen()
+        MethodGen(name)
+                .signature("public android.util.SpareArray",
+                        "loadServiceAliasMap")
+                .body { produceLoadServiceAliasMapMethodBodySrc(aliasInfoList) }
                 .gen()?.writeFile(dir.absolutePath)
     }
 
@@ -357,6 +377,19 @@ class RouterCompileActuator(private val project: Project,
                 sb.append("return result;}")
             }
             sb.append("default:break;}")
+        }
+        sb.append("return result;}")
+        return sb.toString()
+    }
+
+    private fun produceLoadServiceAliasMapMethodBodySrc(aliasInfoList: ArrayList<Pair<String, String>>): String {
+        val sb = StringBuilder("{")
+                .append("android.util.SparseArray result = new android.util.SparseArray();")
+        if (aliasInfoList.isNotEmpty()) {
+            aliasInfoList.forEach {
+                val hash = it.first.hashCode()
+                sb.append("result.put($hash, ${it.second});")
+            }
         }
         sb.append("return result;}")
         return sb.toString()

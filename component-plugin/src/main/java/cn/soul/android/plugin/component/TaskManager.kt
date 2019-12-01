@@ -26,18 +26,7 @@ import java.util.*
 class TaskManager(private val project: Project,
                   private val extension: ComponentExtension) {
     private var taskFactory: TaskFactory = PluginTaskFactory(TaskFactoryImpl(project.tasks))
-    val componentTaskContainer: MutableSet<Task> = mutableSetOf()
     var pluginTaskContainer: PluginTaskContainer? = null
-
-    fun isComponentTask(taskName: String): Boolean {
-        componentTaskContainer.forEach {
-            if (it.name == taskName) {
-                return true
-            }
-        }
-        return false
-    }
-
 
     fun createRefineManifestTask(scope: VariantScope) {
         val processTask = scope.taskContainer.processManifestTask?.get()
@@ -84,10 +73,6 @@ class TaskManager(private val project: Project,
                 ImmutableList.of(symbol),
                 task.name
         )
-//        scope.artifacts.replaceArtifact(
-//                InternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME,
-//                ImmutableList.of(symbol),
-//                task)
         task.get().dependsOn(pluginTaskContainer?.prefixResources)
         scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
     }

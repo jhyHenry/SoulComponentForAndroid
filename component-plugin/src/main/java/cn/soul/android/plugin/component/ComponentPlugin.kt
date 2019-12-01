@@ -1,7 +1,6 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.extesion.ComponentExtension
-import cn.soul.android.plugin.component.manager.StatusManager
 import cn.soul.android.plugin.component.tasks.transform.CementAppTransform
 import cn.soul.android.plugin.component.tasks.transform.CementLibTransform
 import cn.soul.android.plugin.component.utils.Descriptor
@@ -21,52 +20,48 @@ import java.util.*
  */
 class ComponentPlugin : Plugin<Project> {
     private lateinit var mPluginExtension: ComponentExtension
-    private lateinit var project: Project
-    private lateinit var taskManager: TaskManager
+    private lateinit var mProject: Project
+    private lateinit var mTaskManager: TaskManager
 
     override fun apply(p: Project) {
-        project = p
+        mProject = p
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
         if (isRunForAar()) {
             p.plugins.apply("com.android.library")
-            val extension = project.extensions.findByType(BaseExtension::class.java)
-            extension?.registerTransform(CementLibTransform(project))
+            val extension = mProject.extensions.findByType(BaseExtension::class.java)
+            extension?.registerTransform(CementLibTransform(mProject))
         } else {
             p.plugins.apply("com.android.application")
-            val extension = project.extensions.findByType(BaseExtension::class.java)
-            extension?.registerTransform(CementAppTransform(project))
+            val extension = mProject.extensions.findByType(BaseExtension::class.java)
+            extension?.registerTransform(CementAppTransform(mProject))
         }
-        mPluginExtension = project.extensions.create("component", ComponentExtension::class.java)
-        taskManager = TaskManager(p, mPluginExtension)
-        project.afterEvaluate {
-            mPluginExtension.ensureComponentExtension(project)
+        mPluginExtension = mProject.extensions.create("component", ComponentExtension::class.java)
+        mTaskManager = TaskManager(p, mPluginExtension)
+        mProject.afterEvaluate {
+            mPluginExtension.ensureComponentExtension(mProject)
             configureProject()
             createTasks()
-
-            //if only run component task, skip some time consuming operations
-            StatusManager.isRunComponentTaskOnly = isRunComponentTaskOnly()
-            Log.d("component run as:${if (StatusManager.isRunComponentTaskOnly) "component" else "app"}")
         }
     }
 
     private fun configureProject() {
         Log.p(msg = "configure project.")
-        val gradle = project.gradle
+        val gradle = mProject.gradle
         val taskNames = gradle.startParameter.taskNames
 
         val needAddDependencies = needAddComponentDependencies(taskNames)
 
-        mPluginExtension.dependencies.appendDependencies(project, needAddDependencies)
-        mPluginExtension.dependencies.appendInterfaceApis(project, needAddDependencies)
+        mPluginExtension.dependencies.appendDependencies(mProject, needAddDependencies)
+        mPluginExtension.dependencies.appendInterfaceApis(mProject, needAddDependencies)
     }
 
     private fun isRunForAar(): Boolean {
-        val gradle = project.gradle
+        val gradle = mProject.gradle
         val taskNames = gradle.startParameter.taskNames
         if (taskNames.size == 1) {
             val module = Descriptor.getTaskModuleName(taskNames[0])
-            if (module != project.name) {
+            if (module != mProject.name) {
                 return false
             }
             val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
@@ -75,13 +70,6 @@ class ComponentPlugin : Plugin<Project> {
                     taskName.toLowerCase(Locale.getDefault()).endsWith("aar")
         }
         return false
-    }
-
-    private fun isRunComponentTaskOnly(): Boolean {
-        val gradle = project.gradle
-        val taskNames = gradle.startParameter.taskNames
-        return taskNames.size == 1 &&
-                taskManager.isComponentTask(Descriptor.getTaskNameWithoutModule(taskNames[0]))
     }
 
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
@@ -98,36 +86,35 @@ class ComponentPlugin : Plugin<Project> {
     private fun createTasks() {
         Log.p(msg = "create tasks.")
         if (isRunForAar()) {
-            val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
+            val libPlugin = mProject.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
                 //cannot access class, is a bug of kotlin plugin. issue track :
                 //https://youtrack.jetbrains.com/issue/KT-26535?_ga=2.269032241.1117822405.1574306246-1707679741.1559701832
                 val variantType = it.variantData.type
                 if (variantType.isTestComponent) {
-                    //这里是continue,不给test的variant创建task
+                    //continue , do not create task for test variant
                     return@forEach
                 }
 
                 val taskContainer = PluginTaskContainer()
-                taskManager.pluginTaskContainer = taskContainer
+                mTaskManager.pluginTaskContainer = taskContainer
 
-                taskManager.createPrefixResourcesTask(it)
+                mTaskManager.createPrefixResourcesTask(it)
 
-//                taskManager.createGenerateSymbolTask(it)
+                mTaskManager.createGenerateSymbolTask(it)
 
-                taskManager.createRefineManifestTask(it)
+                mTaskManager.createRefineManifestTask(it)
 
-                taskManager.crateGenInterfaceArtifactTask(it)
+                mTaskManager.crateGenInterfaceArtifactTask(it)
 
-                taskManager.createUploadTask(it)
+                mTaskManager.createUploadTask(it)
             }
         } else {
-            val appPlugin = project.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
+            val appPlugin = mProject.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
-
-                //                taskManager.createReplaceManifestTask(pluginVariantScope)
+                mTaskManager.createReplaceManifestTask(it)
             }
         }
     }

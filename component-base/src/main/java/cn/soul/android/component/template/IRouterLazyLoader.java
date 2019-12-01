@@ -1,5 +1,7 @@
 package cn.soul.android.component.template;
 
+import android.util.SparseArray;
+
 import java.util.List;
 
 /**
@@ -9,4 +11,6 @@ import java.util.List;
  */
 public interface IRouterLazyLoader {
     List<IRouterNodeProvider> lazyLoadFactoryByGroup(String group);
+
+    SparseArray<String> loadServiceAliasMap();
 }
