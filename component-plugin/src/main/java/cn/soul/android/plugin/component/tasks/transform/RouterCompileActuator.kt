@@ -7,6 +7,8 @@ import cn.soul.android.component.exception.InjectTypeException
 import cn.soul.android.component.node.NodeType
 import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.component.template.IRouterNodeProvider
+import cn.soul.android.component.template.IServiceAliasProvider
+import cn.soul.android.component.util.CollectionHelper
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.InjectType
 import cn.soul.android.plugin.component.utils.InjectHelper
@@ -28,8 +30,8 @@ import java.util.zip.ZipEntry
 import kotlin.collections.ArrayList
 
 /**
- * All router relative code is in here.This class help inject code for Router Jump.
- * This actuator support Activity, Fragment, IComponentService Node now.
+ * All router relative code is in here.This class help inject code for Router navigate.
+ * This actuator support compile Activity, Fragment, IComponentService Node now.
  * @author panxinghai
  *
  * date : 2019-11-18 18:44
@@ -43,6 +45,9 @@ class RouterCompileActuator(private val project: Project,
 
     //pair first: super interface's class full name, second: node path
     private val componentServiceAlias = arrayListOf<Pair<String, String>>()
+
+    //for lazy loader
+    private val aliasProviderList = arrayListOf<String>()
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
         InjectHelper.instance.refresh()
@@ -107,8 +112,12 @@ class RouterCompileActuator(private val project: Project,
             groupMap.forEach {
                 Log.d("${it.key} : ${Arrays.toString(it.value.toArray())}")
             }
+            return
         }
-        return
+        if (zipEntry.name.startsWith(Constants.SERVICE_ALIAS_PROVIDER_FILE_FOLDER)) {
+            aliasProviderList.add(getNameWithEntryName(zipEntry.name))
+            println(zipEntry.name + "23333")
+        }
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {
@@ -123,6 +132,9 @@ class RouterCompileActuator(private val project: Project,
                 genRouterProviderImpl(dest, it.key, it.value)
             }
         }
+        if (isComponent && componentServiceAlias.isNotEmpty()) {
+            genServiceAliasProviderImpl(dest, componentServiceAlias)
+        }
         if (!isComponent) {
             nodeMapByGroup.forEach {
                 groupMap.computeIfAbsent(it.key) {
@@ -131,8 +143,10 @@ class RouterCompileActuator(private val project: Project,
             }
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterNodeProvider::class.java))
+            InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(CollectionHelper::class.java))
             Log.d("generate lazy loader")
-            genRouterLazyLoaderImpl(dest, groupMap, componentServiceAlias)
+            genRouterLazyLoaderImpl(dest, groupMap,
+                    componentServiceAlias, aliasProviderList)
         }
     }
 
@@ -344,9 +358,31 @@ class RouterCompileActuator(private val project: Project,
         return builder.toString()
     }
 
+    private fun genServiceAliasProviderImpl(dir: File, componentServiceAlias: ArrayList<Pair<String, String>>) {
+        val name = Constants.SERVICE_ALIAS_PROVIDER_FILE_PACKAGE + genServiceAliasProviderClassName()
+        MethodGen(name)
+                .interfaces(IServiceAliasProvider::class.java)
+                .signature("public android.util.SparseArray",
+                        "getServiceAlias")
+                .body { produceAliasProviderBodySrc(componentServiceAlias) }
+                .gen()?.writeFile(dir.absolutePath)
+    }
+
+    private fun produceAliasProviderBodySrc(alias: ArrayList<Pair<String, String>>): String {
+        val sb = StringBuilder("{")
+                .append("android.util.SparseArray result = new android.util.SparseArray();")
+        alias.forEach {
+            val hash = it.first.hashCode()
+            sb.append("result.put($hash, \"${it.second}\");")
+        }
+        sb.append("return result;}")
+        return sb.toString()
+    }
+
     private fun genRouterLazyLoaderImpl(dir: File,
                                         groupMap: MutableMap<String, ArrayList<String>>,
-                                        aliasInfoList: ArrayList<Pair<String, String>>) {
+                                        aliasInfoList: ArrayList<Pair<String, String>>,
+                                        aliasProviderList: ArrayList<String>) {
         val name = Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME
         MethodGen(name)
                 .interfaces(IRouterLazyLoader::class.java)
@@ -356,9 +392,9 @@ class RouterCompileActuator(private val project: Project,
                 .body { produceLazyLoadFactoryBodySrc(groupMap) }
                 .gen()
         MethodGen(name)
-                .signature("public android.util.SpareArray",
+                .signature("public android.util.SparseArray",
                         "loadServiceAliasMap")
-                .body { produceLoadServiceAliasMapMethodBodySrc(aliasInfoList) }
+                .body { produceLoadServiceAliasMapMethodBodySrc(aliasInfoList, aliasProviderList) }
                 .gen()?.writeFile(dir.absolutePath)
     }
 
@@ -382,14 +418,16 @@ class RouterCompileActuator(private val project: Project,
         return sb.toString()
     }
 
-    private fun produceLoadServiceAliasMapMethodBodySrc(aliasInfoList: ArrayList<Pair<String, String>>): String {
+    private fun produceLoadServiceAliasMapMethodBodySrc(aliasInfoList: ArrayList<Pair<String, String>>,
+                                                        aliasProviderList: ArrayList<String>): String {
         val sb = StringBuilder("{")
                 .append("android.util.SparseArray result = new android.util.SparseArray();")
-        if (aliasInfoList.isNotEmpty()) {
-            aliasInfoList.forEach {
-                val hash = it.first.hashCode()
-                sb.append("result.put($hash, ${it.second});")
-            }
+        aliasInfoList.forEach {
+            val hash = it.first.hashCode()
+            sb.append("result.put($hash, \"${it.second}\");")
+        }
+        aliasProviderList.forEach {
+            sb.append("cn.soul.android.component.util.CollectionHelper.putAllSparseArray(result, new ${Constants.SERVICE_ALIAS_PROVIDER_FILE_PACKAGE}$it().getServiceAlias());")
         }
         sb.append("return result;}")
         return sb.toString()
@@ -398,6 +436,11 @@ class RouterCompileActuator(private val project: Project,
     private fun genRouterProviderClassName(group: String): String {
         val componentName = getComponentExtension().componentName
         return "$group\$$componentName\$NodeProvider"
+    }
+
+    private fun genServiceAliasProviderClassName(): String {
+        val componentName = getComponentExtension().componentName
+        return "$componentName\$ServiceAliasProvider"
     }
 
     private fun getComponentExtension(): ComponentExtension {

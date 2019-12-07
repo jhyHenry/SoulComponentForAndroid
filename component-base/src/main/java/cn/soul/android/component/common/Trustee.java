@@ -1,13 +1,17 @@
 package cn.soul.android.component.common;
 
+import android.content.Context;
 import android.util.SparseArray;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import cn.soul.android.component.Constants;
 import cn.soul.android.component.IComponentService;
+import cn.soul.android.component.exception.ComponentServiceInstantException;
 import cn.soul.android.component.exception.HashCollisionException;
+import cn.soul.android.component.node.ComponentServiceNode;
 import cn.soul.android.component.node.RouterNode;
 import cn.soul.android.component.template.IRouterNodeProvider;
 import cn.soul.android.component.template.IRouterLazyLoader;
@@ -22,7 +26,9 @@ public class Trustee {
 
     private SparseArray<RouterTable> mRouterMapByGroup;
     private IRouterLazyLoader mLazyLoader;
-    private Map<Class<? extends IComponentService>, IComponentService> mComponentServiceContainer;
+    private Map<String, IComponentService> mServiceInstanceContainer;
+
+    private SparseArray<String> mComponentServiceAliasMap;
 
     private Trustee() {
         mRouterMapByGroup = new SparseArray<>();
@@ -52,9 +58,43 @@ public class Trustee {
     }
 
     public synchronized void release() {
-        mComponentServiceContainer = null;
+        mServiceInstanceContainer = null;
         mRouterMapByGroup = null;
         mLazyLoader = null;
+    }
+
+    public IComponentService instanceComponentService(Context context, Class<?> clazz)
+            throws IllegalAccessException, InstantiationException, RuntimeException {
+        if (mComponentServiceAliasMap == null) {
+            IRouterLazyLoader lazyLoader = instanceLoader();
+            if (lazyLoader == null) {
+                throw new ComponentServiceInstantException("load node info by lazy load occur exception");
+            }
+            mComponentServiceAliasMap = lazyLoader.loadServiceAliasMap();
+        }
+        if (mComponentServiceAliasMap == null) {
+            throw new ComponentServiceInstantException("load service alias occur exception.");
+        }
+        String path = mComponentServiceAliasMap.get(clazz.getName().hashCode());
+        RouterNode node = getRouterNode(path);
+        if (node == null) {
+            throw new ComponentServiceInstantException("cannot find router info with class:" + clazz.getName() + ", path:" + path);
+        }
+        return instanceComponentService(context, (ComponentServiceNode) node);
+    }
+
+    public IComponentService instanceComponentService(Context context, ComponentServiceNode node)
+            throws InstantiationException, IllegalAccessException {
+        if (mServiceInstanceContainer == null) {
+            mServiceInstanceContainer = new HashMap<>();
+        }
+        IComponentService instance = mServiceInstanceContainer.get(node.getPath());
+        if (instance == null) {
+            instance = (IComponentService) node.getTarget().newInstance();
+            instance.init(context);
+            mServiceInstanceContainer.put(node.getPath(), instance);
+        }
+        return instance;
     }
 
     private RouterTable getRouterTable(String group) {
@@ -86,6 +126,20 @@ public class Trustee {
 
     //lazy load node
     private synchronized void loadNode(String group, RouterTable table) {
+        IRouterLazyLoader lazyLoader = instanceLoader();
+        if (lazyLoader == null) {
+            return;
+        }
+        List<IRouterNodeProvider> list = lazyLoader.lazyLoadFactoryByGroup(group);
+        for (IRouterNodeProvider factory : list) {
+            List<RouterNode> nodes = factory.getRouterNodes();
+            for (RouterNode node : nodes) {
+                table.putNode(node);
+            }
+        }
+    }
+
+    private IRouterLazyLoader instanceLoader() {
         if (mLazyLoader == null) {
             try {
                 mLazyLoader = (IRouterLazyLoader) Class.forName(Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME)
@@ -97,17 +151,8 @@ public class Trustee {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-            if (mLazyLoader == null) {
-                return;
-            }
         }
-        List<IRouterNodeProvider> list = mLazyLoader.lazyLoadFactoryByGroup(group);
-        for (IRouterNodeProvider factory : list) {
-            List<RouterNode> nodes = factory.getRouterNodes();
-            for (RouterNode node : nodes) {
-                table.putNode(node);
-            }
-        }
+        return mLazyLoader;
     }
 
     private static class RouterTable {

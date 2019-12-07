@@ -5,13 +5,15 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import cn.soul.android.component.common.Trustee;
+import cn.soul.android.component.exception.ComponentServiceInstantException;
+import cn.soul.android.component.node.ComponentServiceNode;
 import cn.soul.android.component.node.FragmentNode;
 import cn.soul.android.component.node.RouterNode;
 import cn.soul.android.component.template.IInjectable;
-
 
 /**
  * Created by nebula on 2019-07-20
@@ -33,6 +35,10 @@ public class SoulRouter {
         void onLost(String path);
 
         void onError(RouterNode node, Exception e);
+    }
+
+    public interface ServiceInstantCallback {
+        void onError(Exception e);
     }
 
     public static void init(SoulRouterConfig config) {
@@ -75,17 +81,54 @@ public class SoulRouter {
         Trustee.instance().putRouterNode(node);
     }
 
-    Object navigate(int requestCode, Context context, Navigator guide, NavigateCallback callback) {
+    @Nullable
+    public <S> S service(Class<? extends S> clazz) {
+        return service(null, clazz, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public <S> S service(Context context, Class<? extends S> clazz, ServiceInstantCallback callback) {
+        if (context == null) {
+            context = sContext;
+        }
+        return (S) navigate(context, clazz, callback);
+    }
+
+    Object navigate(Context context, Class<?> clazz, ServiceInstantCallback instantCallback) {
+        ServiceInstantCallback callback = instantCallback;
+        try {
+            return Trustee.instance().instanceComponentService(context, clazz);
+        } catch (IllegalAccessException e) {
+            if (callback != null) {
+                callback.onError(e);
+            }
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            if (callback != null) {
+                callback.onError(e);
+            }
+            e.printStackTrace();
+        } catch (ComponentServiceInstantException e) {
+            if (callback != null) {
+                callback.onError(e);
+            }
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    Object navigate(int requestCode, Context context, Navigator guide, NavigateCallback navigateCallback) {
         RouterNode node = Trustee.instance().getRouterNode(guide.path);
-        NavigateCallback navigateCallback = callback == null ? mNavigateCallback : callback;
+        NavigateCallback callback = navigateCallback == null ? mNavigateCallback : navigateCallback;
         if (node == null) {
-            if (navigateCallback != null) {
-                navigateCallback.onLost(guide.path);
+            if (callback != null) {
+                callback.onLost(guide.path);
             }
             return null;
         }
-        if (navigateCallback != null) {
-            navigateCallback.onFound(node);
+        if (callback != null) {
+            callback.onFound(node);
         }
         if (context == null) {
             context = sContext;
@@ -110,6 +153,19 @@ public class SoulRouter {
                 }
                 return null;
             case COMPONENT_SERVICE:
+                try {
+                    Trustee.instance().instanceComponentService(context, (ComponentServiceNode) node);
+                } catch (InstantiationException e) {
+                    if (callback != null) {
+                        callback.onError(node, e);
+                    }
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    if (callback != null) {
+                        callback.onError(node, e);
+                    }
+                    e.printStackTrace();
+                }
                 break;
             default:
                 break;
@@ -121,6 +177,10 @@ public class SoulRouter {
         Fragment fragment = (Fragment) routerNode.getTarget().newInstance();
         fragment.setArguments(guide.bundle);
         return fragment;
+    }
+
+    private IComponentService getComponentServiceInstance(Context context, ComponentServiceNode node, Navigator guide) throws InstantiationException, IllegalAccessException {
+        return Trustee.instance().instanceComponentService(context, node);
     }
 
     private void startActivity(int requestCode, Context context, RouterNode node, Navigator guide) {

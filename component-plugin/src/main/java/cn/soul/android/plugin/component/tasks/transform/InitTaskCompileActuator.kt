@@ -62,7 +62,6 @@ class InitTaskCompileActuator(private val project: Project,
         if (!ctClass.hasAnnotation(ServiceInject::class.java)) {
             return false
         }
-        println(ctClass.name)
         if (ctClass.isInterface || Modifier.isAbstract(ctClass.modifiers) || !ctClass.subtypeOf(mComponentServiceCtClass)) {
             throw ClassGenerateException("ServiceInject must annotate non-abstract class which implement IComponentService")
         }

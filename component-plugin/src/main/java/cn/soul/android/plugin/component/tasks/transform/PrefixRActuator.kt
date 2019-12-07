@@ -79,7 +79,6 @@ class PrefixRActuator(private val project: Project,
         classInfo.forEach {
             val newRClass = InjectHelper.instance.getClassPool().makeClass(it.first)
             it.second.forEach { field ->
-                println("${it.first}:$field")
                 newRClass.addField(CtField.make(field, newRClass))
             }
         }
