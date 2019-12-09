@@ -46,9 +46,6 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.appcompat:appcompat:1.0.2'
 }
 
-//combuild {
-//    applicationName = 'com.soul.componentdemo.application.AppApplication'
-//    isRegisterCompoAuto = true
-//}

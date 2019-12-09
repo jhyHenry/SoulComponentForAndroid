@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'maven'
-
+apply from: '../script/upload.gradle'
 
 dependencies {
 //    implementation fileTree(include: ['*.jar'], dir: 'libs')
@@ -19,13 +19,31 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version" //gradle sdk
 }
 
-uploadArchives {
-    repositories.mavenDeployer {
-        repository(url: uri('../repo/'))
+//uploadArchives {
+//    repositories.mavenDeployer {
+//        repository(url: uri('../repo/'))
+//
+//        pom.groupId = 'cn.soul.android.plugin'
+//        pom.artifactId = 'component-plugin'
+//        pom.version = '1.0.2'
+//    }
+//}
+parseLocalProperties()
 
-        pom.groupId = 'cn.soul.android.plugin'
-        pom.artifactId = 'component-plugin'
-        pom.version = '1.0.2'
+uploadArchives {
+    def local = LOCAL == 1
+    def url = local ? "../repo/" : MAVEN_REPO_RELEASE_URL
+    repositories.mavenDeployer {
+        repository(url: url) {
+            authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+        }
+        pom.project {
+            version '1.0.2'
+            artifactId 'component-plugin'
+            groupId 'cn.soul.android.plugin'
+            packaging TYPE
+            description DESCRIPTION
+        }
     }
 }
 
