@@ -31,16 +31,19 @@ dependencies {
 parseLocalProperties()
 
 uploadArchives {
-    def local = LOCAL == 1
-    def url = local ? "../repo/" : MAVEN_REPO_RELEASE_URL
+    def local = LOCAL == "1"
     repositories.mavenDeployer {
-        repository(url: url) {
-            authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+        if (local) {
+            repository(url: uri("../repo/"))
+        } else {
+            repository(url: MAVEN_REPO_RELEASE_URL) {
+                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+            }
         }
         pom.project {
-            version '1.0.2'
-            artifactId 'component-plugin'
             groupId 'cn.soul.android.plugin'
+            artifactId 'component-plugin'
+            version '1.0.2'
             packaging TYPE
             description DESCRIPTION
         }

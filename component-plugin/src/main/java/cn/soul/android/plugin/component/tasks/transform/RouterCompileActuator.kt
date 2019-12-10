@@ -9,6 +9,7 @@ import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.component.template.IRouterNodeProvider
 import cn.soul.android.component.template.IServiceAliasProvider
 import cn.soul.android.component.util.CollectionHelper
+import cn.soul.android.plugin.component.CompLibPlugin
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.InjectType
 import cn.soul.android.plugin.component.utils.InjectHelper
@@ -57,7 +58,7 @@ class RouterCompileActuator(private val project: Project,
         }
         val variantName = transformInvocation.context.variantName
         println(variantName)
-        val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
+        val libPlugin = project.plugins.getPlugin(CompLibPlugin::class.java) as LibraryPlugin
         //cannot got jar file input in library Transform, so got them by variantManager
         libPlugin.variantManager.variantScopes.forEach {
             if (it.fullVariantName != variantName) {

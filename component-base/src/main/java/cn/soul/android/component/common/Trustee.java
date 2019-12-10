@@ -61,6 +61,7 @@ public class Trustee {
         mServiceInstanceContainer = null;
         mRouterMapByGroup = null;
         mLazyLoader = null;
+        sInstance = null;
     }
 
     public IComponentService instanceComponentService(Context context, Class<?> clazz)

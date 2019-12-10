@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import cn.soul.android.plugin.component.CompLibPlugin
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
@@ -30,7 +31,7 @@ class PrefixRActuator(private val project: Project,
     override fun preTransform(transformInvocation: TransformInvocation) {
         val p = project
         val variantName = transformInvocation.context.variantName
-        val libPlugin = p.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
+        val libPlugin = p.plugins.getPlugin(CompLibPlugin::class.java) as LibraryPlugin
         (libPlugin.extension as LibraryExtension).libraryVariants.all {
             if (it.name == variantName) {
                 applicationId = it.applicationId

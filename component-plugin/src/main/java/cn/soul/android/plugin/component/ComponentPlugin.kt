@@ -28,7 +28,7 @@ class ComponentPlugin : Plugin<Project> {
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
         if (isRunForAar()) {
-            p.plugins.apply("com.android.library")
+            p.plugins.apply(CompLibPlugin::class.java)
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
             extension?.registerTransform(CementLibTransform(mProject))
         } else {
@@ -86,7 +86,7 @@ class ComponentPlugin : Plugin<Project> {
     private fun createTasks() {
         Log.p(msg = "create tasks.")
         if (isRunForAar()) {
-            val libPlugin = mProject.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
+            val libPlugin = mProject.plugins.getPlugin(CompLibPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
                 //cannot access class, is a bug of kotlin plugin. issue track :
