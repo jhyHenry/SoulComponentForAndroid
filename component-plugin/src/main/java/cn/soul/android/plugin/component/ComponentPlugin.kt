@@ -23,14 +23,28 @@ class ComponentPlugin : Plugin<Project> {
     private lateinit var mProject: Project
     private lateinit var mTaskManager: TaskManager
 
+    private var mLibConfigExecutor: (() -> Unit)? = null
     override fun apply(p: Project) {
         mProject = p
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
         if (isRunForAar()) {
-            p.plugins.apply(CompLibPlugin::class.java)
+            mProject.afterEvaluate {
+                mLibConfigExecutor?.invoke()
+            }
+            p.plugins.apply("com.android.library")
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
             extension?.registerTransform(CementLibTransform(mProject))
+            mLibConfigExecutor = {
+                extension?.apply {
+                    defaultConfig.applicationId = null
+                    buildTypes {
+                        it.all { buildType ->
+                            buildType.isShrinkResources = false
+                        }
+                    }
+                }
+            }
         } else {
             p.plugins.apply("com.android.application")
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
@@ -86,7 +100,7 @@ class ComponentPlugin : Plugin<Project> {
     private fun createTasks() {
         Log.p(msg = "create tasks.")
         if (isRunForAar()) {
-            val libPlugin = mProject.plugins.getPlugin(CompLibPlugin::class.java) as BasePlugin<*>
+            val libPlugin = mProject.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
                 //cannot access class, is a bug of kotlin plugin. issue track :
@@ -109,13 +123,18 @@ class ComponentPlugin : Plugin<Project> {
                 mTaskManager.crateGenInterfaceArtifactTask(it)
 
                 mTaskManager.createUploadTask(it)
+
+                mTaskManager.applyProguard(mProject, it)
             }
         } else {
             val appPlugin = mProject.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
                 mTaskManager.createReplaceManifestTask(it)
+
+                mTaskManager.applyProguard(mProject, it)
             }
         }
+
     }
 }

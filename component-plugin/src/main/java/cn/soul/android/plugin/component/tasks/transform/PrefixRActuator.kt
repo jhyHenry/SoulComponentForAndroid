@@ -1,6 +1,5 @@
 package cn.soul.android.plugin.component.tasks.transform
 
-import cn.soul.android.plugin.component.CompLibPlugin
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
@@ -31,7 +30,7 @@ class PrefixRActuator(private val project: Project,
     override fun preTransform(transformInvocation: TransformInvocation) {
         val p = project
         val variantName = transformInvocation.context.variantName
-        val libPlugin = p.plugins.getPlugin(CompLibPlugin::class.java) as LibraryPlugin
+        val libPlugin = p.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
         (libPlugin.extension as LibraryExtension).libraryVariants.all {
             if (it.name == variantName) {
                 applicationId = it.applicationId
@@ -73,10 +72,10 @@ class PrefixRActuator(private val project: Project,
             classInfo.add(pair)
         }
         ctClass.detach()
-        /*with gradle 3.3.0, R file changed from .java file to .jar file, if directly use
-          fieldAccess replace, new access while inline by constant, so construct new ctclass
-          in javassist, it will be correct behavior
-          */
+        /* with gradle 3.3.0, R file changed from .java file to .jar file, if directly use
+         * fieldAccess replace, new access while inline by constant, so construct new ctclass
+         * in javassist, it will be correct behavior
+         */
         classInfo.forEach {
             val newRClass = InjectHelper.instance.getClassPool().makeClass(it.first)
             it.second.forEach { field ->
