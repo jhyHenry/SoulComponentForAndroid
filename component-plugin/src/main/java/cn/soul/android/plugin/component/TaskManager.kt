@@ -4,8 +4,6 @@ import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.utils.Descriptor
 import com.android.SdkConstants
-import com.android.annotations.NonNull
-import com.android.build.api.transform.Transform
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.BuildArtifactsHolder
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -16,14 +14,10 @@ import com.android.build.gradle.internal.transforms.BaseProguardAction
 import com.android.build.gradle.internal.variant.VariantHelper
 import com.android.build.gradle.tasks.ProcessLibraryManifest
 import com.android.utils.FileUtils
-import com.android.utils.appendCapitalized
-import com.google.common.base.CaseFormat
 import com.google.common.collect.ImmutableList
 import org.gradle.api.Project
-import org.gradle.api.Task
 import java.io.File
 import java.util.*
-import java.util.stream.Collectors
 
 /**
  * @author panxinghai
@@ -137,7 +131,7 @@ class TaskManager(private val project: Project,
     }
 
     fun applyProguard(project: Project, scope: VariantScope) {
-        val proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${it.fullVariantName.capitalize()}")
+        val proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${scope.fullVariantName.capitalize()}")
         if (proguardTask is TransformTask) {
             val transform = proguardTask.transform
             if (transform is BaseProguardAction) {

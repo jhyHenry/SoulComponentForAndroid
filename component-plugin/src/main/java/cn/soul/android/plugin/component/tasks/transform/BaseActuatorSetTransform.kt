@@ -1,6 +1,5 @@
 package cn.soul.android.plugin.component.tasks.transform
 
-import cn.soul.android.plugin.component.resolve.ZipHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.JarInput
@@ -37,10 +36,8 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
     }
 
     override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
-        ZipHelper.traversalZip(jarInput.file) { entry ->
-            actuatorSet.forEach {
-                it.onJarEntryVisited(entry, transformInvocation)
-            }
+        actuatorSet.forEach {
+            it.onJarVisited(jarInput.file, transformInvocation)
         }
         return false
     }

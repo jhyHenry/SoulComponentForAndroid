@@ -2,7 +2,7 @@ package cn.soul.android.plugin.component.tasks.transform
 
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
-import java.util.zip.ZipEntry
+import java.io.File
 
 /**
  * use this actuator decoupling logic.
@@ -27,8 +27,10 @@ interface TransformActuator {
     fun onClassVisited(ctClass: CtClass,
                        transformInvocation: TransformInvocation): Boolean
 
-    fun onJarEntryVisited(zipEntry: ZipEntry,
-                          transformInvocation: TransformInvocation)
+    fun onJarVisited(jarFile: File,
+                     transformInvocation: TransformInvocation)
+
+
 
     /**
      * see [BaseTraversalTransform.postTransform]

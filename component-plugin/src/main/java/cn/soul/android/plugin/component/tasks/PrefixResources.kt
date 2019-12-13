@@ -27,7 +27,7 @@ open class PrefixResources : AndroidVariantTask() {
     private val prefixHandleMap: MutableMap<String, IElementPrefix> = mutableMapOf()
     private var valuesCount = 0
     private val typeList = listOf(
-//            "style",
+            "style",
 //            "styleable",
 //            "bool",
 //            "attr",

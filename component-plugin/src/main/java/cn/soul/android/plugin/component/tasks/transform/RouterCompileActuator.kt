@@ -16,6 +16,7 @@ import cn.soul.android.plugin.component.utils.Log
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.TransformInvocation
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -25,6 +26,8 @@ import javassist.bytecode.SignatureAttribute
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import java.io.File
+import java.net.URL
+import java.net.URLClassLoader
 import java.util.*
 import java.util.zip.ZipEntry
 
@@ -48,29 +51,40 @@ class RouterCompileActuator(private val project: Project,
     //for lazy loader
     private val aliasProviderList = arrayListOf<String>()
 
+    private var baseClassLoader: URLClassLoader? = null
+
     override fun preTraversal(transformInvocation: TransformInvocation) {
         InjectHelper.instance.refresh()
         InjectHelper.instance.appendAndroidPlatformPath(project)
-        if (!isComponent) {
-            return
-        }
-        val variantName = transformInvocation.context.variantName
-        println(variantName)
-        val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
-        //cannot got jar file input in library Transform, so got them by variantManager
-        libPlugin.variantManager.variantScopes.forEach {
-            if (it.fullVariantName != variantName) {
-                return@forEach
+        if (isComponent) {
+            val variantName = transformInvocation.context.variantName
+            println(variantName)
+            val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
+            //cannot got jar file input in library Transform, so got them by variantManager
+            libPlugin.variantManager.variantScopes.forEach {
+                if (it.fullVariantName != variantName) {
+                    return@forEach
+                }
+                it.getArtifactCollection(
+                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+                        AndroidArtifacts.ArtifactScope.EXTERNAL,
+                        AndroidArtifacts.ArtifactType.CLASSES)
+                        .artifactFiles.files
+                        .forEach { file ->
+                            //here we can get all jar file for dependencies
+                            InjectHelper.instance.appendClassPath(file.absolutePath)
+                        }
             }
-            it.getArtifactCollection(
-                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                    AndroidArtifacts.ArtifactScope.EXTERNAL,
-                    AndroidArtifacts.ArtifactType.CLASSES)
-                    .artifactFiles.files
-                    .forEach { file ->
-                        //here we can get all jar file for dependencies
-                        InjectHelper.instance.appendClassPath(file.absolutePath)
-                    }
+        } else {
+            val extension = project.extensions.getByName("android") as BaseExtension
+            val jarPathList = arrayListOf<URL>()
+            transformInvocation.inputs.forEach { input ->
+                input.jarInputs.forEach {
+                    jarPathList.add(URL("file://${it.file.absolutePath}"))
+                }
+            }
+            jarPathList.add(URL("file://" + File(extension.sdkDirectory, "platforms/${extension.compileSdkVersion}/android.jar").absolutePath))
+            baseClassLoader = URLClassLoader(jarPathList.toArray(arrayOf()), this::class.java.classLoader)
         }
     }
 
@@ -99,23 +113,40 @@ class RouterCompileActuator(private val project: Project,
         return insertInjectImplement(nodeInfo)
     }
 
+    private val genClassSet = arrayListOf<String>()
+    override fun onJarVisited(jarFile: File, transformInvocation: TransformInvocation) {
+        genClassSet.clear()
+        super.onJarVisited(jarFile, transformInvocation)
+        if (genClassSet.isNotEmpty()) {
+            Log.e("url:" + URL("file://${jarFile.absolutePath}"))
+            val classLoader = URLClassLoader(arrayOf(URL("file://${jarFile.absolutePath}")), baseClassLoader)
+
+            genClassSet.forEach {
+                val providerClass = classLoader.loadClass("${Constants.ROUTER_GEN_FILE_PACKAGE}$it")
+                val nodeProvider = providerClass.newInstance() as IRouterNodeProvider
+                nodeProvider.routerNodes.forEach { node ->
+                    println(node.path)
+                }
+            }
+        }
+    }
+
     override fun onJarEntryVisited(zipEntry: ZipEntry,
+                                   jarFile: File,
                                    transformInvocation: TransformInvocation) {
         if (isComponent) {
             return
         }
         if (zipEntry.name.startsWith(Constants.ROUTER_GEN_FILE_FOLDER)) {
+            val className = getNameWithEntryName(zipEntry.name)
             groupMap.computeIfAbsent(getGroupWithEntryName(zipEntry.name)) {
                 arrayListOf()
-            }.add(getNameWithEntryName(zipEntry.name))
-            groupMap.forEach {
-                Log.d("${it.key} : ${Arrays.toString(it.value.toArray())}")
-            }
+            }.add(className)
+            genClassSet.add(className)
             return
         }
         if (zipEntry.name.startsWith(Constants.SERVICE_ALIAS_PROVIDER_FILE_FOLDER)) {
             aliasProviderList.add(getNameWithEntryName(zipEntry.name))
-            println(zipEntry.name + "23333")
         }
     }
 

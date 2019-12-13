@@ -11,6 +11,7 @@ import javassist.CtField
 import javassist.expr.ExprEditor
 import javassist.expr.FieldAccess
 import org.gradle.api.Project
+import java.io.File
 import java.util.zip.ZipEntry
 
 /**
@@ -46,7 +47,7 @@ class PrefixRActuator(private val project: Project,
         return true
     }
 
-    override fun onJarEntryVisited(zipEntry: ZipEntry, transformInvocation: TransformInvocation) {
+    override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File, transformInvocation: TransformInvocation) {
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {

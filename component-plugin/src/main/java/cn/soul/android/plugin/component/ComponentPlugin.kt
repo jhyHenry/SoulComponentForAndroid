@@ -130,9 +130,9 @@ class ComponentPlugin : Plugin<Project> {
             val appPlugin = mProject.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
-                mTaskManager.createReplaceManifestTask(it)
+//                mTaskManager.createReplaceManifestTask(it)
 
-                mTaskManager.applyProguard(mProject, it)
+//                mTaskManager.applyProguard(mProject, it)
             }
         }
 

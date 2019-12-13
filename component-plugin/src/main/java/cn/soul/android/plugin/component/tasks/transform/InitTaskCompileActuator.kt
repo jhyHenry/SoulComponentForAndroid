@@ -78,7 +78,7 @@ class InitTaskCompileActuator(private val project: Project,
         return true
     }
 
-    override fun onJarEntryVisited(zipEntry: ZipEntry, transformInvocation: TransformInvocation) {
+    override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File, transformInvocation: TransformInvocation) {
         if (isComponent) {
             return
         }
