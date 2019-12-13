@@ -1,4 +1,6 @@
-apply plugin: 'com.soul.comgradle'
+import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
+
+apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
@@ -10,7 +12,6 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
 //        javaCompileOptions {
 //            annotationProcessorOptions {
@@ -46,29 +47,49 @@ android {
 
     configurations.all {
         resolutionStrategy {
-            force 'com.android.support:support-v4:28.0.0'
         }
     }
 
 }
 
 dependencies {
-    compile project(':componentservice')
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    annotationProcessor project(':router-anno-compiler')
-//    annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    testCompile 'junit:junit:4.12'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
-}
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    releaseImplementation 'net.sf.json-lib:json-lib:2.4:jdk13'
+    testImplementation 'junit:junit:4.12'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    // https://mvnrepository.com/artifact/org.gradle/gradle-core
+    implementation group: 'org.gradle', name: 'gradle-core', version: '4.10.1'
 
-combuild {
-    applicationName = 'com.soul.reader.runalone.application.ReaderApplication'
-    isRegisterCompoAuto = false
 }
 
 repositories {
+    maven {
+        url 'https://repo.gradle.org/gradle/libs-releases-local/'
+    }
     mavenCentral()
+}
+
+afterEvaluate {
+//    println project.dependencies.artifactTypes.all {
+//        println it.properties
+//    }
+    android.applicationVariants.all {
+//        it.variantData.variantDependency.compileClasspath.resolve().forEach{
+//            println it
+//        }
+//        if(it.variantData.name == "release")
+//            return
+//        it.variantData.getVariantDependency().getRuntimeElements().getAllDependencies().forEach{
+//            println it
+//        }
+//        project.getConfigurations()["implementation"].allDependencies.all {
+//            if (it instanceof DefaultSelfResolvingDependency) {
+//                it.resolve().forEach {
+//                    println it
+//                }
+//            } else {
+//                println it.group + ":" + it.name + ":" + it.version
+//            }
+//        }
+    }
 }

@@ -1,0 +1,17 @@
+ext {
+    //此处省略一万行代码
+    parseLocalProperties = this.&parseLocalProperties
+}
+
+def parseLocalProperties() {
+    def file = rootProject.file('local.properties')
+    if (file.exists()) {
+
+        def inputStream = rootProject.file('local.properties').newDataInputStream();
+        def properties = new Properties()
+        properties.load(inputStream)
+        properties.propertyNames().each {
+            ext.set(it, properties.getProperty(it))
+        }
+    }
+}

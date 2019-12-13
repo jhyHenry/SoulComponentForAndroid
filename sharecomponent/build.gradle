@@ -1,4 +1,4 @@
-apply plugin: 'com.soul.comgradle'
+apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 28
@@ -10,8 +10,6 @@ android {
         versionCode 1
         versionName "1.0"
 
-
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -37,27 +35,15 @@ android {
 
     configurations.all {
         resolutionStrategy {
-            force 'com.android.support:support-v4:28.0.0'
         }
     }
 
 }
 
 dependencies {
-    compile project(':componentservice')
-    annotationProcessor project(':router-anno-compiler')
     annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    testCompile 'junit:junit:4.12'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
-    compile project(path: ':router-annotation')
-}
-
-combuild {
-    applicationName = 'com.soul.share.runalone.application.ShareApplication'
-    isRegisterCompoAuto = true
+    testImplementation 'junit:junit:4.12'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 
 repositories {

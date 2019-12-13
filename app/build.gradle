@@ -1,15 +1,16 @@
-apply plugin: 'com.soul.comgradle'
+//apply plugin: 'com.android.application'
+//apply plugin: 'cn.soul.component'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
     defaultConfig {
-        applicationId "com.soul.androidcomponent.w"
+//        applicationId "com.soul.androidcomponent"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -37,26 +38,14 @@ android {
         abortOnError false
     }
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-
     configurations.all {
         resolutionStrategy {
-            force 'com.android.support:support-v4:28.0.0'
         }
     }
 
 }
 
 dependencies {
-    compile project(':componentservice')
-    annotationProcessor project(':router-anno-compiler')
-    compile project(path: ':router-annotation')
+    implementation 'androidx.appcompat:appcompat:1.0.2'
 }
 
-combuild {
-    applicationName = 'com.soul.componentdemo.application.AppApplication'
-    isRegisterCompoAuto = true
-}

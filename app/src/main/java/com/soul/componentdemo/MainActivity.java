@@ -2,20 +2,15 @@ package com.soul.componentdemo;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.view.View;
 import android.widget.Button;
 
-import com.soul.component.basiclib.ToastManager;
-import com.soul.component.basicres.BaseActivity;
-import com.soul.component.basicres.BaseApplication;
-import com.soul.component.componentlib.router.Router;
-import com.soul.componentservice.readerbook.ReadBookService;
-import com.soul.router.facade.annotation.RouteNode;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
-@RouteNode(path = "/main", desc = "首页")
-public class MainActivity extends BaseActivity implements View.OnClickListener {
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     Fragment fragment;
     FragmentTransaction ft;
@@ -41,24 +36,24 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             ft.remove(fragment).commit();
             fragment = null;
         }
-        Router router = Router.getInstance();
-        if (router.getService(ReadBookService.class.getSimpleName()) != null) {
-            ReadBookService service = (ReadBookService) router.getService(ReadBookService.class.getSimpleName());
-            fragment = service.getReadBookFragment();
-            ft = getSupportFragmentManager().beginTransaction();
-            ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
-        }
+//        Router router = Router.getInstance();
+//        if (router.getService(ReadBookService.class.getSimpleName()) != null) {
+//            ReadBookService service = (ReadBookService) router.getService(ReadBookService.class.getSimpleName());
+//            fragment = service.getReadBookFragment();
+//            ft = getSupportFragmentManager().beginTransaction();
+//            ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
+//        }
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.install_share:
-                Router.registerComponent("com.soul.share.applike.ShareApplike");
-                break;
-            case R.id.uninstall_share:
-                Router.unregisterComponent("com.soul.share.applike.ShareApplike");
-                break;
+//            case R.id.install_share:
+//                Router.registerComponent("com.soul.share.applike.ShareApplike");
+//                break;
+//            case R.id.uninstall_share:
+//                Router.unregisterComponent("com.soul.share.applike.ShareApplike");
+//                break;
         }
     }
 
@@ -66,7 +61,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (data != null) {
-            ToastManager.show(BaseApplication.getAppContext(), data.getStringExtra("result"));
+//            ToastManager.show(BaseApplication.getAppContext(), data.getStringExtra("result"));
         }
     }
 }

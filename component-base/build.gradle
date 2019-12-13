@@ -1,0 +1,68 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven'
+apply from: '../script/upload.gradle'
+
+dependencies {
+//    implementation "org.jgrapht:jgrapht-core:1.3.1"
+    implementation 'androidx.fragment:fragment:1.1.0'
+    implementation("com.google.guava:guava:28.1-android")
+    testImplementation 'junit:junit:4.12'
+}
+android {
+    compileSdkVersion 29
+    buildToolsVersion '29.0.0'
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+android.libraryVariants.all { variant ->
+    def name = variant.buildType.name
+    def task = project.tasks.create "jar${name.capitalize()}", Jar
+    task.dependsOn variant.getJavaCompileProvider().get()
+    task.from(variant.getJavaCompileProvider().get().destinationDir) {
+        exclude("**/R.class")
+        exclude("**/R\$**.class")
+    }
+//    println variant.javaCompileProvider.get().destinationDir
+    artifacts.add('archives', task)
+
+}
+
+//uploadArchives {
+//    repositories.mavenDeployer {
+//        repository(url: uri('../repo/'))
+//
+//        pom.groupId = 'cn.soul.android.module'
+//        pom.artifactId = 'component'
+//        pom.version = '1.0.0'
+//    }
+//}
+
+parseLocalProperties()
+
+uploadArchives {
+    def local = LOCAL == "1"
+    repositories.mavenDeployer {
+        if (local) {
+            repository(url: uri("../repo/"))
+        } else {
+            repository(url: MAVEN_REPO_RELEASE_URL) {
+                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+            }
+        }
+        pom.project {
+            groupId 'cn.soul.android.module'
+            artifactId 'component'
+            version '1.0.0'
+            packaging TYPE
+            description DESCRIPTION
+        }
+    }
+}
+
+
+//        ./gradlew assembleDebug -Dorg.gradle.daemon=false -Dorg.gradle.debug=true
