@@ -9,6 +9,7 @@ import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.component.template.IRouterNodeProvider
 import cn.soul.android.component.template.IServiceAliasProvider
 import cn.soul.android.component.util.CollectionHelper
+import cn.soul.android.plugin.component.exception.RouterPathDuplicateException
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.InjectType
 import cn.soul.android.plugin.component.utils.InjectHelper
@@ -41,7 +42,7 @@ import java.util.zip.ZipEntry
 class RouterCompileActuator(private val project: Project,
                             isComponent: Boolean) : TypeActuator(isComponent) {
     //map key: path, value: node info list
-    private val nodeMapByGroup = mutableMapOf<String, ArrayList<NodeInfo>>()
+    private val nodeMapByGroup = mutableMapOf<String, HashSet<NodeInfo>>()
     //map key: group, value: node path list
     private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
@@ -107,9 +108,16 @@ class RouterCompileActuator(private val project: Project,
                 componentServiceAlias.add(Pair(it.name, path))
             }
         }
-        nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, ctClass.name)) {
-            arrayListOf()
-        }.add(nodeInfo)
+        val set = nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, ctClass.name)) {
+            hashSetOf()
+        }
+        val result = set.add(nodeInfo)
+        if (!result) {
+            val dup = set.find { it.path == nodeInfo.path }
+            throw RouterPathDuplicateException(nodeInfo.path, nodeInfo.ctClass.name,
+                    dup!!.path, dup.ctClass.name)
+        }
+
         return insertInjectImplement(nodeInfo)
     }
 
@@ -367,7 +375,7 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
-    private fun genRouterProviderImpl(dir: File, group: String, nodeList: List<NodeInfo>) {
+    private fun genRouterProviderImpl(dir: File, group: String, nodeList: Set<NodeInfo>) {
         MethodGen(Constants.ROUTER_GEN_FILE_PACKAGE + genRouterProviderClassName(group))
                 .interfaces(IRouterNodeProvider::class.java)
                 .signature(returnStatement = "public java.util.List",
@@ -376,7 +384,7 @@ class RouterCompileActuator(private val project: Project,
                 .gen()?.writeFile(dir.absolutePath)
     }
 
-    private fun produceNodesMethodBodySrc(nodeList: List<NodeInfo>): String {
+    private fun produceNodesMethodBodySrc(nodeList: Set<NodeInfo>): String {
         val builder = StringBuilder("{")
                 .append("java.util.ArrayList list = new java.util.ArrayList();")
         nodeList.forEach {
@@ -516,6 +524,20 @@ class RouterCompileActuator(private val project: Project,
                 }
             }
             return NodeType.UNSPECIFIED
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (other == this) {
+                return true
+            }
+            if (other is NodeInfo && other.path == path) {
+                return true
+            }
+            return super.equals(other)
+        }
+
+        override fun hashCode(): Int {
+            return path.hashCode()
         }
     }
 
