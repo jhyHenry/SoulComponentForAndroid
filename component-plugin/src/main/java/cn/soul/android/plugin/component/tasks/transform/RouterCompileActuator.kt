@@ -5,6 +5,7 @@ import cn.soul.android.component.annotation.Inject
 import cn.soul.android.component.annotation.Router
 import cn.soul.android.component.exception.InjectTypeException
 import cn.soul.android.component.node.NodeType
+import cn.soul.android.component.node.RouterNode
 import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.component.template.IRouterNodeProvider
 import cn.soul.android.component.template.IServiceAliasProvider
@@ -14,6 +15,7 @@ import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.InjectType
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
+import cn.soul.android.plugin.component.utils.componentExtension
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.TransformInvocation
@@ -54,12 +56,15 @@ class RouterCompileActuator(private val project: Project,
 
     private var baseClassLoader: URLClassLoader? = null
 
+    private var duplicateChecker: DuplicateChecker? = null
+
+    private var checkDuplicate: Boolean = false
+
     override fun preTraversal(transformInvocation: TransformInvocation) {
         InjectHelper.instance.refresh()
         InjectHelper.instance.appendAndroidPlatformPath(project)
         if (isComponent) {
             val variantName = transformInvocation.context.variantName
-            println(variantName)
             val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
             //cannot got jar file input in library Transform, so got them by variantManager
             libPlugin.variantManager.variantScopes.forEach {
@@ -77,6 +82,12 @@ class RouterCompileActuator(private val project: Project,
                         }
             }
         } else {
+            checkDuplicate = project.componentExtension().buildOption.checkPathDuplicate
+            if (!checkDuplicate) {
+                return
+            }
+            //check path duplicate
+            duplicateChecker = DuplicateChecker()
             val extension = project.extensions.getByName("android") as BaseExtension
             val jarPathList = arrayListOf<URL>()
             transformInvocation.inputs.forEach { input ->
@@ -125,7 +136,7 @@ class RouterCompileActuator(private val project: Project,
     override fun onJarVisited(jarFile: File, transformInvocation: TransformInvocation) {
         genClassSet.clear()
         super.onJarVisited(jarFile, transformInvocation)
-        if (genClassSet.isNotEmpty()) {
+        if (checkDuplicate && genClassSet.isNotEmpty()) {
             Log.e("url:" + URL("file://${jarFile.absolutePath}"))
             val classLoader = URLClassLoader(arrayOf(URL("file://${jarFile.absolutePath}")), baseClassLoader)
 
@@ -133,7 +144,7 @@ class RouterCompileActuator(private val project: Project,
                 val providerClass = classLoader.loadClass("${Constants.ROUTER_GEN_FILE_PACKAGE}$it")
                 val nodeProvider = providerClass.newInstance() as IRouterNodeProvider
                 nodeProvider.routerNodes.forEach { node ->
-                    println(node.path)
+                    duplicateChecker?.check(node)
                 }
             }
         }
@@ -164,7 +175,13 @@ class RouterCompileActuator(private val project: Project,
                 TransformManager.CONTENT_CLASS,
                 TransformManager.PROJECT_ONLY,
                 Format.DIRECTORY)
-
+        if (checkDuplicate) {
+            nodeMapByGroup.forEach { (_, set) ->
+                set.forEach {
+                    duplicateChecker?.check(it.path, it.ctClass.name)
+                }
+            }
+        }
         if (nodeMapByGroup.isNotEmpty()) {
             nodeMapByGroup.forEach {
                 genRouterProviderImpl(dest, it.key, it.value)
@@ -631,6 +648,40 @@ class RouterCompileActuator(private val project: Project,
             val startIndex = s.indexOf('<') + 1
             val endIndex = s.lastIndexOf('>')
             return s.substring(startIndex, endIndex).trim()
+        }
+    }
+
+    class DuplicateChecker {
+        data class NodeCheckInfo(val path: String, val className: String) {
+            override fun equals(other: Any?): Boolean {
+                if (other is NodeCheckInfo) {
+                    return path == other.path
+                }
+                return super.equals(other)
+            }
+
+            override fun hashCode(): Int {
+                return path.hashCode()
+            }
+        }
+
+        private val checkSet = hashSetOf<NodeCheckInfo>()
+
+        fun check(node: RouterNode) {
+            checkInternal(node.path, node.target.name)
+        }
+
+        fun check(path: String, className: String) {
+            checkInternal(path, className)
+        }
+
+        private fun checkInternal(path: String, className: String) {
+            val result = checkSet.add(NodeCheckInfo(path, className))
+            if (!result) {
+                val dup = checkSet.find { it.path == path }
+                throw RouterPathDuplicateException(path, className,
+                        dup!!.path, dup.className)
+            }
         }
     }
 }
