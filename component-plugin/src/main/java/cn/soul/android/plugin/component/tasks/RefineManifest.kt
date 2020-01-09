@@ -2,6 +2,7 @@ package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.AndroidXmlHelper
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
@@ -45,7 +46,7 @@ open class RefineManifest : AndroidVariantTask() {
                 applicationName = it.value
             }
         }
-        println("applicationName = $applicationName")
+        Log.d("applicationName = $applicationName")
         attributeNameList.forEach {
             applicationElement.remove(applicationElement.attribute(it))
         }

@@ -135,6 +135,5 @@ class ComponentPlugin : Plugin<Project> {
 //                mTaskManager.applyProguard(mProject, it)
             }
         }
-
     }
 }

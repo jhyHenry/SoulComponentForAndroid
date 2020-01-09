@@ -5,14 +5,17 @@ import cn.soul.android.component.annotation.Inject
 import cn.soul.android.component.annotation.Router
 import cn.soul.android.component.exception.InjectTypeException
 import cn.soul.android.component.node.NodeType
+import cn.soul.android.component.node.RouterNode
 import cn.soul.android.component.template.IRouterLazyLoader
 import cn.soul.android.component.template.IRouterNodeProvider
 import cn.soul.android.component.template.IServiceAliasProvider
 import cn.soul.android.component.util.CollectionHelper
+import cn.soul.android.plugin.component.exception.RouterPathDuplicateException
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.InjectType
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
+import cn.soul.android.plugin.component.utils.componentExtension
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.Format
 import com.android.build.api.transform.TransformInvocation
@@ -41,7 +44,7 @@ import java.util.zip.ZipEntry
 class RouterCompileActuator(private val project: Project,
                             isComponent: Boolean) : TypeActuator(isComponent) {
     //map key: path, value: node info list
-    private val nodeMapByGroup = mutableMapOf<String, ArrayList<NodeInfo>>()
+    private val nodeMapByGroup = mutableMapOf<String, HashSet<NodeInfo>>()
     //map key: group, value: node path list
     private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
@@ -53,12 +56,15 @@ class RouterCompileActuator(private val project: Project,
 
     private var baseClassLoader: URLClassLoader? = null
 
+    private var duplicateChecker: DuplicateChecker? = null
+
+    private var checkDuplicate: Boolean = false
+
     override fun preTraversal(transformInvocation: TransformInvocation) {
         InjectHelper.instance.refresh()
         InjectHelper.instance.appendAndroidPlatformPath(project)
         if (isComponent) {
             val variantName = transformInvocation.context.variantName
-            println(variantName)
             val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
             //cannot got jar file input in library Transform, so got them by variantManager
             libPlugin.variantManager.variantScopes.forEach {
@@ -76,6 +82,12 @@ class RouterCompileActuator(private val project: Project,
                         }
             }
         } else {
+            checkDuplicate = project.componentExtension().buildOption.checkPathDuplicate
+            if (!checkDuplicate) {
+                return
+            }
+            //check path duplicate
+            duplicateChecker = DuplicateChecker()
             val extension = project.extensions.getByName("android") as BaseExtension
             val jarPathList = arrayListOf<URL>()
             transformInvocation.inputs.forEach { input ->
@@ -107,9 +119,16 @@ class RouterCompileActuator(private val project: Project,
                 componentServiceAlias.add(Pair(it.name, path))
             }
         }
-        nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, ctClass.name)) {
-            arrayListOf()
-        }.add(nodeInfo)
+        val set = nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, ctClass.name)) {
+            hashSetOf()
+        }
+        val result = set.add(nodeInfo)
+        if (!result) {
+            val dup = set.find { it.path == nodeInfo.path }
+            throw RouterPathDuplicateException(nodeInfo.path, nodeInfo.ctClass.name,
+                    dup!!.path, dup.ctClass.name)
+        }
+
         return insertInjectImplement(nodeInfo)
     }
 
@@ -117,7 +136,7 @@ class RouterCompileActuator(private val project: Project,
     override fun onJarVisited(jarFile: File, transformInvocation: TransformInvocation) {
         genClassSet.clear()
         super.onJarVisited(jarFile, transformInvocation)
-        if (genClassSet.isNotEmpty()) {
+        if (checkDuplicate && genClassSet.isNotEmpty()) {
             Log.e("url:" + URL("file://${jarFile.absolutePath}"))
             val classLoader = URLClassLoader(arrayOf(URL("file://${jarFile.absolutePath}")), baseClassLoader)
 
@@ -125,7 +144,7 @@ class RouterCompileActuator(private val project: Project,
                 val providerClass = classLoader.loadClass("${Constants.ROUTER_GEN_FILE_PACKAGE}$it")
                 val nodeProvider = providerClass.newInstance() as IRouterNodeProvider
                 nodeProvider.routerNodes.forEach { node ->
-                    println(node.path)
+                    duplicateChecker?.check(node)
                 }
             }
         }
@@ -156,7 +175,13 @@ class RouterCompileActuator(private val project: Project,
                 TransformManager.CONTENT_CLASS,
                 TransformManager.PROJECT_ONLY,
                 Format.DIRECTORY)
-
+        if (checkDuplicate) {
+            nodeMapByGroup.forEach { (_, set) ->
+                set.forEach {
+                    duplicateChecker?.check(it.path, it.ctClass.name)
+                }
+            }
+        }
         if (nodeMapByGroup.isNotEmpty()) {
             nodeMapByGroup.forEach {
                 genRouterProviderImpl(dest, it.key, it.value)
@@ -367,7 +392,7 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
-    private fun genRouterProviderImpl(dir: File, group: String, nodeList: List<NodeInfo>) {
+    private fun genRouterProviderImpl(dir: File, group: String, nodeList: Set<NodeInfo>) {
         MethodGen(Constants.ROUTER_GEN_FILE_PACKAGE + genRouterProviderClassName(group))
                 .interfaces(IRouterNodeProvider::class.java)
                 .signature(returnStatement = "public java.util.List",
@@ -376,7 +401,7 @@ class RouterCompileActuator(private val project: Project,
                 .gen()?.writeFile(dir.absolutePath)
     }
 
-    private fun produceNodesMethodBodySrc(nodeList: List<NodeInfo>): String {
+    private fun produceNodesMethodBodySrc(nodeList: Set<NodeInfo>): String {
         val builder = StringBuilder("{")
                 .append("java.util.ArrayList list = new java.util.ArrayList();")
         nodeList.forEach {
@@ -518,6 +543,20 @@ class RouterCompileActuator(private val project: Project,
             }
             return NodeType.UNSPECIFIED
         }
+
+        override fun equals(other: Any?): Boolean {
+            if (other == this) {
+                return true
+            }
+            if (other is NodeInfo && other.path == path) {
+                return true
+            }
+            return super.equals(other)
+        }
+
+        override fun hashCode(): Int {
+            return path.hashCode()
+        }
     }
 
     data class InjectInfo(val ctField: CtField,
@@ -610,6 +649,40 @@ class RouterCompileActuator(private val project: Project,
             val startIndex = s.indexOf('<') + 1
             val endIndex = s.lastIndexOf('>')
             return s.substring(startIndex, endIndex).trim()
+        }
+    }
+
+    class DuplicateChecker {
+        data class NodeCheckInfo(val path: String, val className: String) {
+            override fun equals(other: Any?): Boolean {
+                if (other is NodeCheckInfo) {
+                    return path == other.path
+                }
+                return super.equals(other)
+            }
+
+            override fun hashCode(): Int {
+                return path.hashCode()
+            }
+        }
+
+        private val checkSet = hashSetOf<NodeCheckInfo>()
+
+        fun check(node: RouterNode) {
+            checkInternal(node.path, node.target.name)
+        }
+
+        fun check(path: String, className: String) {
+            checkInternal(path, className)
+        }
+
+        private fun checkInternal(path: String, className: String) {
+            val result = checkSet.add(NodeCheckInfo(path, className))
+            if (!result) {
+                val dup = checkSet.find { it.path == path }
+                throw RouterPathDuplicateException(path, className,
+                        dup!!.path, dup.className)
+            }
         }
     }
 }

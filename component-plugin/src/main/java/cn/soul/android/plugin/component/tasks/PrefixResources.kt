@@ -186,7 +186,6 @@ open class PrefixResources : AndroidVariantTask() {
             attribute.value = prefix + attribute.value
             if (it.text.startsWith('@')) {
                 it.text = prefixElementText(it.text)
-                println(it.text)
             }
         }
     }
