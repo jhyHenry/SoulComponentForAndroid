@@ -52,6 +52,7 @@ class MethodGen(private val className: String) {
             var genClass: CtClass? = classPool.getOrNull(className)
             if (genClass == null) {
                 genClass = classPool.makeClass(className)
+                genClass.classFile.majorVersion = 53
                 interfaces.forEach {
                     genClass.addInterface(it)
                 }

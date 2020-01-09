@@ -1,5 +1,4 @@
 ext {
-    //此处省略一万行代码
     parseLocalProperties = this.&parseLocalProperties
 }
 

@@ -131,7 +131,7 @@ class ComponentPlugin : Plugin<Project> {
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
 //                mTaskManager.createReplaceManifestTask(it)
-
+//
 //                mTaskManager.applyProguard(mProject, it)
             }
         }

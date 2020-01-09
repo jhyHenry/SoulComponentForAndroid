@@ -511,7 +511,8 @@ class RouterCompileActuator(private val project: Project,
                             return nodeType
                         }
                     } catch (e: Exception) {
-                        Log.e("cannot got $it in ctClass when check node type. " + e.message)
+                        Log.e("cannot got $it in ${ctClass.name} when check node type. stacktrace")
+                        e.printStackTrace()
                     }
                 }
             }
