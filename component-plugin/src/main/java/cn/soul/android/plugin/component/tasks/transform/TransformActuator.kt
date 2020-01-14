@@ -22,15 +22,14 @@ interface TransformActuator {
     fun preTransform(transformInvocation: TransformInvocation)
 
     /**
-     * @return if true, this ctClass was modified, actuator will write it to file
+     * @return if true, this ctClass was be modified, actuator will write it to file, otherwise actuator
+     * will directly copy source file to destination directory.
      */
-    fun onClassVisited(ctClass: CtClass,
-                       transformInvocation: TransformInvocation): Boolean
+    fun onClassVisited(ctClass: CtClass): Boolean
 
-    fun onJarVisited(jarFile: File,
-                     transformInvocation: TransformInvocation)
+    fun onChangedClassVisited(ctClass: CtClass): Boolean
 
-
+    fun onJarVisited(jarFile: File)
 
     /**
      * see [BaseTraversalTransform.postTransform]

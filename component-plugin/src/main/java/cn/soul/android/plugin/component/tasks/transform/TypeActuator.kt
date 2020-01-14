@@ -12,13 +12,12 @@ import java.util.zip.ZipEntry
  */
 abstract class TypeActuator(protected val isComponent: Boolean) : TransformActuator {
 
-    override fun onJarVisited(jarFile: File, transformInvocation: TransformInvocation) {
+    override fun onJarVisited(jarFile: File) {
         ZipHelper.traversalZip(jarFile) { entry ->
-            onJarEntryVisited(entry, jarFile, transformInvocation)
+            onJarEntryVisited(entry, jarFile)
         }
     }
 
     abstract fun onJarEntryVisited(zipEntry: ZipEntry,
-                                   jarFile: File,
-                                   transformInvocation: TransformInvocation)
+                                   jarFile: File)
 }

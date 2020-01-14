@@ -1,9 +1,10 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.InjectHelper
-import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInvocation
+import javassist.CtClass
+import java.io.File
 
 /**
  * @author panxinghai
@@ -20,24 +21,33 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
         }
     }
 
-    override fun onDirVisited(dirInput: DirectoryInput, transformInvocation: TransformInvocation): Boolean {
-        InjectHelper.instance.processFiles(dirInput.file)
-                .nameFilter { file -> file.name.endsWith(".class") }
-                .forEach { ctClass ->
-                    var modify = false
-                    actuatorSet.forEach {
-                        modify = modify or it.onClassVisited(ctClass, transformInvocation)
-                    }
-                    if (modify) {
-                        ctClass.writeFile(dirInput.file.absolutePath)
-                    }
-                }
+    override fun onChangedFile(inputFile: File, outputDir: File, destFile: File): Boolean {
+        val ctClass = getCtClassByFile(destFile, outputDir)
+        var modify = false
+        actuatorSet.forEach {
+            modify = modify or it.onChangedClassVisited(ctClass)
+        }
+        if (modify) {
+            ctClass.writeFile(outputDir.absolutePath)
+        }
         return false
     }
 
-    override fun onJarVisited(jarInput: JarInput, transformInvocation: TransformInvocation): Boolean {
+    override fun onInputFileVisited(ctClass: CtClass, outputDir: File): Boolean {
+        var modify = false
         actuatorSet.forEach {
-            it.onJarVisited(jarInput.file, transformInvocation)
+            modify = modify or it.onClassVisited(ctClass)
+        }
+        if (modify) {
+            ctClass.writeFile(outputDir.absolutePath)
+            return true
+        }
+        return false
+    }
+
+    override fun onJarVisited(jarInput: JarInput): Boolean {
+        actuatorSet.forEach {
+            it.onJarVisited(jarInput.file)
         }
         return false
     }
@@ -55,4 +65,12 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
     }
 
     abstract fun getTransformActuatorSet(): Set<TransformActuator>
+
+    private fun getCtClassByFile(file: File, outputDir: File): CtClass {
+        val pathLength = file.absolutePath.length
+        val className = file.absolutePath
+                .subSequence(outputDir.absolutePath.length + 1, pathLength - 6)
+                .toString().replace('/', '.')
+        return InjectHelper.instance.getClassPool()[className]
+    }
 }

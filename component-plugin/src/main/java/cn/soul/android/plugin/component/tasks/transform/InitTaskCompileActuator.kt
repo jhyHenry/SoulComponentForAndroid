@@ -53,7 +53,7 @@ class InitTaskCompileActuator(private val project: Project,
         mComponentServiceCtClass = InjectHelper.instance.getClassPool()[IComponentService::class.java.name]
     }
 
-    override fun onClassVisited(ctClass: CtClass, transformInvocation: TransformInvocation): Boolean {
+    override fun onClassVisited(ctClass: CtClass): Boolean {
         //for task auto gather and inject
         if (ctClass.subtypeOf(mInitTaskCtClass)) {
             mTaskNameListProvider.invoke(ctClass)
@@ -78,17 +78,21 @@ class InitTaskCompileActuator(private val project: Project,
         return true
     }
 
-    override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File, transformInvocation: TransformInvocation) {
+    override fun onChangedClassVisited(ctClass: CtClass): Boolean {
+        return false
+    }
+
+    override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File) {
         if (isComponent) {
             return
         }
         if (zipEntry.name.startsWith(Constants.INIT_TASK_GEN_FILE_FOLDER)) {
-            Log.d("find task:${zipEntry.name}")
+            Log.d("found task:${zipEntry.name}")
             mComponentTaskProviderList.add(getClassNameWithEntryName(zipEntry.name))
             return
         }
         if (zipEntry.name.startsWith(Constants.SERVICE_GEN_FILE_FOLDER)) {
-            Log.d("find service:${zipEntry.name}")
+            Log.d("found service:${zipEntry.name}")
             mComponentServiceProviderList.add(getClassNameWithEntryName(zipEntry.name))
             return
         }

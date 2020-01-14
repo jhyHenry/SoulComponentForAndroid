@@ -1,8 +1,8 @@
 package cn.soul.android.plugin.component
 
 import cn.soul.android.plugin.component.extesion.ComponentExtension
-import cn.soul.android.plugin.component.tasks.transform.CementAppTransform
-import cn.soul.android.plugin.component.tasks.transform.CementLibTransform
+import cn.soul.android.plugin.component.tasks.transform.KhalaAppTransform
+import cn.soul.android.plugin.component.tasks.transform.KhalaLibTransform
 import cn.soul.android.plugin.component.utils.Descriptor
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.AppPlugin
@@ -34,7 +34,7 @@ class ComponentPlugin : Plugin<Project> {
             }
             p.plugins.apply("com.android.library")
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
-            extension?.registerTransform(CementLibTransform(mProject))
+            extension?.registerTransform(KhalaLibTransform(mProject))
             mLibConfigExecutor = {
                 extension?.apply {
                     defaultConfig.applicationId = null
@@ -48,7 +48,7 @@ class ComponentPlugin : Plugin<Project> {
         } else {
             p.plugins.apply("com.android.application")
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
-            extension?.registerTransform(CementAppTransform(mProject))
+            extension?.registerTransform(KhalaAppTransform(mProject))
         }
         mPluginExtension = mProject.extensions.create("component", ComponentExtension::class.java)
         mTaskManager = TaskManager(p, mPluginExtension)
@@ -120,7 +120,7 @@ class ComponentPlugin : Plugin<Project> {
 
                 mTaskManager.createRefineManifestTask(it)
 
-                mTaskManager.crateGenInterfaceArtifactTask(it)
+                mTaskManager.createGenInterfaceArtifactTask(it)
 
                 mTaskManager.createUploadTask(it)
 
@@ -130,9 +130,9 @@ class ComponentPlugin : Plugin<Project> {
             val appPlugin = mProject.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
-//                mTaskManager.createReplaceManifestTask(it)
-//
-//                mTaskManager.applyProguard(mProject, it)
+                mTaskManager.createReplaceManifestTask(it)
+
+                mTaskManager.applyProguard(mProject, it)
             }
         }
     }

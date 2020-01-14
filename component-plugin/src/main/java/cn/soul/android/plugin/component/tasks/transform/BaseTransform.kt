@@ -17,7 +17,7 @@ abstract class BaseTransform : Transform() {
     }
 
     override fun isIncremental(): Boolean {
-        return false
+        return true
     }
 
     override fun getScopes(): MutableSet<in QualifiedContent.Scope> {
@@ -35,7 +35,7 @@ abstract class BaseTransform : Transform() {
         FileUtils.copyDirectory(directoryInput.file, dest)
     }
 
-    protected fun getOutputFile(provider: TransformOutputProvider, directoryInput: DirectoryInput): File {
+    protected fun getOutputDir(provider: TransformOutputProvider, directoryInput: DirectoryInput): File {
         return provider.getContentLocation(
                 directoryInput.name,
                 directoryInput.contentTypes,
@@ -43,6 +43,16 @@ abstract class BaseTransform : Transform() {
                 Format.DIRECTORY
         )
     }
+
+    protected fun getOutputJar(provider: TransformOutputProvider, jarInput: JarInput): File {
+        return provider.getContentLocation(
+                jarInput.name,
+                jarInput.contentTypes,
+                jarInput.scopes,
+                Format.JAR
+        )
+    }
+
 
     protected fun outputJarFile(provider: TransformOutputProvider, jarInput: JarInput) {
         val dest = provider.getContentLocation(

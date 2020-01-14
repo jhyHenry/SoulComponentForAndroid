@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.artifact.BuildableArtifact
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.ExistingBuildElements
@@ -98,6 +99,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
 
     @Throws(IOException::class)
     override fun doFullTaskAction() {
+        Log.e("prefix R")
         val manifest = Iterables.getOnlyElement(
                 ExistingBuildElements.from(InternalArtifactType.MERGED_MANIFESTS, manifestFiles))
                 .outputFile
@@ -137,7 +139,8 @@ open class GenerateSymbol : ProcessAndroidResources() {
     class CreationAction(
             variantScope: VariantScope,
             private val symbolFile: File,
-            private val symbolsWithPackageNameOutputFile: File
+            private val symbolsWithPackageNameOutputFile: File,
+            private val externalDir: File
     ) : VariantTaskCreationAction<GenerateSymbol>(variantScope) {
 
         override val name: String
@@ -152,24 +155,19 @@ open class GenerateSymbol : ProcessAndroidResources() {
             super.preConfigure(taskName)
 
             if (variantScope.globalScope.projectOptions.get(BooleanOption.ENABLE_SEPARATE_R_CLASS_COMPILATION)) {
-                rClassOutputJar = variantScope.artifacts
-                        .appendArtifact(InternalArtifactType.COMPILE_ONLY_NOT_NAMESPACED_R_CLASS_JAR,
-                                taskName,
-                                "R.jar")
+                rClassOutputJar = File(externalDir, "R.jar")
             } else {
-                sourceOutputDirectory = variantScope.artifacts
-                        .appendArtifact(InternalArtifactType.NOT_NAMESPACED_R_CLASS_SOURCES, taskName)
+                sourceOutputDirectory = externalDir
             }
 
-            if (generatesProguardOutputFile(variantScope)) {
-                variantScope
-                        .artifacts
-                        .appendArtifact(
-                                InternalArtifactType.AAPT_PROGUARD_FILE,
-                                listOf(variantScope.processAndroidResourcesProguardOutputFile),
-                                taskName)
-            }
-
+//            if (generatesProguardOutputFile(variantScope)) {
+//                variantScope
+//                        .artifacts
+//                        .appendArtifact(
+//                                InternalArtifactType.AAPT_PROGUARD_FILE,
+//                                listOf(variantScope.processAndroidResourcesProguardOutputFile),
+//                                taskName)
+//            }
         }
 
         override fun handleProvider(taskProvider: TaskProvider<out GenerateSymbol>) {

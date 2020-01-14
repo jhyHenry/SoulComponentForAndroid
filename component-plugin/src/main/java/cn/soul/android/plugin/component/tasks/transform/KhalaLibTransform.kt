@@ -12,12 +12,12 @@ import org.gradle.api.Project
  *
  * date : 2019-10-14 20:14
  */
-class CementLibTransform(private val project: Project) : BaseActuatorSetTransform() {
+class KhalaLibTransform(private val project: Project) : BaseActuatorSetTransform() {
     override fun getTransformActuatorSet(): Set<TransformActuator> {
         return ImmutableSet.of(
-                PrefixRActuator(project, true),
-                RouterCompileActuator(project, true),
-                InitTaskCompileActuator(project, true)
+//                PrefixRActuator(project, true),
+                RouterCompileActuator(project, true)
+//                InitTaskCompileActuator(project, true)
         )
     }
 
@@ -27,7 +27,7 @@ class CementLibTransform(private val project: Project) : BaseActuatorSetTransfor
     }
 
     override fun getName(): String {
-        return "cementLib"
+        return "khalaLib"
     }
 
     override fun getScopes(): MutableSet<in QualifiedContent.Scope> {

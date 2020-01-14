@@ -13,18 +13,18 @@ import cn.soul.android.component.template.IServiceCollector;
  * date : 2019-10-14 18:07
  */
 @SuppressWarnings("unused")
-public class Cement {
+public class Khala {
     @SuppressLint("StaticFieldLeak")
-    private volatile static Cement sInstance;
+    private volatile static Khala sInstance;
     private HashMap<String, IComponentService> mServiceAliasMap;
     private HashMap<Class<? extends IComponentService>, IComponentService> mServiceClassMap;
     private InitTaskManager mTaskManager = InitTaskManager.instance();
 
-    public static Cement instance() {
+    public static Khala instance() {
         if (sInstance == null) {
-            synchronized (Cement.class) {
+            synchronized (Khala.class) {
                 if (sInstance == null) {
-                    sInstance = new Cement();
+                    sInstance = new Khala();
                 }
             }
         }

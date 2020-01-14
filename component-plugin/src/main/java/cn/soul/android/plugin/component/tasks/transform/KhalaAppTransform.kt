@@ -8,7 +8,7 @@ import org.gradle.api.Project
  *
  * date : 2019-10-14 22:35
  */
-class CementAppTransform(private val project: Project) : BaseActuatorSetTransform() {
+class KhalaAppTransform(private val project: Project) : BaseActuatorSetTransform() {
     override fun getTransformActuatorSet(): Set<TransformActuator> {
         return ImmutableSet.of(
                 RouterCompileActuator(project, false),
@@ -18,6 +18,6 @@ class CementAppTransform(private val project: Project) : BaseActuatorSetTransfor
 
 
     override fun getName(): String {
-        return "cementApp"
+        return "khalaApp"
     }
 }

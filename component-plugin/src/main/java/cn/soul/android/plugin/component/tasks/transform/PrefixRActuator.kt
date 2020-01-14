@@ -42,12 +42,16 @@ class PrefixRActuator(private val project: Project,
         prefixCustomCtClassField(rCtClass)
     }
 
-    override fun onClassVisited(ctClass: CtClass, transformInvocation: TransformInvocation): Boolean {
+    override fun onClassVisited(ctClass: CtClass): Boolean {
         prefixRClassFieldAccess(ctClass, applicationId)
-        return true
+        return false
     }
 
-    override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File, transformInvocation: TransformInvocation) {
+    override fun onChangedClassVisited(ctClass: CtClass): Boolean {
+        return false
+    }
+
+    override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File) {
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {

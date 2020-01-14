@@ -54,10 +54,7 @@ class TaskManager(private val project: Project,
 
     fun createGenerateSymbolTask(scope: VariantScope) {
         val dir = File(scope.globalScope.intermediatesDir,
-                "symbols/" + scope
-                        .variantData
-                        .variantConfiguration
-                        .dirName)
+                "symbols/" + scope.variantData.variantConfiguration.dirName)
         val symbol = File(dir, SdkConstants.FN_RESOURCE_TEXT)
         val symbolTableWithPackageName = FileUtils.join(
                 scope.globalScope.intermediatesDir,
@@ -67,7 +64,8 @@ class TaskManager(private val project: Project,
                 "package-aware-r.txt")
         val task = taskFactory.register(GenerateSymbol.CreationAction(scope,
                 symbol,
-                symbolTableWithPackageName))
+                symbolTableWithPackageName,
+                File(scope.globalScope.intermediatesDir, "prefixRFile")))
         scope.artifacts.createBuildableArtifact(
                 InternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME,
                 BuildArtifactsHolder.OperationType.TRANSFORM,
@@ -76,9 +74,27 @@ class TaskManager(private val project: Project,
         )
         task.get().dependsOn(pluginTaskContainer?.prefixResources)
         scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
+//
+//        val kotlinCompileTask = project.tasks.findByName("compile${scope.fullVariantName.capitalize()}Kotlin")
+//        if (scope.variantConfiguration.buildType.name == "release") {
+//            task.get().dependsOn.forEach {
+//                println("RFile:$it")
+//            }
+//            println(kotlinCompileTask)
+//            kotlinCompileTask!!.dependsOn.forEach {
+//                println(it)
+//            }
+////            task.get().dependsOn(kotlinCompileTask)
+//            project.afterEvaluate {
+//                kotlinCompileTask!!.dependsOn.forEach {
+//                    println(it)
+//                }
+//            }
+//        }
+
     }
 
-    fun crateGenInterfaceArtifactTask(scope: VariantScope) {
+    fun createGenInterfaceArtifactTask(scope: VariantScope) {
         val file = scope.artifacts.getFinalArtifactFiles(InternalArtifactType.JAVAC).single()
         val task = taskFactory.register(GenerateInterfaceArtifact.ConfigAction(scope, file))
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
@@ -135,7 +151,7 @@ class TaskManager(private val project: Project,
         if (proguardTask is TransformTask) {
             val transform = proguardTask.transform
             if (transform is BaseProguardAction) {
-                transform.keep("public class cn.soul.android.cement.gen.** {*;}")
+                transform.keep("public class cn.soul.android.khala.gen.** {*;}")
                 transform.dontwarn("${scope.variantData.applicationId}.R$*")
             }
         }

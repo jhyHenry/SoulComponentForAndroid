@@ -61,6 +61,7 @@ class RouterCompileActuator(private val project: Project,
     private var checkDuplicate: Boolean = false
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
+        Log.e("changed", "size:" + nodeMapByGroup.size)
         InjectHelper.instance.refresh()
         InjectHelper.instance.appendAndroidPlatformPath(project)
         if (isComponent) {
@@ -103,8 +104,11 @@ class RouterCompileActuator(private val project: Project,
     override fun preTransform(transformInvocation: TransformInvocation) {
     }
 
-    override fun onClassVisited(ctClass: CtClass,
-                                transformInvocation: TransformInvocation): Boolean {
+    override fun onClassVisited(ctClass: CtClass): Boolean {
+        return onChangedClassVisited(ctClass)
+    }
+
+    override fun onChangedClassVisited(ctClass: CtClass): Boolean {
         //traversal all .class file and find the class which annotate by Router, record router path
         //and Class for RouterNode construction
         if (!ctClass.hasAnnotation(Router::class.java)) {
@@ -128,14 +132,13 @@ class RouterCompileActuator(private val project: Project,
             throw RouterPathDuplicateException(nodeInfo.path, nodeInfo.ctClass.name,
                     dup!!.path, dup.ctClass.name)
         }
-
         return insertInjectImplement(nodeInfo)
     }
 
     private val genClassSet = arrayListOf<String>()
-    override fun onJarVisited(jarFile: File, transformInvocation: TransformInvocation) {
+    override fun onJarVisited(jarFile: File) {
         genClassSet.clear()
-        super.onJarVisited(jarFile, transformInvocation)
+        super.onJarVisited(jarFile)
         if (checkDuplicate && genClassSet.isNotEmpty()) {
             Log.e("url:" + URL("file://${jarFile.absolutePath}"))
             val classLoader = URLClassLoader(arrayOf(URL("file://${jarFile.absolutePath}")), baseClassLoader)
@@ -151,8 +154,7 @@ class RouterCompileActuator(private val project: Project,
     }
 
     override fun onJarEntryVisited(zipEntry: ZipEntry,
-                                   jarFile: File,
-                                   transformInvocation: TransformInvocation) {
+                                   jarFile: File) {
         if (isComponent) {
             return
         }

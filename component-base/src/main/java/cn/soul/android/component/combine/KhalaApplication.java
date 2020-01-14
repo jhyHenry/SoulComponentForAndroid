@@ -10,15 +10,15 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.soul.android.component.Cement;
 import cn.soul.android.component.Constants;
+import cn.soul.android.component.Khala;
 
 /**
  * @author panxinghai
  * <p>
  * date : 2019-10-15 15:45
  */
-public class CementApplication extends Application {
+public class KhalaApplication extends Application {
     private List<ComponentApplication> mComponentApplications;
     private List<InitTask> mInitTasks;
 
@@ -26,10 +26,10 @@ public class CementApplication extends Application {
     public void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         mComponentApplications = new ArrayList<>();
-        mInitTasks = Cement.instance().getTaskManager().getExecuteTaskList();
+        mInitTasks = Khala.instance().getTaskManager().getExecuteTaskList();
         String realAppName = getRealAppName();
         for (InitTask task : mInitTasks) {
-            Log.e("SoulCement", "execute init task:" + task.getName());
+            Log.e("Soul component", "execute init task:" + task.getName());
             if (task instanceof ComponentApplication) {
                 ComponentApplication componentApplication = (ComponentApplication) task;
                 if (componentApplication.getClass().getName().equals(realAppName)) {

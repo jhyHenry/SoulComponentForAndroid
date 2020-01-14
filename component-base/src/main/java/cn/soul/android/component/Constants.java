@@ -13,7 +13,7 @@ import cn.soul.android.component.template.IServiceAliasProvider;
  * Created by nebula on 2019-07-21
  */
 public class Constants {
-    public final static String FRAME_NAME = "cement";
+    public final static String FRAME_NAME = "khala";
     public final static String GEN_PACKAGE_NAME = "cn.soul.android." + FRAME_NAME + ".gen.";
     public final static String GEN_FOLDER_NAME = "cn/soul/android/" + FRAME_NAME + "/gen/";
 
@@ -43,8 +43,8 @@ public class Constants {
     public final static String SERVICE_ALIAS_PROVIDER_CLASSNAME = IServiceAliasProvider.class.getName();
     public final static String COMPONENT_SERVICE_CLASSNAME = IComponentService.class.getName();
     public final static String INJECTABLE_CLASSNAME = IInjectable.class.getName();
-    public final static String REPLACE_META_NAME = "cement_replace_real_app";
-    public final static String REPLACE_APPLICATION_NAME = "cn.soul.android.component.combine.CementApplication";
+    public final static String REPLACE_META_NAME = "khala_replace_real_app";
+    public final static String REPLACE_APPLICATION_NAME = "cn.soul.android.component.combine.KhalaApplication";
 
     public final static String COMPONENT_APPLICATION_NAME = "cn.soul.android.component.combine.ComponentApplication";
 }

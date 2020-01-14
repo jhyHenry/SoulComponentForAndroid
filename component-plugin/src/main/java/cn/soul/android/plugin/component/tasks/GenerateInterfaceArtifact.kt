@@ -44,9 +44,9 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .classFilter { ctClass ->
                     ctClass.classFile2.interfaces.contains(IComponentService::class.java.name)
-                }.forEach {
-                    refSet.add(it.name)
-                    retrieveRefClass(it)
+                }.forEach { ctClass, _ ->
+                    refSet.add(ctClass.name)
+                    retrieveRefClass(ctClass)
                 }
         destDir?.deleteRecursively()
         val destFile = File(destDir, "interface.jar")

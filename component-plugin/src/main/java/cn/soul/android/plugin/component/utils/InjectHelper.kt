@@ -79,7 +79,7 @@ class InjectHelper private constructor() {
 
         fun files(): MutableList<File> = list
 
-        fun forEach(action: (ctClass: CtClass) -> Unit) {
+        fun forEach(action: (ctClass: CtClass, file: File) -> Unit) {
             list.forEach inner@{
                 if (mNameFilterAction == null
                         || (mNameFilterAction != null && mNameFilterAction?.invoke(it)!!)) {
@@ -90,7 +90,7 @@ class InjectHelper private constructor() {
                     val ctClass = classPool[className]
                     if (mClassFilterAction == null ||
                             (mClassFilterAction != null && mClassFilterAction?.invoke(ctClass)!!)) {
-                        action.invoke(ctClass)
+                        action.invoke(ctClass, it)
                     }
                 }
             }
