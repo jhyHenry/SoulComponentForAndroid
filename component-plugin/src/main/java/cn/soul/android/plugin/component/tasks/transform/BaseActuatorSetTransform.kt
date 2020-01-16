@@ -1,7 +1,9 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.InjectHelper
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.JarInput
+import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
 import java.io.File
@@ -21,16 +23,32 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
         }
     }
 
-    override fun onChangedFile(inputFile: File, outputDir: File, destFile: File): Boolean {
-        val ctClass = getCtClassByFile(destFile, outputDir)
+    override fun onChangedFile(status: Status, inputFile: File, outputDir: File, destFile: File): Boolean {
+        val ctClass = getCtClassByFile(outputDir, destFile)
         var modify = false
         actuatorSet.forEach {
-            modify = modify or it.onChangedClassVisited(ctClass)
+            modify = modify or it.onIncrementalClassVisited(status, ctClass)
         }
         if (modify) {
             ctClass.writeFile(outputDir.absolutePath)
         }
         return false
+    }
+
+    override fun onRemovedFileTransform(outputDir: File, destFile: File) {
+//        val pathLength = destFile.absolutePath.length
+//        val className = destFile.absolutePath
+//                .subSequence(outputDir.absolutePath.length + 1, pathLength - 6)
+//                .toString().replace('/', '.')
+//
+//        val classPool = InjectHelper.instance.getClassPool()
+//        val classPath = classPool.appendClassPath(outputDir.absolutePath)
+//        val ctClass = classPool[className]
+//        actuatorSet.forEach {
+//            it.onRemovedClassVisited(ctClass)
+//        }
+//        ctClass.detach()
+//        classPool.removeClassPath(classPath)
     }
 
     override fun onInputFileVisited(ctClass: CtClass, outputDir: File): Boolean {
@@ -66,7 +84,7 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
 
     abstract fun getTransformActuatorSet(): Set<TransformActuator>
 
-    private fun getCtClassByFile(file: File, outputDir: File): CtClass {
+    private fun getCtClassByFile(outputDir: File, file: File): CtClass {
         val pathLength = file.absolutePath.length
         val className = file.absolutePath
                 .subSequence(outputDir.absolutePath.length + 1, pathLength - 6)

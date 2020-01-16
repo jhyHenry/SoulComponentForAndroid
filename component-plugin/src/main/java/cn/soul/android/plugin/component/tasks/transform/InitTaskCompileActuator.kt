@@ -1,20 +1,15 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.component.Constants
-import cn.soul.android.component.IComponentService
-import cn.soul.android.component.annotation.ServiceInject
 import cn.soul.android.component.annotation.TaskIgnore
 import cn.soul.android.component.combine.IComponentTaskProvider
 import cn.soul.android.component.combine.ITaskCollector
 import cn.soul.android.component.combine.InitTask
-import cn.soul.android.component.template.IServiceCollector
-import cn.soul.android.component.template.IServiceProvider
-import cn.soul.android.plugin.component.exception.ClassGenerateException
 import cn.soul.android.plugin.component.extesion.ComponentExtension
-import cn.soul.android.plugin.component.utils.InjectHelper
-import cn.soul.android.plugin.component.utils.Log
+import cn.soul.android.plugin.component.utils.*
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.Format
+import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.internal.pipeline.TransformManager
 import javassist.CtClass
@@ -31,55 +26,48 @@ import java.util.zip.ZipEntry
 class InitTaskCompileActuator(private val project: Project,
                               isComponent: Boolean) : TypeActuator(isComponent) {
     private lateinit var mInitTaskCtClass: CtClass
-    private lateinit var mComponentServiceCtClass: CtClass
 
+    @Persistent
     private val mTaskClassList = arrayListOf<CtClass>()
-    private val mTaskNameListProvider: (CtClass) -> Unit = {
-        if (!Modifier.isAbstract(it.modifiers) && !it.hasAnnotation(TaskIgnore::class.java)) {
-            mTaskClassList.add(it)
+
+    private val mTaskNameListProvider: (CtClass, Status) -> Unit = { ctClass, status ->
+        if (!Modifier.isAbstract(ctClass.modifiers) && !ctClass.hasAnnotation(TaskIgnore::class.java)) {
+            if (status == Status.ADDED && mTaskClassList.contains(ctClass)) {
+                throw RuntimeException("incremental error: ${ctClass.name} has already add " +
+                        "in last build.")
+            }
+            mTaskClassList.add(ctClass)
         }
     }
 
-    private val mServiceAliasList = mutableMapOf<String, String>()
-    private val mServiceClassList = mutableMapOf<String, String>()
-
     private val mComponentTaskProviderList = arrayListOf<String>()
-    private val mComponentServiceProviderList = arrayListOf<String>()
+
     override fun preTraversal(transformInvocation: TransformInvocation) {
     }
 
     override fun preTransform(transformInvocation: TransformInvocation) {
         mInitTaskCtClass = InjectHelper.instance.getClassPool()[InitTask::class.java.name]
-        mComponentServiceCtClass = InjectHelper.instance.getClassPool()[IComponentService::class.java.name]
+        if (transformInvocation.isIncremental) {
+            IncrementalHelper.loadPersistentField(this, transformInvocation.persistenceOutputDir())
+        }
     }
 
     override fun onClassVisited(ctClass: CtClass): Boolean {
-        //for task auto gather and inject
-        if (ctClass.subtypeOf(mInitTaskCtClass)) {
-            mTaskNameListProvider.invoke(ctClass)
-            return false
-        }
-        if (!ctClass.hasAnnotation(ServiceInject::class.java)) {
-            return false
-        }
-        if (ctClass.isInterface || Modifier.isAbstract(ctClass.modifiers) || !ctClass.subtypeOf(mComponentServiceCtClass)) {
-            throw ClassGenerateException("ServiceInject must annotate non-abstract class which implement IComponentService")
-        }
-        val serviceInject = ctClass.getAnnotation(ServiceInject::class.java) as ServiceInject
-        if (serviceInject.alias != "") {
-            mServiceAliasList[serviceInject.alias] = ctClass.name
-        }
-        ctClass.interfaces.forEach interfaceForEach@{ i ->
-            if (!i.subtypeOf(mComponentServiceCtClass)) {
-                return@interfaceForEach
-            }
-            mServiceClassList[i.name] = ctClass.name
-        }
-        return true
+        return onIncrementalClassVisited(Status.ADDED, ctClass)
     }
 
-    override fun onChangedClassVisited(ctClass: CtClass): Boolean {
+    override fun onIncrementalClassVisited(status: Status, ctClass: CtClass): Boolean {
+        //for task auto gather and inject
+        if (ctClass.subtypeOf(mInitTaskCtClass)) {
+            mTaskNameListProvider.invoke(ctClass, status)
+        }
         return false
+    }
+
+    override fun onRemovedClassVisited(ctClass: CtClass) {
+        if (ctClass.subtypeOf(mInitTaskCtClass)) {
+            mTaskClassList.remove(ctClass)
+        }
     }
 
     override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File) {
@@ -91,14 +79,10 @@ class InitTaskCompileActuator(private val project: Project,
             mComponentTaskProviderList.add(getClassNameWithEntryName(zipEntry.name))
             return
         }
-        if (zipEntry.name.startsWith(Constants.SERVICE_GEN_FILE_FOLDER)) {
-            Log.d("found service:${zipEntry.name}")
-            mComponentServiceProviderList.add(getClassNameWithEntryName(zipEntry.name))
-            return
-        }
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {
+        IncrementalHelper.savePersistentField(this, transformInvocation.persistenceOutputDir())
         val dest = transformInvocation.outputProvider.getContentLocation(
                 "injectGen",
                 TransformManager.CONTENT_CLASS,
@@ -108,16 +92,10 @@ class InitTaskCompileActuator(private val project: Project,
             if (mTaskClassList.isNotEmpty()) {
                 genComponentTaskProviderImpl(dest)
             }
-            if (mServiceAliasList.isNotEmpty() || mServiceClassList.isNotEmpty()) {
-                genServiceProviderImpl(dest)
-            }
             return
         }
         if (mTaskClassList.isNotEmpty() || mComponentTaskProviderList.isNotEmpty()) {
             genTaskCollectorImpl(dest)
-        }
-        if (mServiceClassList.isNotEmpty() || mServiceAliasList.isNotEmpty() || mComponentServiceProviderList.isNotEmpty()) {
-            genServiceCollectorImpl(dest)
         }
     }
 
@@ -192,68 +170,6 @@ class InitTaskCompileActuator(private val project: Project,
         return false
     }
 
-    private fun genServiceProviderImpl(dir: File) {
-        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + genComponentServiceProviderClassName())
-                .signature(returnStatement = "public java.util.HashMap",
-                        name = "getComponentServices")
-                .interfaces(IServiceProvider::class.java)
-                .body {
-                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
-                    mServiceClassList.forEach {
-                        sb.append("result.put(${it.key}.class, new ${it.value}());")
-                    }
-                    sb.append("return result;}")
-                    sb.toString()
-                }
-                .gen()
-        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + genComponentServiceProviderClassName())
-                .signature(returnStatement = "public java.util.HashMap",
-                        name = "getAliasComponentServices")
-                .body {
-                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
-                    mServiceAliasList.forEach {
-                        sb.append("result.put(\"${it.key}\", new ${it.value}());")
-                    }
-                    sb.append("return result;}")
-                    sb.toString()
-                }
-                .gen()?.writeFile(dir.absolutePath)
-    }
-
-    private fun genServiceCollectorImpl(dir: File) {
-        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + Constants.SERVICE_COLLECTOR_IMPL_NAME)
-                .interfaces(IServiceCollector::class.java)
-                .signature(returnStatement = "public java.util.HashMap",
-                        name = "gatherServices")
-                .body {
-                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
-                    mServiceClassList.forEach {
-                        sb.append("result.put(${it.key}.class, new ${it.value}());")
-                    }
-                    mComponentServiceProviderList.forEach {
-                        sb.append("result.putAll(new $it().getComponentServices());")
-                    }
-                    sb.append("return result;}")
-                    sb.toString()
-                }
-                .gen()
-        MethodGen(Constants.SERVICE_GEN_FILE_PACKAGE + Constants.SERVICE_COLLECTOR_IMPL_NAME)
-                .signature(returnStatement = "public java.util.HashMap",
-                        name = "gatherAliasServices")
-                .body {
-                    val sb = StringBuilder("{java.util.HashMap result = new java.util.HashMap();")
-                    mServiceAliasList.forEach {
-                        sb.append("result.put(\"${it.key}\", new ${it.value}());")
-                    }
-                    mComponentServiceProviderList.forEach {
-                        sb.append("result.putAll(new $it().getAliasComponentServices());")
-                    }
-                    sb.append("return result;}")
-                    sb.toString()
-                }
-                .gen()?.writeFile(dir.absolutePath)
-    }
-
     private fun getClassNameWithEntryName(name: String): String {
         return name.split('.').first().replace('/', '.')
     }
@@ -261,11 +177,6 @@ class InitTaskCompileActuator(private val project: Project,
     private fun genComponentTaskProviderClassName(): String {
         val componentName = getComponentExtension().componentName
         return "$componentName\$\$TaskProvider"
-    }
-
-    private fun genComponentServiceProviderClassName(): String {
-        val componentName = getComponentExtension().componentName
-        return "$componentName\$\$ServiceProvider"
     }
 
     private fun getComponentExtension(): ComponentExtension {

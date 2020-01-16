@@ -13,11 +13,10 @@ import cn.soul.android.component.util.CollectionHelper
 import cn.soul.android.plugin.component.exception.RouterPathDuplicateException
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.InjectType
-import cn.soul.android.plugin.component.utils.InjectHelper
-import cn.soul.android.plugin.component.utils.Log
-import cn.soul.android.plugin.component.utils.componentExtension
+import cn.soul.android.plugin.component.utils.*
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
 import com.android.build.api.transform.Format
+import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
@@ -26,6 +25,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import javassist.*
 import javassist.bytecode.FieldInfo
 import javassist.bytecode.SignatureAttribute
+import org.apache.commons.io.FileUtils
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import java.io.File
@@ -43,13 +43,13 @@ import java.util.zip.ZipEntry
  */
 class RouterCompileActuator(private val project: Project,
                             isComponent: Boolean) : TypeActuator(isComponent) {
-    //map key: path, value: node info list
-    private val nodeMapByGroup = mutableMapOf<String, HashSet<NodeInfo>>()
-    //map key: group, value: node path list
+    @Persistent("NodeInfoSet")
+    private var nodeSetByGroup = NodeInfoSetGroupSplit()
+    //map key: group, value: node path list, for generate lazy loader
     private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
     //pair first: super interface's class full name, second: node path
-    private val componentServiceAlias = arrayListOf<Pair<String, String>>()
+    private val componentServiceAlias = ServiceNodeAlias()
 
     //for lazy loader
     private val aliasProviderList = arrayListOf<String>()
@@ -61,7 +61,6 @@ class RouterCompileActuator(private val project: Project,
     private var checkDuplicate: Boolean = false
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
-        Log.e("changed", "size:" + nodeMapByGroup.size)
         InjectHelper.instance.refresh()
         InjectHelper.instance.appendAndroidPlatformPath(project)
         if (isComponent) {
@@ -102,13 +101,37 @@ class RouterCompileActuator(private val project: Project,
     }
 
     override fun preTransform(transformInvocation: TransformInvocation) {
+        if (!transformInvocation.isIncremental) {
+            return
+        }
+        //initial incremental info, in here khala will load pre-build's status
+        IncrementalHelper.loadPersistentField(this, transformInvocation.persistenceOutputDir())
+        if (nodeSetByGroup.isNotEmpty()) {
+            val removedClass = arrayListOf<String>()
+            nodeSetByGroup.forEach {
+                it.value.forEach setForEach@{ nodeInfo ->
+                    if (nodeInfo.ctClass == CtClass.voidType) {
+                        removedClass.add(nodeInfo.path)
+                        return@setForEach
+                    }
+                    if (nodeInfo.type == NodeType.COMPONENT_SERVICE) {
+                        componentServiceAlias.putNodeInfo(nodeInfo)
+                    }
+                }
+            }
+            removedClass.forEach {
+                Log.d("path removed: $it")
+                nodeSetByGroup.removeNode(it)
+            }
+
+        }
     }
 
     override fun onClassVisited(ctClass: CtClass): Boolean {
-        return onChangedClassVisited(ctClass)
+        return onIncrementalClassVisited(Status.ADDED, ctClass)
     }
 
-    override fun onChangedClassVisited(ctClass: CtClass): Boolean {
+    override fun onIncrementalClassVisited(status: Status, ctClass: CtClass): Boolean {
         //traversal all .class file and find the class which annotate by Router, record router path
         //and Class for RouterNode construction
         if (!ctClass.hasAnnotation(Router::class.java)) {
@@ -119,20 +142,28 @@ class RouterCompileActuator(private val project: Project,
         val nodeInfo = NodeInfo(path, ctClass)
         //additional info collect for component service
         if (nodeInfo.type == NodeType.COMPONENT_SERVICE) {
-            ctClass.interfaces.forEach {
-                componentServiceAlias.add(Pair(it.name, path))
+            componentServiceAlias.putNodeInfo(nodeInfo)
+        }
+        println("ctClass:${ctClass.name}")
+        nodeSetByGroup.forEach {
+            println(" ${it.key}")
+            it.value.forEach {
+                println("\t" + it.path)
             }
         }
-        val set = nodeMapByGroup.computeIfAbsent(getGroupWithPath(path, ctClass.name)) {
-            hashSetOf()
-        }
-        val result = set.add(nodeInfo)
-        if (!result) {
-            val dup = set.find { it.path == nodeInfo.path }
-            throw RouterPathDuplicateException(nodeInfo.path, nodeInfo.ctClass.name,
-                    dup!!.path, dup.ctClass.name)
-        }
+        println("end")
+        nodeSetByGroup.putNode(nodeInfo)
         return insertInjectImplement(nodeInfo)
+    }
+
+    override fun onRemovedClassVisited(ctClass: CtClass) {
+        if (!ctClass.hasAnnotation(Router::class.java)) {
+            return
+        }
+        val routerAnnotation = ctClass.getAnnotation(Router::class.java) as Router
+        val path = routerAnnotation.path
+        val nodeInfo = NodeInfo(path, ctClass)
+        nodeSetByGroup.removeNode(nodeInfo)
     }
 
     private val genClassSet = arrayListOf<String>()
@@ -172,20 +203,24 @@ class RouterCompileActuator(private val project: Project,
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {
+        IncrementalHelper.savePersistentField(this, transformInvocation.persistenceOutputDir())
         val dest = transformInvocation.outputProvider.getContentLocation(
                 "routerGen",
                 TransformManager.CONTENT_CLASS,
                 TransformManager.PROJECT_ONLY,
                 Format.DIRECTORY)
+        if (dest.exists()) {
+            FileUtils.deleteDirectory(dest)
+        }
         if (checkDuplicate) {
-            nodeMapByGroup.forEach { (_, set) ->
+            nodeSetByGroup.forEach { (_, set) ->
                 set.forEach {
                     duplicateChecker?.check(it.path, it.ctClass.name)
                 }
             }
         }
-        if (nodeMapByGroup.isNotEmpty()) {
-            nodeMapByGroup.forEach {
+        if (nodeSetByGroup.isNotEmpty()) {
+            nodeSetByGroup.forEach {
                 genRouterProviderImpl(dest, it.key, it.value)
             }
         }
@@ -193,7 +228,7 @@ class RouterCompileActuator(private val project: Project,
             genServiceAliasProviderImpl(dest, componentServiceAlias)
         }
         if (!isComponent) {
-            nodeMapByGroup.forEach {
+            nodeSetByGroup.forEach {
                 groupMap.computeIfAbsent(it.key) {
                     arrayListOf()
                 }.add(genRouterProviderClassName(it.key))
@@ -415,7 +450,7 @@ class RouterCompileActuator(private val project: Project,
         return builder.toString()
     }
 
-    private fun genServiceAliasProviderImpl(dir: File, componentServiceAlias: ArrayList<Pair<String, String>>) {
+    private fun genServiceAliasProviderImpl(dir: File, componentServiceAlias: ServiceNodeAlias) {
         val name = Constants.SERVICE_ALIAS_PROVIDER_FILE_PACKAGE + genServiceAliasProviderClassName()
         MethodGen(name)
                 .interfaces(IServiceAliasProvider::class.java)
@@ -425,12 +460,12 @@ class RouterCompileActuator(private val project: Project,
                 .gen()?.writeFile(dir.absolutePath)
     }
 
-    private fun produceAliasProviderBodySrc(alias: ArrayList<Pair<String, String>>): String {
+    private fun produceAliasProviderBodySrc(alias: ServiceNodeAlias): String {
         val sb = StringBuilder("{")
                 .append("android.util.SparseArray result = new android.util.SparseArray();")
-        alias.forEach {
-            val hash = it.first.hashCode()
-            sb.append("result.put($hash, \"${it.second}\");")
+        alias.forEach { interfaceName, routerPath ->
+            val hash = interfaceName.hashCode()
+            sb.append("result.put($hash, \"${routerPath}\");")
         }
         sb.append("return result;}")
         return sb.toString()
@@ -438,7 +473,7 @@ class RouterCompileActuator(private val project: Project,
 
     private fun genRouterLazyLoaderImpl(dir: File,
                                         groupMap: MutableMap<String, ArrayList<String>>,
-                                        aliasInfoList: ArrayList<Pair<String, String>>,
+                                        aliasInfoList: ServiceNodeAlias,
                                         aliasProviderList: ArrayList<String>) {
         val name = Constants.ROUTER_GEN_FILE_PACKAGE + Constants.LAZY_LOADER_IMPL_NAME
         MethodGen(name)
@@ -475,13 +510,13 @@ class RouterCompileActuator(private val project: Project,
         return sb.toString()
     }
 
-    private fun produceLoadServiceAliasMapMethodBodySrc(aliasInfoList: ArrayList<Pair<String, String>>,
+    private fun produceLoadServiceAliasMapMethodBodySrc(aliasInfoList: ServiceNodeAlias,
                                                         aliasProviderList: ArrayList<String>): String {
         val sb = StringBuilder("{")
                 .append("android.util.SparseArray result = new android.util.SparseArray();")
-        aliasInfoList.forEach {
-            val hash = it.first.hashCode()
-            sb.append("result.put($hash, \"${it.second}\");")
+        aliasInfoList.forEach { interfaceName, routerPath ->
+            val hash = interfaceName.hashCode()
+            sb.append("result.put($hash, \"${routerPath}\");")
         }
         aliasProviderList.forEach {
             sb.append("cn.soul.android.component.util.CollectionHelper.putAllSparseArray(result, new ${Constants.SERVICE_ALIAS_PROVIDER_FILE_PACKAGE}$it().getServiceAlias());")
@@ -505,13 +540,6 @@ class RouterCompileActuator(private val project: Project,
                 ?: throw GradleException("can not find ComponentExtension, please check your build.gradle file")
     }
 
-    private fun getGroupWithPath(path: String, clazz: String): String {
-        val strings = path.split('/')
-        if (strings.size < 3) {
-            throw GradleException("invalid router path: \"$path\" in $clazz. Router Path must starts with '/' and has a group segment")
-        }
-        return strings[1]
-    }
 
     private fun getGroupWithEntryName(name: String): String {
         return name.split('/').last().split('$')[0]
@@ -521,35 +549,101 @@ class RouterCompileActuator(private val project: Project,
         return name.split('/').last().split('.')[0]
     }
 
-    data class NodeInfo(val path: String,
-                        val ctClass: CtClass) {
+
+    /**
+     * save information of nodeInfo split by group, these data will used of generate RouterNodeProviderImpl
+     */
+    private class NodeInfoSetGroupSplit {
+        private val nodeSetByGroup = mutableMapOf<String, HashSet<NodeInfo>>()
+
+        fun putNode(nodeInfo: NodeInfo) {
+            val set = nodeSetByGroup.computeIfAbsent(getGroupWithPath(nodeInfo.path, nodeInfo.ctClass.name)) {
+                hashSetOf()
+            }
+            val result = set.add(nodeInfo)
+            if (!result) {
+                val dup = set.find { it.path == nodeInfo.path }
+                throw RouterPathDuplicateException(nodeInfo.path, nodeInfo.ctClass.name,
+                        dup!!.path, dup.ctClass.name)
+            }
+        }
+
+        fun removeNode(nodeInfo: NodeInfo) {
+            val group = getGroupWithPath(nodeInfo.path, nodeInfo.ctClass.name)
+            val set = nodeSetByGroup[group] ?: return
+            set.remove(nodeInfo)
+            if (set.size == 0) {
+                nodeSetByGroup.remove(group)
+            }
+        }
+
+        fun removeNode(path: String) {
+            val group = getGroupWithPath(path, null)
+            val set = nodeSetByGroup[group] ?: return
+            set.remove(NodeInfo(path, CtClass.voidType))
+            if (set.size == 0) {
+                nodeSetByGroup.remove(group)
+            }
+        }
+
+        fun isNotEmpty(): Boolean {
+            return nodeSetByGroup.isNotEmpty()
+        }
+
+        fun forEach(action: (Map.Entry<String, HashSet<NodeInfo>>) -> Unit) {
+            nodeSetByGroup.forEach(action)
+        }
+
+        private fun getGroupWithPath(path: String, clazz: String?): String {
+            val strings = path.split('/')
+            if (strings.size < 3) {
+                throw GradleException("invalid router path: \"$path\" in $clazz. Router Path must starts with '/' and has a group segment")
+            }
+            return strings[1]
+        }
+    }
+
+    /**
+     * save node path and node correspond ctClass, this class can get [NodeType]
+     */
+    private data class NodeInfo(val path: String,
+                                val ctClass: CtClass) {
+        companion object {
+            private val typeCache = mutableMapOf<CtClass, NodeType>()
+        }
+
+        /**
+         * nodeType, mark current node type for different node subClass instantiate
+         */
         val type = getNodeType(ctClass)
 
         private fun getNodeType(ctClass: CtClass): NodeType {
-            val classPool = InjectHelper.instance.getClassPool()
-            NodeType.values().forEach { nodeType ->
-                nodeType.supportClasses().forEach support@{
-                    if (it == "") {
-                        return@support
-                    }
-                    try {
-                        val supportClass = classPool[it]
-                        if (ctClass.subtypeOf(supportClass)) {
-                            return nodeType
+            if (ctClass.isPrimitive) {
+                return NodeType.UNSPECIFIED
+            }
+            return typeCache.computeIfAbsent(ctClass) {
+                val classPool = InjectHelper.instance.getClassPool()
+                NodeType.values().forEach { nodeType ->
+                    nodeType.supportClasses().forEach support@{
+                        if (it == "") {
+                            return@support
                         }
-                    } catch (e: Exception) {
-                        Log.e("cannot got $it in ${ctClass.name} when check node type. stacktrace")
-                        e.printStackTrace()
+                        try {
+                            val supportClass = classPool[it]
+                            if (ctClass.subtypeOf(supportClass)) {
+                                return@computeIfAbsent nodeType
+                            }
+                        } catch (e: Exception) {
+                            Log.e("cannot got $it in ${ctClass.name} when check node type. stacktrace:")
+                            e.printStackTrace()
+                        }
                     }
                 }
+                return@computeIfAbsent NodeType.UNSPECIFIED
             }
-            return NodeType.UNSPECIFIED
         }
 
         override fun equals(other: Any?): Boolean {
-            if (other == this) {
-                return true
-            }
             if (other is NodeInfo && other.path == path) {
                 return true
             }
@@ -561,9 +655,35 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
-    data class InjectInfo(val ctField: CtField,
-                          val annotationName: String,
-                          private val ctClass: CtClass) {
+    /**
+     * component service alias, map of class name and router path
+     * //todo: router path change to Set
+     */
+    private class ServiceNodeAlias {
+        private val map = mutableMapOf<String, String>()
+
+        fun putNodeAlias(interfaceName: String, routerPath: String) {
+            map[interfaceName] = routerPath
+        }
+
+        fun putNodeInfo(nodeInfo: NodeInfo) {
+            nodeInfo.ctClass.interfaces.forEach {
+                putNodeAlias(it.name, nodeInfo.path)
+            }
+        }
+
+        fun forEach(action: (interfaceName: String, routerPath: String) -> Unit) {
+            map.forEach(action)
+        }
+
+        fun isNotEmpty(): Boolean {
+            return map.isNotEmpty()
+        }
+    }
+
+    private data class InjectInfo(val ctField: CtField,
+                                  val annotationName: String,
+                                  private val ctClass: CtClass) {
         companion object {
             private val classPool = InjectHelper.instance.getClassPool()
             private val serializableType = classPool["java.io.Serializable"]
@@ -654,7 +774,7 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
-    class DuplicateChecker {
+    private class DuplicateChecker {
         data class NodeCheckInfo(val path: String, val className: String) {
             override fun equals(other: Any?): Boolean {
                 if (other is NodeCheckInfo) {

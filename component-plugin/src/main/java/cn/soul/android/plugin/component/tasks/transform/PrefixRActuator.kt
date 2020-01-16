@@ -3,6 +3,7 @@ package cn.soul.android.plugin.component.tasks.transform
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
+import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
@@ -43,12 +44,14 @@ class PrefixRActuator(private val project: Project,
     }
 
     override fun onClassVisited(ctClass: CtClass): Boolean {
-        prefixRClassFieldAccess(ctClass, applicationId)
-        return false
+        return onIncrementalClassVisited(Status.ADDED, ctClass)
     }
 
-    override fun onChangedClassVisited(ctClass: CtClass): Boolean {
-        return false
+    override fun onIncrementalClassVisited(status: Status, ctClass: CtClass): Boolean {
+        return prefixRClassFieldAccess(ctClass, applicationId)
+    }
+
+    override fun onRemovedClassVisited(ctClass: CtClass) {
     }
 
     override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File) {
@@ -89,17 +92,18 @@ class PrefixRActuator(private val project: Project,
         }
     }
 
-    private fun prefixRClassFieldAccess(ctClass: CtClass, applicationId: String) {
+    private fun prefixRClassFieldAccess(ctClass: CtClass, applicationId: String): Boolean {
         if (prefix == null) {
-            return
+            return false
         }
         if (isRFile(ctClass.simpleName)) {
             //skip R.class's field access prefix
-            return
+            return false
         }
         if (ctClass.isFrozen) {
             ctClass.defrost()
         }
+        var modify = false
         ctClass.instrument(object : ExprEditor() {
             override fun edit(f: FieldAccess?) {
                 if (f == null) {
@@ -107,9 +111,11 @@ class PrefixRActuator(private val project: Project,
                 }
                 if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
                     f.replace("{\$_ = ${f.className}.$prefix${f.fieldName};}")
+                    modify = true
                 }
             }
         })
+        return modify
     }
 
     private fun isRFile(name: String): Boolean = name == "R" || name.startsWith("R$")

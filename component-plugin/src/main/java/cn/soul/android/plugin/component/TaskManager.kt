@@ -65,7 +65,7 @@ class TaskManager(private val project: Project,
         val task = taskFactory.register(GenerateSymbol.CreationAction(scope,
                 symbol,
                 symbolTableWithPackageName,
-                File(scope.globalScope.intermediatesDir, "prefixRFile")))
+                File(scope.globalScope.intermediatesDir, "Khala-PrefixRFile")))
         scope.artifacts.createBuildableArtifact(
                 InternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME,
                 BuildArtifactsHolder.OperationType.TRANSFORM,

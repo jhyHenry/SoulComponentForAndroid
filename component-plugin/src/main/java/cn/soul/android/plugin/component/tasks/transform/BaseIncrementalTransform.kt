@@ -31,7 +31,7 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                 when (jarInput.status) {
                     Status.ADDED, Status.CHANGED -> {
                         Log.e("jar changed:" + jarInput.file.absolutePath)
-                        onChangedJarVisited(jarInput, dest)
+                        onChangedJarTransform(jarInput, dest)
                     }
                     Status.REMOVED -> {
                         Log.e("jar removed:" + jarInput.file.absolutePath)
@@ -41,7 +41,7 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                     }
                     else -> {
                         Log.e("jar no changed:" + jarInput.file.absolutePath)
-                        onJarVisited(jarInput, dest)
+                        onJarTransform(jarInput, dest)
                     }
                 }
             }
@@ -59,16 +59,20 @@ abstract class BaseIncrementalTransform : BaseTransform() {
     private fun onIncrementalDirInput(outputDir: File, dirInput: DirectoryInput) {
         val srcPath = dirInput.file.absolutePath
         val destPath = outputDir.absolutePath
+        val executorList = mutableListOf<() -> Unit>()
         dirInput.changedFiles.forEach { (file, status) ->
             val destClassFilePath = file.absolutePath.replace(srcPath, destPath)
             val destFile = File(destClassFilePath)
             when (status) {
                 Status.ADDED, Status.CHANGED -> {
                     Log.e("dir changed:${file.absolutePath}")
-                    onSingleFileTransform(file, outputDir, destFile)
+                    executorList.add {
+                        onSingleFileTransform(status, file, outputDir, destFile)
+                    }
                 }
                 Status.REMOVED -> {
                     Log.e("dir removed:${file.absolutePath}")
+                    onRemovedFileTransform(outputDir, destFile)
                     if (destFile.exists()) {
                         FileUtils.forceDelete(destFile)
                     }
@@ -78,17 +82,24 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                 }
             }
         }
+        executorList.forEach {
+            it.invoke()
+        }
     }
 
-    abstract fun onJarVisited(jarInput: JarInput, destFile: File)
+    abstract fun onJarTransform(jarInput: JarInput, destFile: File)
 
-    abstract fun onChangedJarVisited(jarInput: JarInput, destFile: File)
+    abstract fun onChangedJarTransform(jarInput: JarInput, destFile: File)
 
     open fun onDirTransform(inputDir: File, outputDir: File) {
         FileUtils.copyDirectory(inputDir, outputDir)
     }
 
-    open fun onSingleFileTransform(inputFile: File, outputDir: File, destFile: File) {
+    open fun onSingleFileTransform(status: Status, inputFile: File, outputDir: File, destFile: File) {
         FileUtils.copyFile(inputFile, destFile)
+    }
+
+    open fun onRemovedFileTransform(outputDir: File, destFile: File) {
+
     }
 }

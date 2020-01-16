@@ -3,6 +3,7 @@ package cn.soul.android.plugin.component.tasks.transform
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.JarInput
+import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
 import java.io.File
@@ -35,9 +36,9 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
         Log.p("transform time cost: ${timeCost}ms")
     }
 
-    override fun onSingleFileTransform(inputFile: File, outputDir: File, destFile: File) {
-        if (!onChangedFile(inputFile, outputDir, destFile)) {
-            super.onSingleFileTransform(inputFile, outputDir, destFile)
+    override fun onSingleFileTransform(status: Status, inputFile: File, outputDir: File, destFile: File) {
+        if (!onChangedFile(status, inputFile, outputDir, destFile)) {
+            super.onSingleFileTransform(status, inputFile, outputDir, destFile)
         }
     }
 
@@ -53,15 +54,16 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
                     } else {
                         val destClassFilePath = file.absolutePath.replace(srcPath, destPath)
                         val destFile = File(destClassFilePath)
-                        super.onSingleFileTransform(file, outputDir, destFile)
+                        super.onSingleFileTransform(Status.ADDED, file, outputDir, destFile)
                     }
                 }
     }
 
-    override fun onJarVisited(jarInput: JarInput, destFile: File) {
+    override fun onJarTransform(jarInput: JarInput, destFile: File) {
+        onJarVisited(jarInput)
     }
 
-    override fun onChangedJarVisited(jarInput: JarInput, destFile: File) {
+    override fun onChangedJarTransform(jarInput: JarInput, destFile: File) {
     }
 
     abstract fun onInputFileVisited(ctClass: CtClass, outputDir: File): Boolean
@@ -73,7 +75,7 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
      * will write result to target directory for next transform. Otherwise [BaseTraversalTransform]
      * will ignore build result.
      */
-    abstract fun onChangedFile(inputFile: File, outputDir: File, destFile: File): Boolean
+    abstract fun onChangedFile(status: Status, inputFile: File, outputDir: File, destFile: File): Boolean
 
     /**
      * see [onInputFileVisited]
@@ -89,14 +91,14 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
     }
 
     /**
-     * called before all [onInputFileVisited] and [onJarVisited]
+     * called before all [onInputFileVisited] and [onJarTransform]
      */
     protected open fun preTransform(transformInvocation: TransformInvocation) {
 
     }
 
     /**
-     * called after all [onInputFileVisited] and [onJarVisited]
+     * called after all [onInputFileVisited] and [onJarTransform]
      */
     abstract fun postTransform(transformInvocation: TransformInvocation)
 }

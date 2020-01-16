@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
 import java.io.File
@@ -27,7 +28,9 @@ interface TransformActuator {
      */
     fun onClassVisited(ctClass: CtClass): Boolean
 
-    fun onChangedClassVisited(ctClass: CtClass): Boolean
+    fun onIncrementalClassVisited(status: Status, ctClass: CtClass): Boolean
+
+    fun onRemovedClassVisited(ctClass: CtClass)
 
     fun onJarVisited(jarFile: File)
 

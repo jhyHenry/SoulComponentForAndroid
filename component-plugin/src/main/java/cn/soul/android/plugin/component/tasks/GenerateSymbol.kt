@@ -99,7 +99,6 @@ open class GenerateSymbol : ProcessAndroidResources() {
 
     @Throws(IOException::class)
     override fun doFullTaskAction() {
-        Log.e("prefix R")
         val manifest = Iterables.getOnlyElement(
                 ExistingBuildElements.from(InternalArtifactType.MERGED_MANIFESTS, manifestFiles))
                 .outputFile
