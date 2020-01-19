@@ -2,7 +2,6 @@ package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
-import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import org.apache.commons.io.FileUtils
@@ -30,18 +29,20 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                 val dest = getOutputJar(outputProvider, jarInput)
                 when (jarInput.status) {
                     Status.ADDED, Status.CHANGED -> {
-                        Log.e("jar changed:" + jarInput.file.absolutePath)
-                        onChangedJarTransform(jarInput, dest)
+                        Log.test("jar ${jarInput.status.name}:" + jarInput.file.absolutePath)
+                        onIncrementalJarTransform(jarInput.status, jarInput.file, dest)
                     }
                     Status.REMOVED -> {
-                        Log.e("jar removed:" + jarInput.file.absolutePath)
+                        //it seemed transform will full build when remove jar file, so ignore this status
+                        Log.test("jar removed:" + jarInput.file.absolutePath)
                         if (dest.exists()) {
                             FileUtils.forceDelete(dest)
                         }
                     }
                     else -> {
-                        Log.e("jar no changed:" + jarInput.file.absolutePath)
-                        onJarTransform(jarInput, dest)
+                        if (!isIncremental) {
+                            onIncrementalJarTransform(Status.ADDED, jarInput.file, dest)
+                        }
                     }
                 }
             }
@@ -61,24 +62,27 @@ abstract class BaseIncrementalTransform : BaseTransform() {
         val destPath = outputDir.absolutePath
         val executorList = mutableListOf<() -> Unit>()
         dirInput.changedFiles.forEach { (file, status) ->
+            if (file.isDirectory) {
+                return@forEach
+            }
             val destClassFilePath = file.absolutePath.replace(srcPath, destPath)
             val destFile = File(destClassFilePath)
             when (status) {
                 Status.ADDED, Status.CHANGED -> {
-                    Log.e("dir changed:${file.absolutePath}")
+//                    Log.test("dir ${status.name}:${file.absolutePath}")
                     executorList.add {
                         onSingleFileTransform(status, file, outputDir, destFile)
                     }
                 }
                 Status.REMOVED -> {
-                    Log.e("dir removed:${file.absolutePath}")
+//                    Log.test("dir removed:${file.absolutePath}")
                     onRemovedFileTransform(outputDir, destFile)
                     if (destFile.exists()) {
                         FileUtils.forceDelete(destFile)
                     }
                 }
                 else -> {
-                    Log.e("dir no changed:${file.absolutePath}")
+                    Log.test("dir no changed:${file.absolutePath}")
                 }
             }
         }
@@ -87,9 +91,9 @@ abstract class BaseIncrementalTransform : BaseTransform() {
         }
     }
 
-    abstract fun onJarTransform(jarInput: JarInput, destFile: File)
-
-    abstract fun onChangedJarTransform(jarInput: JarInput, destFile: File)
+    open fun onIncrementalJarTransform(status: Status, jarFile: File, destFile: File) {
+        FileUtils.copyFile(jarFile, destFile)
+    }
 
     open fun onDirTransform(inputDir: File, outputDir: File) {
         FileUtils.copyDirectory(inputDir, outputDir)

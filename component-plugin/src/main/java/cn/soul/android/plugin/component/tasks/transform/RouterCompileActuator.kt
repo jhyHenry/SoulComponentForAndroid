@@ -46,17 +46,14 @@ class RouterCompileActuator(private val project: Project,
     @Persistent("NodeInfoSet")
     private var nodeSetByGroup = NodeInfoSetGroupSplit()
     //map key: group, value: node path list, for generate lazy loader
-    private val groupMap = mutableMapOf<String, ArrayList<String>>()
 
-    //pair first: super interface's class full name, second: node path
-    private val componentServiceAlias = ServiceNodeAlias()
+    @Persistent
+    private var libProviderConstants = LibProviderContainer()
 
-    //for lazy loader
-    private val aliasProviderList = arrayListOf<String>()
+    @Persistent
+    private var duplicateChecker: DuplicateChecker? = null
 
     private var baseClassLoader: URLClassLoader? = null
-
-    private var duplicateChecker: DuplicateChecker? = null
 
     private var checkDuplicate: Boolean = false
 
@@ -114,9 +111,6 @@ class RouterCompileActuator(private val project: Project,
                         removedClass.add(nodeInfo.path)
                         return@setForEach
                     }
-                    if (nodeInfo.type == NodeType.COMPONENT_SERVICE) {
-                        componentServiceAlias.putNodeInfo(nodeInfo)
-                    }
                 }
             }
             removedClass.forEach {
@@ -140,18 +134,9 @@ class RouterCompileActuator(private val project: Project,
         val routerAnnotation = ctClass.getAnnotation(Router::class.java) as Router
         val path = routerAnnotation.path
         val nodeInfo = NodeInfo(path, ctClass)
-        //additional info collect for component service
-        if (nodeInfo.type == NodeType.COMPONENT_SERVICE) {
-            componentServiceAlias.putNodeInfo(nodeInfo)
+        if (status == Status.CHANGED && nodeSetByGroup.contains(nodeInfo)) {
+            nodeSetByGroup.removeNode(nodeInfo)
         }
-        println("ctClass:${ctClass.name}")
-        nodeSetByGroup.forEach {
-            println(" ${it.key}")
-            it.value.forEach {
-                println("\t" + it.path)
-            }
-        }
-        println("end")
         nodeSetByGroup.putNode(nodeInfo)
         return insertInjectImplement(nodeInfo)
     }
@@ -167,9 +152,9 @@ class RouterCompileActuator(private val project: Project,
     }
 
     private val genClassSet = arrayListOf<String>()
-    override fun onJarVisited(jarFile: File) {
+    override fun onJarVisited(status: Status, jarFile: File) {
         genClassSet.clear()
-        super.onJarVisited(jarFile)
+        super.onJarVisited(status, jarFile)
         if (checkDuplicate && genClassSet.isNotEmpty()) {
             Log.e("url:" + URL("file://${jarFile.absolutePath}"))
             val classLoader = URLClassLoader(arrayOf(URL("file://${jarFile.absolutePath}")), baseClassLoader)
@@ -190,15 +175,14 @@ class RouterCompileActuator(private val project: Project,
             return
         }
         if (zipEntry.name.startsWith(Constants.ROUTER_GEN_FILE_FOLDER)) {
-            val className = getNameWithEntryName(zipEntry.name)
-            groupMap.computeIfAbsent(getGroupWithEntryName(zipEntry.name)) {
-                arrayListOf()
-            }.add(className)
-            genClassSet.add(className)
+            Log.d("found router:${zipEntry.name}")
+            libProviderConstants.putGroupedProviderWithEntryName(zipEntry.name)
+            genClassSet.add(LibProviderContainer.getNameWithEntryName(zipEntry.name))
             return
         }
         if (zipEntry.name.startsWith(Constants.SERVICE_ALIAS_PROVIDER_FILE_FOLDER)) {
-            aliasProviderList.add(getNameWithEntryName(zipEntry.name))
+            Log.d("found service alias:${zipEntry.name}")
+            libProviderConstants.putAliasProviderWithEntryName(zipEntry.name)
         }
     }
 
@@ -224,21 +208,29 @@ class RouterCompileActuator(private val project: Project,
                 genRouterProviderImpl(dest, it.key, it.value)
             }
         }
+        //pair first: super interface's class full name, second: node path
+        val componentServiceAlias = ServiceNodeAlias()
+        nodeSetByGroup.forEach {
+            it.value.forEach { nodeInfo ->
+                if (nodeInfo.type == NodeType.COMPONENT_SERVICE) {
+                    componentServiceAlias.putNodeInfo(nodeInfo)
+                }
+            }
+        }
+
         if (isComponent && componentServiceAlias.isNotEmpty()) {
             genServiceAliasProviderImpl(dest, componentServiceAlias)
         }
         if (!isComponent) {
             nodeSetByGroup.forEach {
-                groupMap.computeIfAbsent(it.key) {
-                    arrayListOf()
-                }.add(genRouterProviderClassName(it.key))
+                libProviderConstants.putGroupedProvider(it.key, genRouterProviderClassName(it.key))
             }
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterLazyLoader::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(IRouterNodeProvider::class.java))
             InjectHelper.instance.getClassPool().appendClassPath(ClassClassPath(CollectionHelper::class.java))
             Log.d("generate lazy loader")
-            genRouterLazyLoaderImpl(dest, groupMap,
-                    componentServiceAlias, aliasProviderList)
+            genRouterLazyLoaderImpl(dest, libProviderConstants.groupedProviderMap,
+                    componentServiceAlias, libProviderConstants.aliasProviderList)
         }
     }
 
@@ -541,15 +533,6 @@ class RouterCompileActuator(private val project: Project,
     }
 
 
-    private fun getGroupWithEntryName(name: String): String {
-        return name.split('/').last().split('$')[0]
-    }
-
-    private fun getNameWithEntryName(name: String): String {
-        return name.split('/').last().split('.')[0]
-    }
-
-
     /**
      * save information of nodeInfo split by group, these data will used of generate RouterNodeProviderImpl
      */
@@ -566,6 +549,12 @@ class RouterCompileActuator(private val project: Project,
                 throw RouterPathDuplicateException(nodeInfo.path, nodeInfo.ctClass.name,
                         dup!!.path, dup.ctClass.name)
             }
+        }
+
+        fun contains(nodeInfo: NodeInfo): Boolean {
+            val group = getGroupWithPath(nodeInfo.path, nodeInfo.ctClass.name)
+            val set = nodeSetByGroup[group] ?: return false
+            return set.contains(nodeInfo)
         }
 
         fun removeNode(nodeInfo: NodeInfo) {
@@ -602,6 +591,38 @@ class RouterCompileActuator(private val project: Project,
             return strings[1]
         }
     }
+
+    private class LibProviderContainer {
+        val aliasProviderList = arrayListOf<String>()
+        val groupedProviderMap = mutableMapOf<String, ArrayList<String>>()
+
+        fun putAliasProviderWithEntryName(entryName: String) {
+            aliasProviderList.add(getNameWithEntryName(entryName))
+        }
+
+        fun putGroupedProviderWithEntryName(entryName: String) {
+            val className = getNameWithEntryName(entryName)
+            val group = getGroupWithEntryName(entryName)
+            putGroupedProvider(group, className)
+        }
+
+        fun putGroupedProvider(group: String, className: String) {
+            groupedProviderMap.computeIfAbsent(group) {
+                arrayListOf()
+            }.add(className)
+        }
+
+        private fun getGroupWithEntryName(name: String): String {
+            return name.split('/').last().split('$')[0]
+        }
+
+        companion object {
+            fun getNameWithEntryName(name: String): String {
+                return name.split('/').last().split('.')[0]
+            }
+        }
+    }
+
 
     /**
      * save node path and node correspond ctClass, this class can get [NodeType]

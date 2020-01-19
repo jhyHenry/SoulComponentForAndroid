@@ -32,7 +32,7 @@ interface TransformActuator {
 
     fun onRemovedClassVisited(ctClass: CtClass)
 
-    fun onJarVisited(jarFile: File)
+    fun onJarVisited(status: Status, jarFile: File)
 
     /**
      * see [BaseTraversalTransform.postTransform]

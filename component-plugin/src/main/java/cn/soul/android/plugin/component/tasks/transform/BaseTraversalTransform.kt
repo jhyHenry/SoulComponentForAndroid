@@ -2,7 +2,6 @@ package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
-import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
@@ -33,7 +32,7 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
         super.transform(transformInvocation)
         postTransform(transformInvocation)
         timeCost = System.currentTimeMillis() - current
-        Log.p("transform time cost: ${timeCost}ms")
+        Log.p("${if (transformInvocation.isIncremental) "incremental " else ""}transform time cost: ${timeCost}ms")
     }
 
     override fun onSingleFileTransform(status: Status, inputFile: File, outputDir: File, destFile: File) {
@@ -59,11 +58,10 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
                 }
     }
 
-    override fun onJarTransform(jarInput: JarInput, destFile: File) {
-        onJarVisited(jarInput)
-    }
-
-    override fun onChangedJarTransform(jarInput: JarInput, destFile: File) {
+    override fun onIncrementalJarTransform(status: Status, jarFile: File, destFile: File) {
+        if (!onJarVisited(status, jarFile)) {
+            super.onIncrementalJarTransform(Status.ADDED, jarFile, destFile)
+        }
     }
 
     abstract fun onInputFileVisited(ctClass: CtClass, outputDir: File): Boolean
@@ -80,7 +78,7 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
     /**
      * see [onInputFileVisited]
      */
-    abstract fun onJarVisited(jarInput: JarInput): Boolean
+    abstract fun onJarVisited(status: Status, jarFile: File): Boolean
 
     /**
      * [BaseTraversalTransform] will traversal first to load all input files to Javassist ClassPool,
@@ -91,14 +89,14 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
     }
 
     /**
-     * called before all [onInputFileVisited] and [onJarTransform]
+     * called before all [onInputFileVisited] and [onIncrementalJarTransform]
      */
     protected open fun preTransform(transformInvocation: TransformInvocation) {
 
     }
 
     /**
-     * called after all [onInputFileVisited] and [onJarTransform]
+     * called after all [onInputFileVisited] and [onIncrementalJarTransform]
      */
     abstract fun postTransform(transformInvocation: TransformInvocation)
 }

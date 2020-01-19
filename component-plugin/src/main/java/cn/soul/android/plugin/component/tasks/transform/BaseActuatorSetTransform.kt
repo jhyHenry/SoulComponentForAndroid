@@ -1,8 +1,6 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.InjectHelper
-import cn.soul.android.plugin.component.utils.Log
-import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
@@ -63,9 +61,9 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
         return false
     }
 
-    override fun onJarVisited(jarInput: JarInput): Boolean {
+    override fun onJarVisited(status: Status, jarFile: File): Boolean {
         actuatorSet.forEach {
-            it.onJarVisited(jarInput.file)
+            it.onJarVisited(status, jarFile)
         }
         return false
     }

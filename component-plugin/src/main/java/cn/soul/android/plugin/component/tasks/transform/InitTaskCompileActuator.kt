@@ -30,6 +30,9 @@ class InitTaskCompileActuator(private val project: Project,
     @Persistent
     private val mTaskClassList = arrayListOf<CtClass>()
 
+    @Persistent
+    private val mComponentTaskProviderList = arrayListOf<String>()
+
     private val mTaskNameListProvider: (CtClass, Status) -> Unit = { ctClass, status ->
         if (!Modifier.isAbstract(ctClass.modifiers) && !ctClass.hasAnnotation(TaskIgnore::class.java)) {
             if (status == Status.ADDED && mTaskClassList.contains(ctClass)) {
@@ -39,8 +42,6 @@ class InitTaskCompileActuator(private val project: Project,
             mTaskClassList.add(ctClass)
         }
     }
-
-    private val mComponentTaskProviderList = arrayListOf<String>()
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
     }

@@ -67,6 +67,10 @@ object Log {
         doNormalLog(Level.INFO, tag, msg)
     }
 
+    fun test(msg: String) {
+        doNormalLog(Level.ERROR, "test", msg)
+    }
+
     private fun doNormalLog(level: Level, tag: String = defaultTag, msg: String) {
         if (inScope(level)) {
             println("$tag: $msg")

@@ -1,7 +1,7 @@
 package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.resolve.ZipHelper
-import com.android.build.api.transform.TransformInvocation
+import com.android.build.api.transform.Status
 import java.io.File
 import java.util.zip.ZipEntry
 
@@ -12,7 +12,7 @@ import java.util.zip.ZipEntry
  */
 abstract class TypeActuator(protected val isComponent: Boolean) : TransformActuator {
 
-    override fun onJarVisited(jarFile: File) {
+    override fun onJarVisited(status: Status, jarFile: File) {
         ZipHelper.traversalZip(jarFile) { entry ->
             onJarEntryVisited(entry, jarFile)
         }
