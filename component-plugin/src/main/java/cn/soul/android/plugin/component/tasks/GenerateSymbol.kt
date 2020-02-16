@@ -1,6 +1,5 @@
 package cn.soul.android.plugin.component.tasks
 
-import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.artifact.BuildableArtifact
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.ExistingBuildElements
@@ -118,8 +117,6 @@ open class GenerateSymbol : ProcessAndroidResources() {
                 sourceOut = sourceOutputDirectory,
                 rClassOutputJar = rClassOutputJar,
                 symbolFileOut = textSymbolOutputFile,
-                proguardOut = proguardOutputFile,
-                mergedResources = inputResourcesDir.single(),
                 platformSymbols = androidAttrSymbol,
                 namespacedRClass = namespacedRClass)
 
@@ -203,8 +200,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
                 Strings.nullToEmpty(variantScope.variantConfiguration.originalApplicationId)
             }
 
-            task.manifestFiles = variantScope.artifacts.getFinalArtifactFiles(
-                    InternalArtifactType.MERGED_MANIFESTS)
+            task.manifestFiles = variantScope.artifacts.getFinalProduct(InternalArtifactType.MERGED_MANIFESTS)
 
             task.inputResourcesDir = variantScope.artifacts.getFinalArtifactFiles(
                     InternalArtifactType.PACKAGED_RES)

@@ -15,7 +15,7 @@ open class ComponentExtension {
     var componentName: String? = null
     var uploadPath: String? = null
     var repoPath: String? = null
-    var logLevel: Log.Level? = null
+    var logLevel = 5
     var removeDuplicateResources = true
 
     var resourcePrefix: String? = null
@@ -44,5 +44,6 @@ open class ComponentExtension {
         if (resourcePrefix == null) {
             resourcePrefix = "${project.name}_"
         }
+        Log.level = logLevel
     }
 }

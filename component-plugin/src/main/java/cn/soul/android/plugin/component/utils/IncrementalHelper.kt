@@ -20,7 +20,10 @@ object IncrementalHelper {
         registerGsonAdapter()
     }
 
-    private fun saveInfo(info: Any, type: Type, fileName: String, outputDir: File) {
+    private fun saveInfo(info: Any?, type: Type, fileName: String, outputDir: File) {
+        if (info == null) {
+            return
+        }
         val string = gson.toJson(info, type)
         val file = File(outputDir, "persistence-${DigestUtils.md5Hex(fileName)}.json")
         file.writeText(string)

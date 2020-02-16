@@ -45,7 +45,6 @@ class RouterCompileActuator(private val project: Project,
                             isComponent: Boolean) : TypeActuator(isComponent) {
     @Persistent("NodeInfoSet")
     private var nodeSetByGroup = NodeInfoSetGroupSplit()
-    //map key: group, value: node path list, for generate lazy loader
 
     @Persistent
     private var libProviderConstants = LibProviderContainer()
@@ -117,7 +116,6 @@ class RouterCompileActuator(private val project: Project,
                 Log.d("path removed: $it")
                 nodeSetByGroup.removeNode(it)
             }
-
         }
     }
 
@@ -242,7 +240,7 @@ class RouterCompileActuator(private val project: Project,
         val injectInfoList = arrayListOf<InjectInfo>()
         val classPool = InjectHelper.instance.getClassPool()
         if (nodeInfo.type != NodeType.ACTIVITY && nodeInfo.type != NodeType.FRAGMENT) {
-            //one inject for activity and fragment
+            //only inject for activity and fragment
             return false
         }
 
@@ -592,6 +590,9 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
+    /**
+     * contains all provider classes in this class
+     */
     private class LibProviderContainer {
         val aliasProviderList = arrayListOf<String>()
         val groupedProviderMap = mutableMapOf<String, ArrayList<String>>()
@@ -655,8 +656,11 @@ class RouterCompileActuator(private val project: Project,
                                 return@computeIfAbsent nodeType
                             }
                         } catch (e: Exception) {
-                            Log.e("cannot got $it in ${ctClass.name} when check node type. stacktrace:")
-                            e.printStackTrace()
+                            Log.e("cannot got $it in ${ctClass.name} when check node type. Error msg: ${e.javaClass}:${e.message}")
+                            if (Log.level > 3) {
+                                Log.e("stacktrace:")
+                                e.printStackTrace()
+                            }
                         }
                     }
                 }

@@ -6,12 +6,12 @@ apply from: '../script/upload.gradle'
 dependencies {
 //    implementation fileTree(include: ['*.jar'], dir: 'libs')
     //noinspection GradleDependency
-    implementation 'com.android.tools.build:gradle:3.3.0'
-    implementation 'com.android.tools.build:builder:3.3.0'
+    implementation 'com.android.tools.build:gradle:3.5.3'
+//    implementation 'com.android.tools.build:builder:3.4.0'
     implementation 'org.javassist:javassist:3.26.0-GA'
     implementation 'org.dom4j:dom4j:2.1.1'
 //    implementation project(":component-base")
-    implementation 'cn.soul.android.module:component:1.0.0@jar'
+    implementation 'cn.soul.android.module:component:1.1.4@jar'
     implementation 'net.sf.json-lib:json-lib:2.4:jdk13'
     implementation localGroovy()
     //gradle sdk
@@ -43,7 +43,7 @@ uploadArchives {
         pom.project {
             groupId 'cn.soul.android.plugin'
             artifactId 'component-plugin'
-            version '1.0.5-SNAPSHOT'
+            version '1.1.4'
             packaging TYPE
             description DESCRIPTION
         }

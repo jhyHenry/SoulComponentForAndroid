@@ -116,7 +116,7 @@ class TaskManager(private val project: Project,
     }
 
     fun createReplaceManifestTask(scope: VariantScope) {
-        val manifestFile = scope.taskContainer.packageAndroidTask?.get()?.manifests?.single()
+        val manifestFile = scope.taskContainer.packageAndroidTask?.get()?.manifests?.get()?.asFile
                 ?: return
         val task = taskFactory.register(ReplaceManifest.ConfigAction(scope, File(manifestFile, "AndroidManifest.xml")))
         scope.taskContainer.processAndroidResTask?.get()?.dependsOn(task.get())

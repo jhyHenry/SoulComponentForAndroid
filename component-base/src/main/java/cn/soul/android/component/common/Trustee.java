@@ -1,6 +1,7 @@
 package cn.soul.android.component.common;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.SparseArray;
 
 import java.util.HashMap;
@@ -64,7 +65,7 @@ public class Trustee {
         sInstance = null;
     }
 
-    public IComponentService instanceComponentService(Context context, Class<?> clazz)
+    public synchronized IComponentService instanceComponentService(Context context, Class<?> clazz)
             throws IllegalAccessException, InstantiationException, RuntimeException {
         if (mComponentServiceAliasMap == null) {
             IRouterLazyLoader lazyLoader = instanceLoader();
@@ -77,6 +78,9 @@ public class Trustee {
             throw new ComponentServiceInstantException("load service alias occur exception.");
         }
         String path = mComponentServiceAliasMap.get(clazz.getName().hashCode());
+        if (TextUtils.isEmpty(path)) {
+            throw new ComponentServiceInstantException("cannot find router info with class:" + clazz.getName() + ", path:" + path);
+        }
         RouterNode node = getRouterNode(path);
         if (node == null) {
             throw new ComponentServiceInstantException("cannot find router info with class:" + clazz.getName() + ", path:" + path);
@@ -84,7 +88,7 @@ public class Trustee {
         return instanceComponentService(context, (ComponentServiceNode) node);
     }
 
-    public IComponentService instanceComponentService(Context context, ComponentServiceNode node)
+    public synchronized IComponentService instanceComponentService(Context context, ComponentServiceNode node)
             throws InstantiationException, IllegalAccessException {
         if (mServiceInstanceContainer == null) {
             mServiceInstanceContainer = new HashMap<>();

@@ -29,6 +29,7 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
         }
         if (modify) {
             ctClass.writeFile(outputDir.absolutePath)
+            return true
         }
         return false
     }

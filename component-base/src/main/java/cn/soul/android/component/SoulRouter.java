@@ -4,9 +4,13 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.util.SparseArray;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import cn.soul.android.component.common.Trustee;
 import cn.soul.android.component.exception.ComponentServiceInstantException;
@@ -24,6 +28,9 @@ public class SoulRouter {
     private volatile static SoulRouter sInstance;
     private volatile static boolean isInit = false;
     private static Context sContext;
+
+    private SparseArray<IInterceptor> mInterceptors;
+    private List<IInterceptor> mInterceptorList;
     private NavigateCallback mNavigateCallback;
 
     private SoulRouter() {
@@ -92,10 +99,25 @@ public class SoulRouter {
         if (context == null) {
             context = sContext;
         }
-        return (S) navigate(context, clazz, callback);
+        return (S) navigateService(context, clazz, callback);
     }
 
-    Object navigate(Context context, Class<?> clazz, ServiceInstantCallback instantCallback) {
+    public synchronized void registerInterceptor(int priority, IInterceptor interceptor) {
+        if (mInterceptors == null) {
+            mInterceptors = new SparseArray<>();
+        }
+        mInterceptors.put(priority, interceptor);
+    }
+
+    public synchronized void unregisterInterceptor(IInterceptor interceptor) {
+        int index = mInterceptors.indexOfValue(interceptor);
+        if (index < 0) {
+            return;
+        }
+        mInterceptors.removeAt(index);
+    }
+
+    private Object navigateService(Context context, Class<?> clazz, ServiceInstantCallback instantCallback) {
         ServiceInstantCallback callback = instantCallback;
         try {
             return Trustee.instance().instanceComponentService(context, clazz);
@@ -133,6 +155,15 @@ public class SoulRouter {
         if (context == null) {
             context = sContext;
         }
+        RealChain realChain = new RealChain(node);
+        List<IInterceptor> interceptors = interceptorList();
+        for (IInterceptor interceptor : interceptors) {
+            if (!realChain.proceed) {
+                return null;
+            }
+            interceptor.intercept(realChain);
+        }
+
         switch (node.getType()) {
             case ACTIVITY:
                 startActivity(requestCode, context, node, guide);
@@ -192,4 +223,43 @@ public class SoulRouter {
         context.startActivity(intent);
     }
 
+    private List<IInterceptor> interceptorList() {
+        if (mInterceptorList == null) {
+            mInterceptorList = new ArrayList<>();
+        } else {
+            mInterceptorList.clear();
+        }
+        if (mInterceptors == null) {
+            return mInterceptorList;
+        }
+        int len = mInterceptors.size();
+        for (int i = len - 1; i >= 0; i--) {
+            int key = mInterceptors.keyAt(i);
+            mInterceptorList.add(mInterceptors.get(key));
+        }
+        return mInterceptorList;
+    }
+
+    private static class RealChain implements IInterceptor.Chain {
+        boolean proceed = true;
+        RouterNode mNode;
+
+        RealChain(RouterNode node) {
+            mNode = node;
+        }
+
+        @Override
+        public RouterNode node() {
+            proceed = false;
+            return mNode;
+        }
+
+        @Override
+        public void proceed(RouterNode node) {
+            if (node != mNode) {
+                mNode = node;
+            }
+            proceed = true;
+        }
+    }
 }
