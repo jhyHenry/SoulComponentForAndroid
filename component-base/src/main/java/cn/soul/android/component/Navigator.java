@@ -1,5 +1,6 @@
 package cn.soul.android.component;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -17,6 +18,10 @@ public class Navigator {
     String path;
     String group;
     Bundle bundle;
+
+    //for activity
+    int flags;
+    boolean startForResult;
 
     public Navigator(String path) {
         this.path = path;
@@ -169,19 +174,34 @@ public class Navigator {
         return this;
     }
 
+    public Navigator withFlags(int flags) {
+        this.flags = flags;
+        return this;
+    }
+
     public Object navigate() {
         return navigate(null);
     }
 
     public Object navigate(Context context) {
-        return navigate(0, context, null);
+        return navigateInternal(0, context, null);
+    }
+
+    public Object navigate(int requestCode, Activity context) {
+        startForResult = true;
+        return navigateInternal(requestCode, context, null);
+    }
+
+    public Object navigate(int requestCode, Activity context, SoulRouter.NavigateCallback callback) {
+        startForResult = true;
+        return navigateInternal(requestCode, context, callback);
     }
 
     public Object navigate(Context context, SoulRouter.NavigateCallback callback) {
-        return navigate(0, context, callback);
+        return navigateInternal(0, context, callback);
     }
 
-    public Object navigate(int requestCode, Context context, SoulRouter.NavigateCallback navigateCallback) {
+    private Object navigateInternal(int requestCode, Context context, SoulRouter.NavigateCallback navigateCallback) {
         return SoulRouter.instance().navigate(requestCode, context, this, navigateCallback);
     }
 }

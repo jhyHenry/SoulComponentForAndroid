@@ -75,7 +75,12 @@ class RouterCompileActuator(private val project: Project,
                         .forEach { file ->
                             //here we can get all jar file for dependencies
                             InjectHelper.instance.appendClassPath(file.absolutePath)
+//                            Log.e("dep:" + file.absolutePath)
                         }
+//                it.variantDependencies.runtimeClasspath.allDependencies.forEach {
+//                    (it as DefaultProjectDependency).dependencyProject.
+//
+//                }
             }
         } else {
             checkDuplicate = project.componentExtension().buildOption.checkPathDuplicate

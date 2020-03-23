@@ -55,6 +55,7 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
                         val destFile = File(destClassFilePath)
                         super.onSingleFileTransform(Status.ADDED, file, outputDir, destFile)
                     }
+                    ctClass.detach()
                 }
     }
 

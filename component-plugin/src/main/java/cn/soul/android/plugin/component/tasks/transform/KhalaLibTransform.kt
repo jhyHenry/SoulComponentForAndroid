@@ -30,6 +30,10 @@ class KhalaLibTransform(private val project: Project) : BaseActuatorSetTransform
         return "khalaLib"
     }
 
+    override fun getInputTypes(): MutableSet<QualifiedContent.ContentType> {
+        return TransformManager.CONTENT_CLASS
+    }
+
     override fun getScopes(): MutableSet<in QualifiedContent.Scope> {
         return TransformManager.PROJECT_ONLY
     }

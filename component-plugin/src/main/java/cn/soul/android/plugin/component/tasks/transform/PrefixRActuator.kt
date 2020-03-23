@@ -7,11 +7,14 @@ import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import javassist.CtClass
 import javassist.CtField
 import javassist.expr.ExprEditor
 import javassist.expr.FieldAccess
 import org.gradle.api.Project
+import org.gradle.api.file.FileSystemLocation
 import java.io.File
 import java.util.zip.ZipEntry
 
@@ -38,6 +41,14 @@ class PrefixRActuator(private val project: Project,
                 applicationId = it.applicationId
                 Log.d("applicationId:$applicationId")
             }
+        }
+        //cannot got jar file input in library Transform, so got them by variantManager
+        libPlugin.variantManager.variantScopes.forEach {
+            if (it.fullVariantName != variantName) {
+                return@forEach
+            }
+            val provider = it.artifacts.getFinalProduct<FileSystemLocation>(InternalArtifactType.COMPILE_ONLY_NOT_NAMESPACED_R_CLASS_JAR)
+            InjectHelper.instance.appendClassPath(provider.get().asFile.absolutePath)
         }
         val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
         prefixCustomCtClassField(rCtClass)

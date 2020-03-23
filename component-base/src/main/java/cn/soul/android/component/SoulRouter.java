@@ -216,11 +216,19 @@ public class SoulRouter {
 
     private void startActivity(int requestCode, Context context, RouterNode node, Navigator guide) {
         Intent intent = new Intent(context, node.getTarget());
+        if (guide.flags != 0) {
+            intent.setFlags(guide.flags);
+        }
         intent.putExtras(guide.bundle);
         if (!(context instanceof Activity)) {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        context.startActivity(intent);
+
+        if (context instanceof Activity && guide.startForResult) {
+            ((Activity) context).startActivityForResult(intent, requestCode);
+        } else {
+            context.startActivity(intent);
+        }
     }
 
     private List<IInterceptor> interceptorList() {

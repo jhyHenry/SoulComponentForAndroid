@@ -114,7 +114,6 @@ class ComponentPlugin : Plugin<Project> {
         return false
     }
 
-    @Suppress("MISSING_DEPENDENCY_CLASS")
     private fun createTasks() {
         Log.p(msg = "create tasks.")
         if (isRunForAar()) {
@@ -223,10 +222,6 @@ class ComponentPlugin : Plugin<Project> {
         return sb.toString()
     }
 
-    /**
-     * 读output.json，拿到path字段，为对应的ap_文件名称
-     * @param file
-     */
     @Throws(IOException::class)
     fun readJsonFileAndGetPathValue(file: File): String {
         val jsonString = readPlaintTextFile(file)

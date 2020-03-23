@@ -16,6 +16,8 @@ import com.android.build.gradle.tasks.ProcessLibraryManifest
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import org.gradle.api.Project
+import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.file.RegularFile
 import java.io.File
 import java.util.*
 
@@ -95,7 +97,7 @@ class TaskManager(private val project: Project,
     }
 
     fun createGenInterfaceArtifactTask(scope: VariantScope) {
-        val file = scope.artifacts.getFinalArtifactFiles(InternalArtifactType.JAVAC).single()
+        val file = scope.artifacts.getFinalProduct<FileSystemLocation>(InternalArtifactType.JAVAC).get().asFile
         val task = taskFactory.register(GenerateInterfaceArtifact.ConfigAction(scope, file))
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         pluginTaskContainer?.genInterface = task.get()
