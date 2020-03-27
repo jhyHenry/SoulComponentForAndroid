@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component.tasks
 
 import cn.soul.android.component.IComponentService
+import cn.soul.android.component.annotation.ClassExposed
 import cn.soul.android.plugin.component.utils.InjectHelper
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
@@ -43,7 +44,8 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
         InjectHelper.instance.processFiles(source)
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .classFilter { ctClass ->
-                    ctClass.classFile2.interfaces.contains(IComponentService::class.java.name)
+                    ctClass.classFile2.interfaces.contains(IComponentService::class.java.name) or
+                            ctClass.hasAnnotation(ClassExposed::class.java)
                 }.forEach { ctClass, _ ->
                     refSet.add(ctClass.name)
                     retrieveRefClass(ctClass)
@@ -57,6 +59,9 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
             refSet.forEach { ref ->
                 val fileName = ref.replace('.', '/') + ".class"
                 val file = File(sourceDir, fileName)
+                if (!file.exists()) {
+                    return@forEach
+                }
                 FileInputStream(file).use { fis ->
                     zos.putNextEntry(ZipEntry(fileName))
 

@@ -21,7 +21,6 @@ import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import javassist.*
 import javassist.bytecode.FieldInfo
 import javassist.bytecode.SignatureAttribute
@@ -67,20 +66,18 @@ class RouterCompileActuator(private val project: Project,
                 if (it.fullVariantName != variantName) {
                     return@forEach
                 }
-                it.getArtifactCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.EXTERNAL,
-                        AndroidArtifacts.ArtifactType.CLASSES)
-                        .artifactFiles.files
-                        .forEach { file ->
-                            //here we can get all jar file for dependencies
-                            InjectHelper.instance.appendClassPath(file.absolutePath)
-//                            Log.e("dep:" + file.absolutePath)
-                        }
-//                it.variantDependencies.runtimeClasspath.allDependencies.forEach {
-//                    (it as DefaultProjectDependency).dependencyProject.
-//
-//                }
+//                it.getArtifactCollection(
+//                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+//                        AndroidArtifacts.ArtifactScope.EXTERNAL,
+//                        AndroidArtifacts.ArtifactType.CLASSES)
+//                        .artifactFiles.files
+//                        .forEach { file ->
+//                            //here we can get all jar file for dependencies
+//                        }
+                val task = it.taskContainer.javacTask.get()
+                task.classpath.files.forEach {file->
+                    InjectHelper.instance.appendClassPath(file.absolutePath)
+                }
             }
         } else {
             checkDuplicate = project.componentExtension().buildOption.checkPathDuplicate
@@ -521,12 +518,12 @@ class RouterCompileActuator(private val project: Project,
     }
 
     private fun genRouterProviderClassName(group: String): String {
-        val componentName = getComponentExtension().componentName
+        val componentName = getComponentExtension().componentName?.replace('-', '_')
         return "$group\$$componentName\$NodeProvider"
     }
 
     private fun genServiceAliasProviderClassName(): String {
-        val componentName = getComponentExtension().componentName
+        val componentName = getComponentExtension().componentName?.replace('-', '_')
         return "$componentName\$ServiceAliasProvider"
     }
 
