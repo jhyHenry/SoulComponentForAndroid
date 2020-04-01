@@ -6,6 +6,8 @@ import org.dom4j.io.SAXReader
 import org.dom4j.io.XMLWriter
 import java.io.File
 import java.io.FileWriter
+import java.util.*
+import kotlin.collections.HashSet
 
 /**
  * @author panxinghai
@@ -148,6 +150,9 @@ class PrefixHelper {
     private fun prefixElementText(text: String): String {
         val strings = text.split('/')
         val type = strings[0].substring(1)
+        if (strings.size == 1 && type.toLowerCase(Locale.getDefault()) == "null") {
+            return text
+        }
         val resourceRef = strings[1]
         if (!accessTypeSet.contains(type)) {
             return text
