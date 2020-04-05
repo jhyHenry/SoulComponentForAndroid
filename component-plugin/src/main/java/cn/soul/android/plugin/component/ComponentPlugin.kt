@@ -105,9 +105,12 @@ class ComponentPlugin : Plugin<Project> {
     }
 
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
+        if (isRunForAar()) {
+            return false
+        }
         taskNames.forEach {
             val taskName = Descriptor.getTaskNameWithoutModule(it)
-            if (taskName.startsWith("assemble") || taskName.startsWith("install")) {
+            if (taskName.startsWith("assemble") || taskName.startsWith("install") || taskName.startsWith("bundle")) {
                 return true
             }
         }
