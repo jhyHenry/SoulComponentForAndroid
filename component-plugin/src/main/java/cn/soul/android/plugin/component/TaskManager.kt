@@ -17,7 +17,6 @@ import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import org.gradle.api.Project
 import org.gradle.api.file.FileSystemLocation
-import org.gradle.api.file.RegularFile
 import java.io.File
 import java.util.*
 
@@ -48,10 +47,15 @@ class TaskManager(private val project: Project,
         if (prefix == null) {
             prefix = "${project.name}_"
         }
+        prefix.replace('-', '_')
         val task = taskFactory.register(PrefixResources.ConfigAction(scope, file, prefix))
         task.get().dependsOn(scope.taskContainer.mergeResourcesTask)
         pluginTaskContainer?.prefixResources = task.get()
         scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
+//        //use ParseLibraryResourcesTask's output
+//        val parseResourcesTaskName = scope.getTaskName("parse", "LibraryResources")
+//        val parseResourcesTask = project.tasks.getByName(parseResourcesTaskName)
+//        parseResourcesTask.dependsOn(task)
     }
 
     fun createGenerateSymbolTask(scope: VariantScope) {
@@ -76,6 +80,7 @@ class TaskManager(private val project: Project,
         )
         task.get().dependsOn(pluginTaskContainer?.prefixResources)
         scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
+        pluginTaskContainer?.generateSymbol = task.get()
 //
 //        val kotlinCompileTask = project.tasks.findByName("compile${scope.fullVariantName.capitalize()}Kotlin")
 //        if (scope.variantConfiguration.buildType.name == "release") {

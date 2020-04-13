@@ -7,7 +7,6 @@ import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import javassist.CtClass
 import javassist.CtField
@@ -42,7 +41,6 @@ class PrefixRActuator(private val project: Project,
                 Log.d("applicationId:$applicationId")
             }
         }
-        //cannot got jar file input in library Transform, so got them by variantManager
         libPlugin.variantManager.variantScopes.forEach {
             if (it.fullVariantName != variantName) {
                 return@forEach
@@ -121,6 +119,7 @@ class PrefixRActuator(private val project: Project,
                     return
                 }
                 if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
+                    Log.e("{\$_ = ${f.className}.$prefix${f.fieldName};}")
                     f.replace("{\$_ = ${f.className}.$prefix${f.fieldName};}")
                     modify = true
                 }

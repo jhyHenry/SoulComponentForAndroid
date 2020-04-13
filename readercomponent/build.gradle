@@ -58,7 +58,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     // https://mvnrepository.com/artifact/org.gradle/gradle-core
-    implementation group: 'org.gradle', name: 'gradle-core', version: '4.10.1'
 
 }
 

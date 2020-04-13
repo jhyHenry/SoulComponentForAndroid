@@ -47,5 +47,6 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'org.javassist:javassist:3.26.0-GA'
 }
 
