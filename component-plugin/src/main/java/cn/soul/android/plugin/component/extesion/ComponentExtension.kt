@@ -11,7 +11,8 @@ import org.gradle.api.Project
  */
 open class ComponentExtension {
     val dependencies = Dependencies()
-    val buildOption = BuildOption()
+    var buildOption = BuildOption()
+//    var upload = Upload()
     var componentName: String? = null
     var uploadPath: String? = null
     var repoPath: String? = null
@@ -28,7 +29,7 @@ open class ComponentExtension {
         action.execute(buildOption)
     }
 
-    fun ensureComponentExtension(project: Project) {
+    internal fun ensureComponentExtension(project: Project) {
         if (componentName == null) {
             componentName = project.name
         }

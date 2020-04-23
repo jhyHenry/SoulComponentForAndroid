@@ -6,6 +6,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.maven.MavenDeployer
 import org.gradle.api.plugins.MavenPlugin
+import org.gradle.api.publication.maven.internal.deployer.MavenRemoteRepository
 import org.gradle.api.tasks.Upload
 import java.io.File
 
@@ -14,18 +15,18 @@ import java.io.File
  *
  * reference [MavenPlugin]
  */
-open class UploadComponent : Upload() {
+open class LocalComponent : Upload() {
     class ConfigAction(private val scope: VariantScope,
                        private val project: Project) :
-            TaskCreationAction<UploadComponent>() {
+            TaskCreationAction<LocalComponent>() {
         override val name: String
-            get() = "uploadComponent${scope.variantConfiguration.flavorName.capitalize()}"
+            get() = "localComponent${scope.variantConfiguration.flavorName.capitalize()}"
 
 
-        override val type: Class<UploadComponent>
-            get() = UploadComponent::class.java
+        override val type: Class<LocalComponent>
+            get() = LocalComponent::class.java
 
-        override fun configure(task: UploadComponent) {
+        override fun configure(task: LocalComponent) {
             val config = this.project.configurations.getByName("archives")
             createUploadTask(task, config.uploadTaskName, config, project)
             val uploadArchives = project.tasks.withType(Upload::class.java).findByName("uploadArchives")
@@ -34,9 +35,9 @@ open class UploadComponent : Upload() {
                 task.repositories.add(it)
             }
             task.repositories.withType(MavenDeployer::class.java) {
-                //                val remote = MavenRemoteRepository()
-//                remote.url = project.uri("../resultRepo/").toString()
-//                it.repository = remote
+                val remote = MavenRemoteRepository()
+                remote.url = project.uri("../repo/").toString()
+                it.repository = remote
                 it.pom.apply {
                     artifactId = project.name
                 }

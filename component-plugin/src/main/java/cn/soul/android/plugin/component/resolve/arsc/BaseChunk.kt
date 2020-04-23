@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 abstract class BaseChunk(var header: ChunkHeader) : SerializableResource {
     var offset = 0
 
-    enum class Type(public val code: Short) {
+    enum class Type(val code: Short) {
         NULL(0x0000),
         STRING_POOL(0x0001),
         TABLE(0x0002),

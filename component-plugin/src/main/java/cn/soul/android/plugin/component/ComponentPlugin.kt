@@ -98,6 +98,7 @@ class ComponentPlugin : Plugin<Project> {
             }
             val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
             return taskName.startsWith("uploadComponent") ||
+                    taskName.startsWith("localComponent") ||
                     taskName.toLowerCase(Locale.getDefault()).startsWith("bundle") &&
                     taskName.toLowerCase(Locale.getDefault()).endsWith("aar")
         }
@@ -143,6 +144,8 @@ class ComponentPlugin : Plugin<Project> {
                 mTaskManager.createGenInterfaceArtifactTask(it)
 
                 mTaskManager.createUploadTask(it)
+
+                mTaskManager.createLocalTask(it)
 
                 mTaskManager.applyProguard(mProject, it)
             }

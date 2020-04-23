@@ -109,13 +109,11 @@ class TaskManager(private val project: Project,
         if (scope.variantConfiguration.buildType.name != "release") {
             return
         }
-        val uploadTaskPrefix = "uploadComponent"
         if (project.gradle.startParameter.taskNames.size == 0) {
             return
         }
-        val startTaskName = Descriptor.getTaskNameWithoutModule(project.gradle.startParameter.taskNames[0])
-        if (startTaskName.startsWith(uploadTaskPrefix)) {
-            val flavor = startTaskName.substring(uploadTaskPrefix.length)
+        val flavor = getFlavor()
+        if (flavor != null) {
             if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
                 project.artifacts.add("archives", File(task.get().destDir, "interface.jar"))
             }
@@ -135,19 +133,38 @@ class TaskManager(private val project: Project,
             return
         }
 
-        val uploadTaskPrefix = "uploadComponent"
         if (project.gradle.startParameter.taskNames.size == 0) {
             return
         }
-        val startTaskName = Descriptor.getTaskNameWithoutModule(project.gradle.startParameter.taskNames[0])
-        if (startTaskName.startsWith(uploadTaskPrefix)) {
-            val flavor = startTaskName.substring(uploadTaskPrefix.length)
+        val flavor = getFlavor()
+        if (flavor != null) {
             if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
                 VariantHelper.setupArchivesConfig(project, scope.variantDependencies.runtimeClasspath)
                 project.artifacts.add("archives", scope.taskContainer.bundleLibraryTask!!)
             }
         }
         val task = taskFactory.register(UploadComponent.ConfigAction(scope, project))
+        pluginTaskContainer?.uploadTask = task.get()
+        task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
+        task.get().dependsOn(pluginTaskContainer?.genInterface!!)
+    }
+
+    fun createLocalTask(scope: VariantScope) {
+        if (scope.variantConfiguration.buildType.name != "release") {
+            return
+        }
+
+        if (project.gradle.startParameter.taskNames.size == 0) {
+            return
+        }
+        val flavor = getFlavor()
+        if (flavor != null) {
+            if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
+                VariantHelper.setupArchivesConfig(project, scope.variantDependencies.runtimeClasspath)
+                project.artifacts.add("archives", scope.taskContainer.bundleLibraryTask!!)
+            }
+        }
+        val task = taskFactory.register(LocalComponent.ConfigAction(scope, project))
         pluginTaskContainer?.uploadTask = task.get()
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
@@ -162,5 +179,18 @@ class TaskManager(private val project: Project,
                 transform.dontwarn("${scope.variantData.applicationId}.R$*")
             }
         }
+    }
+
+    private fun getFlavor(): String? {
+        val uploadTaskPrefix = "uploadComponent"
+        val localTaskPrefix = "localComponent"
+        val startTaskName = Descriptor.getTaskNameWithoutModule(project.gradle.startParameter.taskNames[0])
+        if (startTaskName.startsWith(localTaskPrefix)) {
+            return startTaskName.substring(localTaskPrefix.length)
+        }
+        if (startTaskName.startsWith(uploadTaskPrefix)) {
+            return startTaskName.substring(uploadTaskPrefix.length)
+        }
+        return null
     }
 }

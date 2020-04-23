@@ -2,7 +2,7 @@ package cn.soul.android.plugin.component.resolve.arsc
 
 import java.nio.ByteBuffer
 
-class ChunkHeader(public val type: Short, var headerSize: Short, var size: Int) {
+class ChunkHeader(val type: Short, var headerSize: Short, var size: Int) {
 
     companion object {
         fun create(buff: ByteBuffer): ChunkHeader {

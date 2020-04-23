@@ -12,9 +12,7 @@ import java.io.File
 var componentExtension: ComponentExtension? = null
 
 fun Project.componentExtension(): ComponentExtension {
-    if (componentExtension == null) {
-        componentExtension = extensions.getByType(ComponentExtension::class.java)
-    }
+    componentExtension = extensions.getByType(ComponentExtension::class.java)
     return componentExtension!!
 }
 

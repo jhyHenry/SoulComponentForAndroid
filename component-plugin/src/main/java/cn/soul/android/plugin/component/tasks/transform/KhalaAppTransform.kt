@@ -11,8 +11,8 @@ import org.gradle.api.Project
 class KhalaAppTransform(private val project: Project) : BaseActuatorSetTransform() {
     override fun getTransformActuatorSet(): Set<TransformActuator> {
         return ImmutableSet.of(
-                RouterCompileActuator(project, false),
-                InitTaskCompileActuator(project, false)
+                RouterCompileActuator(project, false)
+//                , InitTaskCompileActuator(project, false)
         )
     }
 
