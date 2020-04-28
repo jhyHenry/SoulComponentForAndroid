@@ -184,7 +184,13 @@ class TaskManager(private val project: Project,
     private fun getFlavor(): String? {
         val uploadTaskPrefix = "uploadComponent"
         val localTaskPrefix = "localComponent"
+        val commonTaskPrefix = "commonLocalComponent"
+
         val startTaskName = Descriptor.getTaskNameWithoutModule(project.gradle.startParameter.taskNames[0])
+        if (startTaskName == commonTaskPrefix) {
+            //todo:consider add flavor
+            return ""
+        }
         if (startTaskName.startsWith(localTaskPrefix)) {
             return startTaskName.substring(localTaskPrefix.length)
         }

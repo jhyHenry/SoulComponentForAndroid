@@ -6,15 +6,19 @@ import cn.soul.android.plugin.component.resolve.ZipHelper
 import cn.soul.android.plugin.component.resolve.arsc.ArscFile
 import cn.soul.android.plugin.component.resolve.arsc.StringPoolChunk
 import cn.soul.android.plugin.component.resolve.arsc.TableChunk
+import cn.soul.android.plugin.component.tasks.CommonLocalComponent
 import cn.soul.android.plugin.component.tasks.transform.KhalaAppTransform
 import cn.soul.android.plugin.component.tasks.transform.KhalaLibTransform
 import cn.soul.android.plugin.component.utils.Descriptor
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.*
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
+import com.android.build.gradle.internal.tasks.factory.registerTask
 import net.sf.json.JSONArray
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
 import java.io.*
 import java.util.*
 
@@ -92,6 +96,14 @@ class ComponentPlugin : Plugin<Project> {
         val gradle = mProject.gradle
         val taskNames = gradle.startParameter.taskNames
         if (taskNames.size == 1) {
+            if (mProject.name == "app") {
+                //special module didn't use as library, it will change to white list
+                return false
+            }
+            if (taskNames[0] == "commonLocalComponent") {
+                //for all module load
+                return true
+            }
             val module = Descriptor.getTaskModuleName(taskNames[0])
             if (module != mProject.name) {
                 return false
@@ -143,9 +155,14 @@ class ComponentPlugin : Plugin<Project> {
 
                 mTaskManager.createGenInterfaceArtifactTask(it)
 
-                mTaskManager.createUploadTask(it)
-
-                mTaskManager.createLocalTask(it)
+                val gradle = mProject.gradle
+                val taskNames = gradle.startParameter.taskNames
+                val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
+                if (taskName.startsWith("uploadComponent")) {
+                    mTaskManager.createUploadTask(it)
+                } else {
+                    mTaskManager.createLocalTask(it)
+                }
 
                 mTaskManager.applyProguard(mProject, it)
             }
@@ -158,6 +175,30 @@ class ComponentPlugin : Plugin<Project> {
                 mTaskManager.applyProguard(mProject, it)
             }
         }
+        val rootProject = mProject.rootProject ?: return
+        if (rootProject.tasks.findByName("commonLocalComponent") == null) {
+            val task = createCommonDeployTask(mProject)
+            var lastTask: Task? = null
+            rootProject.subprojects.last().afterEvaluate {
+                rootProject.subprojects.forEach { p ->
+                    val localComponent = p.tasks.find { it.name.startsWith("localComponent") }
+                            ?: return@forEach
+                    if (lastTask != null) {
+                        val preBuildTask = p.tasks.find { it.name.startsWith("preBuild") }
+                        preBuildTask?.dependsOn(lastTask)
+                    }
+                    lastTask = localComponent
+                }
+                if (lastTask != null) {
+                    task?.get()?.dependsOn(lastTask)
+                }
+            }
+        }
+    }
+
+    private fun createCommonDeployTask(project: Project): TaskProvider<CommonLocalComponent>? {
+        val taskContainer = project.parent?.tasks ?: return null
+        return taskContainer.registerTask(CommonLocalComponent.ConfigAction(project))
     }
 
     private fun replaceDuplicateResource(file: File) {

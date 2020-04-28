@@ -50,11 +50,5 @@ open class LocalComponent : Upload() {
             upload.isUploadDescriptor = true
             upload.conventionMapping.map("descriptorDestination") { File(project.buildDir, "ivy.xml") }
         }
-
-        private fun getField(instance: Any, fieldName: String): Any {
-            val field = instance.javaClass.getDeclaredField(fieldName)
-            field.isAccessible = true
-            return field.get(instance)
-        }
     }
 }
