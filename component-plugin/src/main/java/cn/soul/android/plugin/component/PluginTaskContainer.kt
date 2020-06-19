@@ -5,6 +5,8 @@ import org.gradle.api.Task
 
 
 /**
+ * task 实例holder，每个variant一个，方便在该variantScope下进行使用
+ *
  * @author panxinghai
  *
  * date : 2019-07-11 15:26

@@ -119,7 +119,7 @@ class PrefixRActuator(private val project: Project,
                     return
                 }
                 if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
-                    Log.e("{\$_ = ${f.className}.$prefix${f.fieldName};}")
+                    Log.d("{\$_ = ${f.className}.$prefix${f.fieldName};}")
                     f.replace("{\$_ = ${f.className}.$prefix${f.fieldName};}")
                     modify = true
                 }

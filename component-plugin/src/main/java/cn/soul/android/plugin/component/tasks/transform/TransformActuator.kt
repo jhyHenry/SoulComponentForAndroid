@@ -6,7 +6,9 @@ import javassist.CtClass
 import java.io.File
 
 /**
- * use this actuator decoupling logic.
+ * Transform的一个抽象。本身transform之间传递结果需要通过I/O，效率较低，在这里把所有插件内的transform通过Actuator
+ * 处理，全部放到一个Transform中
+ *
  * @author panxinghai
  *
  * date : 2019-11-18 16:53

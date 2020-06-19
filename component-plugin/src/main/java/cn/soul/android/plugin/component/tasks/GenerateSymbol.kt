@@ -23,6 +23,8 @@ import java.io.IOException
 import java.util.function.Supplier
 
 /**
+ * 在修改完前缀后重新生成R.txt, 该类修改自[GenerateLibraryRFileTask]
+ *
  * Created by nebula on 2019-08-26
  */
 open class GenerateSymbol : ProcessAndroidResources() {

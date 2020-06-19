@@ -21,6 +21,8 @@ import java.io.File
 import java.util.*
 
 /**
+ * 创建task的管理类，每个task的用途参见其本身注释
+ *
  * @author panxinghai
  *
  * date : 2019-07-11 14:22

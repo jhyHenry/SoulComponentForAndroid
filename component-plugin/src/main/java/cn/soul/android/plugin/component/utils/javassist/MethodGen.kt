@@ -7,6 +7,8 @@ import javassist.CtClass
 import javassist.CtMethod
 
 /**
+ *
+ * Javassist生成字节码的工具类
  * @author panxinghai
  *
  * date : 2019-10-29 23:00

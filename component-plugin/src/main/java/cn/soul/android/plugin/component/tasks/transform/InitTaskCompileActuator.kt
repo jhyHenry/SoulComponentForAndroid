@@ -19,6 +19,10 @@ import java.lang.reflect.Modifier
 import java.util.zip.ZipEntry
 
 /**
+ * 构建多模块初始化的transform，可能还有问题，使用前多多调试。
+ * 多模块间的引用类似路由的设计，参考[RouterCompileActuator]。
+ * 这里将所有的[InitTask]实现类收集，并在运行时交由[KhalaApplication]执行。
+ *
  * @author panxinghai
  *
  * date : 2019-11-19 10:20

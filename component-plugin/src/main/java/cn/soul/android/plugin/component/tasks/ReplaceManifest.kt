@@ -12,6 +12,8 @@ import java.io.File
 import java.io.FileWriter
 
 /**
+ * 该task会将实际实现过[ComponentApplication]的Application替换为[KhalaApplication]
+ *
  * @author panxinghai
  *
  * date : 2019-10-15 19:16

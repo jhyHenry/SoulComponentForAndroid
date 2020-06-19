@@ -14,6 +14,9 @@ import cn.soul.android.component.Constants;
 import cn.soul.android.component.Khala;
 
 /**
+ * 实际运行的Application，这里会收集所有需要初始化的逻辑（实现了{@link InitTask}的类），并统一按序执行。
+ * 可以考虑新增不同线程执行任务的功能。
+ *
  * @author panxinghai
  * <p>
  * date : 2019-10-15 15:45

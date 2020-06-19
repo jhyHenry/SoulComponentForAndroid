@@ -8,6 +8,8 @@ import android.content.Context;
 import java.util.Set;
 
 /**
+ * 需要加入到组件化初始化序列的Application需要实现该类。
+ *
  * @author panxinghai
  * <p>
  * date : 2019-10-12 11:22

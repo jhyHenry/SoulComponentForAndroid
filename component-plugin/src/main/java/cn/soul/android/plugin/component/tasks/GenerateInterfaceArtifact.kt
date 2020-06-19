@@ -26,6 +26,9 @@ import java.util.zip.ZipOutputStream
 //}
 
 /**
+ * 根据[IComponentService]和[ClassExposed]判定需要暴露给外部调用的类。会根据需要暴露的Class做DFS找到所有被引用的
+ * 类，一并打包，最终生成interface.jar
+ *
  * Created by nebula on 2019-09-03
  */
 open class GenerateInterfaceArtifact : AndroidVariantTask() {

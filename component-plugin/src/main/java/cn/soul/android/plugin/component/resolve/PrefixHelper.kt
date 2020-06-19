@@ -10,6 +10,9 @@ import java.util.*
 import kotlin.collections.HashSet
 
 /**
+ * 为资源增加前缀的task。这里只能为打包为aar的module增加资源前缀，aar中只包含当前module中的代码，其依赖的lib
+ * 没有打包到aar中，因此放在lib中的资源不会添加前缀，还是有可能会产生冲突
+ *
  * @author panxinghai
  *
  * date : 2019-09-06 14:06
@@ -37,6 +40,7 @@ class PrefixHelper {
             "xml"
     )
 
+    //需要被处理的资源类型，这里枚举出来。styleable和attr没有增加前缀处理，是因为其本身的特殊性，推荐这里还是依赖代码规范处理
     private val accessTypeSet = hashSetOf(
             "style",
 //            "styleable",
@@ -52,6 +56,7 @@ class PrefixHelper {
             "array"
     )
 
+    //有些资源类型 xml中和R中不一样，这里做转换
     private val attributeNameTypeMap = hashMapOf(
             "string-array" to "array")
 
@@ -59,6 +64,7 @@ class PrefixHelper {
     private val reader: SAXReader = SAXReader()
     var prefix = ""
 
+    //第一遍遍历所有资源，确定需要处理的资源范围
     fun initWithPackagedRes(prefix: String, dir: File) {
         this.prefix = prefix
         componentResMap.clear()

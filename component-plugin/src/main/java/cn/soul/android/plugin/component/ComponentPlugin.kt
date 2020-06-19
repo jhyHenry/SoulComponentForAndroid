@@ -23,6 +23,8 @@ import java.io.*
 import java.util.*
 
 /**
+ * 插件初始化入口
+ *
  * @author panxinghai
  *
  * date : 2019-07-11 11:19
@@ -38,12 +40,15 @@ class ComponentPlugin : Plugin<Project> {
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
         if (isRunForAar()) {
+            //作为生成aar包的情况
             mProject.afterEvaluate {
                 mLibConfigExecutor?.invoke()
             }
             p.plugins.apply("com.android.library")
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
+            //注册Lib用Transform
             extension?.registerTransform(KhalaLibTransform(mProject))
+            //library下有某些属性不允许赋值，委托给executor，在evaluate结束后清空这些值
             mLibConfigExecutor = {
                 extension?.apply {
                     defaultConfig.applicationId = null
@@ -59,6 +64,7 @@ class ComponentPlugin : Plugin<Project> {
             val extension = mProject.extensions.findByType(AppExtension::class.java)
             extension?.registerTransform(KhalaAppTransform(mProject))
             extension?.applicationVariants?.all {
+                //release条件下执行资源去重操作
                 if (it.buildType.name != "release") {
                     return@all
                 }
@@ -75,6 +81,11 @@ class ComponentPlugin : Plugin<Project> {
         mPluginExtension = mProject.extensions.create("component", ComponentExtension::class.java)
         mTaskManager = TaskManager(p, mPluginExtension)
         mProject.afterEvaluate {
+            /* 在原本的插件任务结束后，执行该插件的初始化流程
+             * 1.处理extension
+             * 2.配置project（处理dependencies等等）
+             * 3.创建自定义tasks
+             */
             mPluginExtension.ensureComponentExtension(mProject)
             configureProject()
             createTasks()
@@ -92,6 +103,13 @@ class ComponentPlugin : Plugin<Project> {
         mPluginExtension.dependencies.appendInterfaceApis(mProject, needAddDependencies)
     }
 
+    /**
+     * 判断本次执行流程的类型。特定情况下才会执行aar包的生成。
+     * 情况如下：
+     * 1.仅执行了一个task
+     * 2.执行的task指定module为当前module 如 ./gradlew app:uploadComponent 指定的目标为app
+     * 3.执行task为commonLocalComponent，这种情况会依次生成所有依赖该插件的module的aar包
+     */
     private fun isRunForAar(): Boolean {
         val gradle = mProject.gradle
         val taskNames = gradle.startParameter.taskNames
@@ -117,6 +135,9 @@ class ComponentPlugin : Plugin<Project> {
         return false
     }
 
+    /**
+     * 判断是否需要进行module的依赖，仅在最终构建结果是apk或aab（google play用）时进行依赖
+     */
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
         if (isRunForAar()) {
             return false
@@ -132,12 +153,11 @@ class ComponentPlugin : Plugin<Project> {
 
     private fun createTasks() {
         Log.p(msg = "create tasks.")
+        //为每一个variant创建对应的task（除了test）
         if (isRunForAar()) {
             val libPlugin = mProject.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
-                //cannot access class, is a bug of kotlin plugin. issue track :
-                //https://youtrack.jetbrains.com/issue/KT-26535?_ga=2.269032241.1117822405.1574306246-1707679741.1559701832
                 val variantType = it.variantData.type
                 if (variantType.isTestComponent) {
                     //continue , do not create task for test variant
@@ -176,6 +196,10 @@ class ComponentPlugin : Plugin<Project> {
             }
         }
         val rootProject = mProject.rootProject ?: return
+        /* 这里是对commonLocalComponent的处理，通过对一系列localComponent和preBuild
+         * 的依赖关系让整个task执行流程有序（也可以通过加锁互斥去处理）。
+         * 算是对本地依赖的一种特殊兼容，如果以后分工程进行组件化，这个task完全可以去掉
+         */
         if (rootProject.tasks.findByName("commonLocalComponent") == null) {
             val task = createCommonDeployTask(mProject)
             var lastTask: Task? = null
