@@ -175,6 +175,7 @@ class ComponentPlugin : Plugin<Project> {
 
                 mTaskManager.createGenInterfaceArtifactTask(it)
 
+                //这里创建上传任务，结合maven仓库插件简化上传流程
                 val gradle = mProject.gradle
                 val taskNames = gradle.startParameter.taskNames
                 val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
@@ -184,6 +185,7 @@ class ComponentPlugin : Plugin<Project> {
                     mTaskManager.createLocalTask(it)
                 }
 
+                //插件中直接处理proguard，不需要外部添加
                 mTaskManager.applyProguard(mProject, it)
             }
         } else {
