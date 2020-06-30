@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
@@ -34,7 +35,7 @@ interface TransformActuator {
 
     fun onRemovedClassVisited(ctClass: CtClass)
 
-    fun onJarVisited(status: Status, jarFile: File)
+    fun onJarVisited(status: Status, jarInput: JarInput)
 
     /**
      * see [BaseTraversalTransform.postTransform]

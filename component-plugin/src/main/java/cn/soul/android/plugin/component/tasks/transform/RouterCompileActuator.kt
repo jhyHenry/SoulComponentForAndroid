@@ -13,11 +13,10 @@ import cn.soul.android.component.util.CollectionHelper
 import cn.soul.android.plugin.component.exception.RouterPathDuplicateException
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.manager.InjectType
+import cn.soul.android.plugin.component.resolve.ZipHelper
 import cn.soul.android.plugin.component.utils.*
 import cn.soul.android.plugin.component.utils.javassist.MethodGen
-import com.android.build.api.transform.Format
-import com.android.build.api.transform.Status
-import com.android.build.api.transform.TransformInvocation
+import com.android.build.api.transform.*
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
@@ -75,7 +74,7 @@ class RouterCompileActuator(private val project: Project,
 //                            //here we can get all jar file for dependencies
 //                        }
                 val task = it.taskContainer.javacTask.get()
-                task.classpath.files.forEach {file->
+                task.classpath.files.forEach { file ->
                     InjectHelper.instance.appendClassPath(file.absolutePath)
                 }
             }
@@ -152,12 +151,27 @@ class RouterCompileActuator(private val project: Project,
     }
 
     private val genClassSet = arrayListOf<String>()
-    override fun onJarVisited(status: Status, jarFile: File) {
+    override fun onJarVisited(status: Status, jarInput: JarInput) {
         genClassSet.clear()
-        super.onJarVisited(status, jarFile)
+        //这里处理直接引用的一方lib
+        if (jarInput.scopes.size == 1 && jarInput.scopes.contains(QualifiedContent.Scope.SUB_PROJECTS)) {
+            val libJar = jarInput.file
+            InjectHelper.instance.appendClassPath(libJar.absolutePath)
+            ZipHelper.traversalZip(libJar) {
+                if (!it.name.endsWith(".class")) {
+                    return@traversalZip
+                }
+                val className = it.name.subSequence(0, it.name.length - 6)
+                        .toString().replace('/', '.')
+                //这里状态要是CHANGED的，因为jar的状态是整个jar包的，里面的类单独状态不确定
+                onIncrementalClassVisited(Status.CHANGED, InjectHelper.instance.getClassPool()[className])
+            }
+            return
+        }
+        super.onJarVisited(status, jarInput)
         if (checkDuplicate && genClassSet.isNotEmpty()) {
-            Log.e("url:" + URL("file://${jarFile.absolutePath}"))
-            val classLoader = URLClassLoader(arrayOf(URL("file://${jarFile.absolutePath}")), baseClassLoader)
+            Log.e("url:" + URL("file://${jarInput.file.absolutePath}"))
+            val classLoader = URLClassLoader(arrayOf(URL("file://${jarInput.file.absolutePath}")), baseClassLoader)
 
             genClassSet.forEach {
                 val providerClass = classLoader.loadClass("${Constants.ROUTER_GEN_FILE_PACKAGE}$it")

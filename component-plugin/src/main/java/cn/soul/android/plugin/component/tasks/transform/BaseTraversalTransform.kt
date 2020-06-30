@@ -2,6 +2,7 @@ package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.InjectHelper
 import cn.soul.android.plugin.component.utils.Log
+import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import javassist.CtClass
@@ -59,9 +60,9 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
                 }
     }
 
-    override fun onIncrementalJarTransform(status: Status, jarFile: File, destFile: File) {
-        if (!onJarVisited(status, jarFile)) {
-            super.onIncrementalJarTransform(Status.ADDED, jarFile, destFile)
+    override fun onIncrementalJarTransform(status: Status, jarInput: JarInput, destFile: File) {
+        if (!onJarVisited(status, jarInput)) {
+            super.onIncrementalJarTransform(Status.ADDED, jarInput, destFile)
         }
     }
 
@@ -79,7 +80,7 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
     /**
      * see [onInputFileVisited]
      */
-    abstract fun onJarVisited(status: Status, jarFile: File): Boolean
+    abstract fun onJarVisited(status: Status, jarInput: JarInput): Boolean
 
     /**
      * [BaseTraversalTransform] will traversal first to load all input files to Javassist ClassPool,

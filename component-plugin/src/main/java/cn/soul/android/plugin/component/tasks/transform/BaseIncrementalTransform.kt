@@ -2,6 +2,7 @@ package cn.soul.android.plugin.component.tasks.transform
 
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.transform.DirectoryInput
+import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.Status
 import com.android.build.api.transform.TransformInvocation
 import org.apache.commons.io.FileUtils
@@ -30,7 +31,7 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                 when (jarInput.status) {
                     Status.ADDED, Status.CHANGED -> {
                         Log.test("jar ${jarInput.status.name}:" + jarInput.file.absolutePath)
-                        onIncrementalJarTransform(jarInput.status, jarInput.file, dest)
+                        onIncrementalJarTransform(jarInput.status, jarInput, dest)
                     }
                     Status.REMOVED -> {
                         //it seemed transform will full build when remove jar file, so ignore this status
@@ -41,7 +42,7 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                     }
                     else -> {
                         if (!isIncremental) {
-                            onIncrementalJarTransform(Status.ADDED, jarInput.file, dest)
+                            onIncrementalJarTransform(Status.ADDED, jarInput, dest)
                         }
                     }
                 }
@@ -91,8 +92,8 @@ abstract class BaseIncrementalTransform : BaseTransform() {
         }
     }
 
-    open fun onIncrementalJarTransform(status: Status, jarFile: File, destFile: File) {
-        FileUtils.copyFile(jarFile, destFile)
+    open fun onIncrementalJarTransform(status: Status, jarInput: JarInput, destFile: File) {
+        FileUtils.copyFile(jarInput.file, destFile)
     }
 
     open fun onDirTransform(inputDir: File, outputDir: File) {
