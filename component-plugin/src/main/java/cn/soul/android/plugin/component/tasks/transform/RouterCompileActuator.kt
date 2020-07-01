@@ -722,6 +722,9 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
+    /**
+     * 保存注入逻辑的参数，提供一些注入流程中的工具方法简化操作
+     */
     private data class InjectInfo(val ctField: CtField,
                                   val annotationName: String,
                                   private val ctClass: CtClass) {

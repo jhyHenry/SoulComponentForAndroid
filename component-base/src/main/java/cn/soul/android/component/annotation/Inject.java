@@ -6,6 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Inject注解的field会通过插件自动生成解析逻辑。
+ *
  * @author panxinghai
  * <p>
  * date : 2019-09-27 11:51

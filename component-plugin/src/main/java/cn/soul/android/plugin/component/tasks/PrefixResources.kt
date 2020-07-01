@@ -20,13 +20,6 @@ open class PrefixResources : AndroidVariantTask() {
         val folder = packagedResFolder ?: return
         val startTime = System.currentTimeMillis()
         PrefixHelper.instance.initWithPackagedRes(prefix, folder)
-//        fileTraversal(folder) {
-//            if (it.name.endsWith(".xml")) {
-//                refineXmlFile(it)
-//            } else {
-//                renameFileWithPrefix(it)
-//            }
-//        }
         folder.walk().filter { it.isFile && it.name != "values.xml" }
                 .forEach {
                     PrefixHelper.instance.prefixResourceFile(it)

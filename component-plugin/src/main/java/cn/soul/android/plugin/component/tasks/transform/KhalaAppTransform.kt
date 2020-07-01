@@ -12,6 +12,7 @@ class KhalaAppTransform(private val project: Project) : BaseActuatorSetTransform
     override fun getTransformActuatorSet(): Set<TransformActuator> {
         return ImmutableSet.of(
                 RouterCompileActuator(project, false)
+                //需要代理初始化的话就把这句注释打开
 //                , InitTaskCompileActuator(project, false)
         )
     }

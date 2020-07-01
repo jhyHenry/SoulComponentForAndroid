@@ -27,7 +27,10 @@ import java.util.zip.ZipOutputStream
 
 /**
  * 根据[IComponentService]和[ClassExposed]判定需要暴露给外部调用的类。会根据需要暴露的Class做DFS找到所有被引用的
- * 类，一并打包，最终生成interface.jar
+ * 类，一并打包，最终生成interface.jar。目前引用interface.jar是通过gradle的implementation 的@jar来做的，
+ * interface.jar和实际的aar实际上是在一个路径下的两个文件，可能会有一定程度耦合，如果需要两个部分可以自定义决定依赖，
+ * 可以修改上传逻辑和interfaceApi引用的方式。比如上传时上传至不同的仓库路径，比如原本逻辑上传仓库为com.google.android，
+ * 那么interface.jar可以上传至com.google.android-api，引用时去指定路径拿就可以了，这样可以单独依赖或取消某一个代码包。
  *
  * Created by nebula on 2019-09-03
  */

@@ -6,6 +6,8 @@ import java.util.Set;
 import cn.soul.android.component.annotation.TaskIgnore;
 
 /**
+ * 默认的{@link InitTask}实现类，处理了依赖的实现，使用{@link InitTask}接口时推荐直接实现该类
+ *
  * @author panxinghai
  * <p>
  * date : 2019-10-14 21:11

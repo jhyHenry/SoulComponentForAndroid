@@ -18,6 +18,8 @@ import cn.soul.android.component.template.IRouterNodeProvider;
 import cn.soul.android.component.template.IRouterLazyLoader;
 
 /**
+ * 数据集合，路由的信息都会通过该类加载，并且相关的组会在此缓存
+ *
  * @author panxinghai
  * <p>
  * date : 2019-09-11 15:34

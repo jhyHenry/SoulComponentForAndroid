@@ -9,6 +9,7 @@ import java.io.File
 import java.lang.reflect.Type
 
 /**
+ * 该工具类提供功能：用于储存transform中增量编译的中间信息，配合[Persistent]注解使用
  * @author panxinghai
  *
  * date : 2020-01-14 17:02
@@ -38,6 +39,11 @@ object IncrementalHelper {
         return gson.fromJson<T>(string, type)
     }
 
+    /**
+     * 储存所有被[Persistent]注解的field，将其内容转换为json保存
+     * @param target 目标类
+     * @param outputDir 储存目标文件夹
+     */
     fun savePersistentField(target: Any, outputDir: File) {
         target.javaClass.declaredFields.forEach {
             val persistent = it.getAnnotation(Persistent::class.java) ?: return@forEach
@@ -47,6 +53,11 @@ object IncrementalHelper {
         }
     }
 
+    /**
+     * 将先前储存的数据根据md5后的文件名(field名）还原至被[Persistent]注解的field
+     * @param target 目标类
+     * @param outputDir 储存目标文件夹
+     */
     fun loadPersistentField(target: Any, outputDir: File) {
         target.javaClass.declaredFields.forEach {
             val persistent = it.getAnnotation(Persistent::class.java) ?: return@forEach
@@ -66,6 +77,11 @@ object IncrementalHelper {
         gson = gsonBuilder.create()
     }
 
+    /**
+     * Json解析过程中一些特殊类的处理，比如CtClass。某些情况下，比如删除了一个文件，可能对应的CtClass会为空，为了
+     * 处理这样的情况，如果某些数据关于CtClass的项被删除，就将其设置为原始类型void（这个类型正常情况下不会出现），由此
+     * 来判断数据的删除情况。
+     */
     private class CtClassTypeAdapter : TypeAdapter<CtClass>() {
         override fun write(out: JsonWriter?, value: CtClass?) {
             if (out == null) {
