@@ -161,8 +161,7 @@ class RouterCompileActuator(private val project: Project,
                 if (!it.name.endsWith(".class")) {
                     return@traversalZip
                 }
-                val className = it.name.subSequence(0, it.name.length - 6)
-                        .toString().replace('/', '.')
+                val className = ZipHelper.entryNameToClassName(it.name)
                 //这里状态要是CHANGED的，因为jar的状态是整个jar包的，里面的类单独状态不确定
                 val ctClass = InjectHelper.instance.getClassPool()[className]
                 onIncrementalClassVisited(Status.CHANGED, ctClass)

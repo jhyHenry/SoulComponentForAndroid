@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks.transform
 
+import com.android.build.api.transform.TransformInvocation
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project
 
@@ -17,6 +18,22 @@ class KhalaAppTransform(private val project: Project) : BaseActuatorSetTransform
         )
     }
 
+    override fun preTransform(transformInvocation: TransformInvocation) {
+        clearJarFactoryCache()
+        super.preTransform(transformInvocation)
+    }
+
+    private fun clearJarFactoryCache() {
+        val clazz = Class.forName("sun.net.www.protocol.jar.JarFileFactory")
+        val fileCacheField = clazz.getDeclaredField("fileCache")
+        val urlCacheField = clazz.getDeclaredField("urlCache")
+        fileCacheField.isAccessible = true
+        urlCacheField.isAccessible = true
+        val fileCache = fileCacheField.get(null) as MutableMap<*, *>
+        val urlCache = urlCacheField.get(null) as MutableMap<*, *>
+        fileCache.clear()
+        urlCache.clear()
+    }
 
     override fun getName(): String {
         return "khalaApp"
