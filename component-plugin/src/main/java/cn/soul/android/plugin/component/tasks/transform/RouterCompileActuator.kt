@@ -164,7 +164,9 @@ class RouterCompileActuator(private val project: Project,
                 val className = it.name.subSequence(0, it.name.length - 6)
                         .toString().replace('/', '.')
                 //这里状态要是CHANGED的，因为jar的状态是整个jar包的，里面的类单独状态不确定
-                onIncrementalClassVisited(Status.CHANGED, InjectHelper.instance.getClassPool()[className])
+                val ctClass = InjectHelper.instance.getClassPool()[className]
+                onIncrementalClassVisited(Status.CHANGED, ctClass)
+                ctClass.detach()
             }
             return
         }
