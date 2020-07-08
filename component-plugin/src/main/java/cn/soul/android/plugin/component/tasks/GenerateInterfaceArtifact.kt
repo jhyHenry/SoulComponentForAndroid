@@ -35,7 +35,8 @@ import java.util.zip.ZipOutputStream
  * Created by nebula on 2019-09-03
  */
 open class GenerateInterfaceArtifact : AndroidVariantTask() {
-    var sourceDir: File? = null
+    var javaSourceDir: File? = null
+    var kotlinSourceDir: File? = null
     var destDir: File? = null
 
     private val refSet = hashSetOf<String>()
@@ -44,18 +45,18 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
 
     @TaskAction
     fun taskAction() {
-        val source = sourceDir ?: return
+        if (javaSourceDir == null && kotlinSourceDir == null) {
+            return
+        }
         InjectHelper.instance.refresh()
-        InjectHelper.instance.appendClassPath(source.absolutePath)
-        InjectHelper.instance.processFiles(source)
-                .nameFilter { file -> file.name.endsWith(".class") }
-                .classFilter { ctClass ->
-                    ctClass.classFile2.interfaces.contains(IComponentService::class.java.name) or
-                            ctClass.hasAnnotation(ClassExposed::class.java)
-                }.forEach { ctClass, _ ->
-                    refSet.add(ctClass.name)
-                    retrieveRefClass(ctClass)
-                }
+        javaSourceDir?.let {
+            InjectHelper.instance.appendClassPath(it.absolutePath)
+            extractClass(it)
+        }
+        kotlinSourceDir?.let {
+            InjectHelper.instance.appendClassPath(it.absolutePath)
+            extractClass(it)
+        }
         destDir?.deleteRecursively()
         val destFile = File(destDir, "interface.jar")
         destDir?.mkdirs()
@@ -64,9 +65,12 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
         ZipOutputStream(FileOutputStream(destFile)).use { zos ->
             refSet.forEach { ref ->
                 val fileName = ref.replace('.', '/') + ".class"
-                val file = File(sourceDir, fileName)
+                var file = File(javaSourceDir, fileName)
                 if (!file.exists()) {
-                    return@forEach
+                    file = File(kotlinSourceDir, fileName)
+                    if (!file.exists()) {
+                        return@forEach
+                    }
                 }
                 FileInputStream(file).use { fis ->
                     zos.putNextEntry(ZipEntry(fileName))
@@ -79,6 +83,24 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
                 }
             }
         }
+    }
+
+    /**
+     * 提取目标目录下被ClassExposed标注和继承自IComponentService接口的类处理
+     * @param source 目标目录
+     * @see ClassExposed
+     * @see IComponentService
+     */
+    private fun extractClass(source: File) {
+        InjectHelper.instance.processFiles(source)
+                .nameFilter { file -> file.name.endsWith(".class") }
+                .classFilter { ctClass ->
+                    ctClass.classFile2.interfaces.contains(IComponentService::class.java.name) or
+                            ctClass.hasAnnotation(ClassExposed::class.java)
+                }.forEach { ctClass, _ ->
+                    refSet.add(ctClass.name)
+                    retrieveRefClass(ctClass)
+                }
     }
 
     /**
@@ -212,7 +234,8 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
 
 
     class ConfigAction(private val scope: VariantScope,
-                       private val sourceDir: File)
+                       private val javaOutput: File,
+                       private val kotlinOutput: File)
         : VariantTaskCreationAction<GenerateInterfaceArtifact>(scope) {
         override val name: String
             get() = scope.getTaskName("gen", "interfaceArtifact")
@@ -222,7 +245,8 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
         override fun configure(task: GenerateInterfaceArtifact) {
             super.configure(task)
             task.variantName = scope.fullVariantName
-            task.sourceDir = sourceDir
+            task.javaSourceDir = javaOutput
+            task.kotlinSourceDir = kotlinOutput
             task.destDir = FileUtils.join(
                     scope.globalScope.intermediatesDir,
                     "gen-interface-artifact",

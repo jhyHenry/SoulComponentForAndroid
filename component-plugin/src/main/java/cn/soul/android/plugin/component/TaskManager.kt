@@ -17,6 +17,7 @@ import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import org.gradle.api.Project
 import org.gradle.api.file.FileSystemLocation
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.File
 import java.util.*
 
@@ -104,8 +105,9 @@ class TaskManager(private val project: Project,
     }
 
     fun createGenInterfaceArtifactTask(scope: VariantScope) {
-        val file = scope.artifacts.getFinalProduct<FileSystemLocation>(InternalArtifactType.JAVAC).get().asFile
-        val task = taskFactory.register(GenerateInterfaceArtifact.ConfigAction(scope, file))
+        val javaOutput = scope.artifacts.getFinalProduct<FileSystemLocation>(InternalArtifactType.JAVAC).get().asFile
+        val kotlinOutput = (project.tasks.findByName("compile${scope.fullVariantName.capitalize()}Kotlin") as KotlinCompile).destinationDir
+        val task = taskFactory.register(GenerateInterfaceArtifact.ConfigAction(scope, javaOutput, kotlinOutput))
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         pluginTaskContainer?.genInterface = task.get()
         if (scope.variantConfiguration.buildType.name != "release") {
