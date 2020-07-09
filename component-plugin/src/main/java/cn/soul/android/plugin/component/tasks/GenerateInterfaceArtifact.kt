@@ -234,8 +234,8 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
 
 
     class ConfigAction(private val scope: VariantScope,
-                       private val javaOutput: File,
-                       private val kotlinOutput: File)
+                       private val javaOutput: File?,
+                       private val kotlinOutput: File?)
         : VariantTaskCreationAction<GenerateInterfaceArtifact>(scope) {
         override val name: String
             get() = scope.getTaskName("gen", "interfaceArtifact")

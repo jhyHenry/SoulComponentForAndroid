@@ -106,7 +106,7 @@ class TaskManager(private val project: Project,
 
     fun createGenInterfaceArtifactTask(scope: VariantScope) {
         val javaOutput = scope.artifacts.getFinalProduct<FileSystemLocation>(InternalArtifactType.JAVAC).get().asFile
-        val kotlinOutput = (project.tasks.findByName("compile${scope.fullVariantName.capitalize()}Kotlin") as KotlinCompile).destinationDir
+        val kotlinOutput = (project.tasks.findByName("compile${scope.fullVariantName.capitalize()}Kotlin") as? KotlinCompile)?.destinationDir
         val task = taskFactory.register(GenerateInterfaceArtifact.ConfigAction(scope, javaOutput, kotlinOutput))
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         pluginTaskContainer?.genInterface = task.get()
