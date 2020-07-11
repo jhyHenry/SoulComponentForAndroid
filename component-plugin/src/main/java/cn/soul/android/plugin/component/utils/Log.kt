@@ -41,7 +41,7 @@ object Log {
     }
 
     fun w(msg: String) {
-        doNormalLog(2, msg = msg)
+        doNormalLog(2, msg = "warning: $msg")
     }
 
     fun p(msg: String) {

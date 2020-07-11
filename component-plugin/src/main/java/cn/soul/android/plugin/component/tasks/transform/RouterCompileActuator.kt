@@ -171,7 +171,6 @@ class RouterCompileActuator(private val project: Project,
         }
         super.onJarVisited(status, jarInput)
         if (checkDuplicate && genClassSet.isNotEmpty()) {
-            Log.e("url:" + URL("file://${jarInput.file.absolutePath}"))
             val classLoader = URLClassLoader(arrayOf(URL("file://${jarInput.file.absolutePath}")), baseClassLoader)
 
             genClassSet.forEach {
@@ -673,9 +672,9 @@ class RouterCompileActuator(private val project: Project,
                                 return@computeIfAbsent nodeType
                             }
                         } catch (e: Exception) {
-                            Log.e("cannot got $it in ${ctClass.name} when check node type. Error msg: ${e.javaClass}:${e.message}")
+                            Log.w("cannot got $it in ${ctClass.name} when check node type. Error msg: ${e.javaClass}:${e.message}")
                             if (Log.level > 3) {
-                                Log.e("stacktrace:")
+                                Log.w("stacktrace:")
                                 e.printStackTrace()
                             }
                         }

@@ -30,12 +30,12 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                 val dest = getOutputJar(outputProvider, jarInput)
                 when (jarInput.status) {
                     Status.ADDED, Status.CHANGED -> {
-                        Log.test("jar ${jarInput.status.name}:" + jarInput.file.absolutePath)
+                        Log.p("jar ${jarInput.status.name}:" + jarInput.file.absolutePath)
                         onIncrementalJarTransform(jarInput.status, jarInput, dest)
                     }
                     Status.REMOVED -> {
                         //it seemed transform will full build when remove jar file, so ignore this status
-                        Log.test("jar removed:" + jarInput.file.absolutePath)
+                        Log.p("jar removed:" + jarInput.file.absolutePath)
                         if (dest.exists()) {
                             FileUtils.forceDelete(dest)
                         }
