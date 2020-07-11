@@ -1,4 +1,6 @@
-include ':app', ':component-plugin', ':component-base',
+include ':app',
+        ':component-plugin',
+        ':component-base',
         ':readercomponent',
         ':sharecomponent'
 

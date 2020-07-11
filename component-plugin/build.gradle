@@ -1,4 +1,5 @@
-apply plugin: 'java-library'
+//apply plugin: 'java-library'
+apply plugin: 'groovy'
 apply plugin: 'kotlin'
 apply plugin: 'maven'
 apply from: '../script/upload.gradle'
@@ -7,7 +8,6 @@ dependencies {
 //    implementation fileTree(include: ['*.jar'], dir: 'libs')
     //noinspection GradleDependency
     implementation 'com.android.tools.build:gradle:3.5.3'
-//    implementation 'com.android.tools.build:builder:3.4.0'
     implementation 'org.javassist:javassist:3.26.0-GA'
     implementation 'org.dom4j:dom4j:2.1.1'
 //    implementation project(":component-base")
@@ -20,22 +20,13 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"//gradle plugin
 }
 
-//uploadArchives {
-//    repositories.mavenDeployer {
-//        repository(url: uri('../repo/'))
-//
-//        pom.groupId = 'cn.soul.android.plugin'
-//        pom.artifactId = 'component-plugin'
-//        pom.version = '1.0.2'
-//    }
-//}
 parseLocalProperties()
 
 uploadArchives {
     def local = LOCAL == "1"
     repositories.mavenDeployer {
         if (local) {
-            repository(url: uri("../repo/"))
+            repository(url: uri(localMavenRepo))
         } else {
             repository(url: MAVEN_REPO_RELEASE_URL) {
                 authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
@@ -51,4 +42,4 @@ uploadArchives {
     }
 }
 
-//        ./gradlew assembleDebug -Dorg.gradle.daemon=false -Dorg.gradle.debug=true
+// ./gradlew assembleDebug -Dorg.gradle.daemon=false -Dorg.gradle.debug=true

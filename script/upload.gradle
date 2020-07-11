@@ -1,5 +1,13 @@
+// TODO 指定上传的本地路径
+def repo = 'file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath
+
+//println('file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath)
+//println(getProjectDir().absolutePath)
+
 ext {
     parseLocalProperties = this.&parseLocalProperties
+    def localMavenRepo = repo
+    ext.localMavenRepo = localMavenRepo
 }
 
 def parseLocalProperties() {

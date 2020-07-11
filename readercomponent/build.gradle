@@ -1,6 +1,4 @@
-import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
-
-apply plugin: 'com.android.application'
+apply plugin: 'cn.soul.component'
 apply plugin: 'kotlin-android'
 
 android {
@@ -58,14 +56,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     // https://mvnrepository.com/artifact/org.gradle/gradle-core
-
-}
-
-repositories {
-    maven {
-        url 'https://repo.gradle.org/gradle/libs-releases-local/'
-    }
-    mavenCentral()
 }
 
 afterEvaluate {
