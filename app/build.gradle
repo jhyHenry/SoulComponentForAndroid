@@ -1,12 +1,11 @@
 //apply plugin: 'com.android.application'
-//apply plugin: 'cn.soul.component'
-apply plugin: 'com.android.library'
+apply plugin: 'cn.soul.component'
 
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
     defaultConfig {
-//        applicationId "com.soul.androidcomponent"
+        applicationId "com.soul.androidcomponent"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
@@ -46,7 +45,8 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'org.javassist:javassist:3.26.0-GA'
+    implementation 'cn.soul.android.module:component:1.1.6@jar'
 }
 

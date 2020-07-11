@@ -1,4 +1,4 @@
-apply plugin: 'com.android.application'
+apply plugin: 'cn.soul.component'
 
 android {
     compileSdkVersion 28
@@ -9,7 +9,6 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -44,8 +43,4 @@ dependencies {
     annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-}
-
-repositories {
-    mavenCentral()
 }

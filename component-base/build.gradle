@@ -4,10 +4,11 @@ apply from: '../script/upload.gradle'
 
 dependencies {
 //    implementation "org.jgrapht:jgrapht-core:1.3.1"
-    implementation 'androidx.fragment:fragment:1.1.0'
+    implementation 'androidx.fragment:fragment:1.2.5'
     implementation("com.google.guava:guava:28.1-android")
     testImplementation 'junit:junit:4.12'
 }
+
 android {
     compileSdkVersion 29
     buildToolsVersion '29.0.0'
@@ -29,18 +30,7 @@ android.libraryVariants.all { variant ->
     }
 //    println variant.javaCompileProvider.get().destinationDir
     artifacts.add('archives', task)
-
 }
-
-//uploadArchives {
-//    repositories.mavenDeployer {
-//        repository(url: uri('../repo/'))
-//
-//        pom.groupId = 'cn.soul.android.module'
-//        pom.artifactId = 'component'
-//        pom.version = '1.0.0'
-//    }
-//}
 
 parseLocalProperties()
 
@@ -48,7 +38,7 @@ uploadArchives {
     def local = LOCAL == "1"
     repositories.mavenDeployer {
         if (local) {
-            repository(url: uri("../repo/"))
+            repository(url: uri(localMavenRepo))
         } else {
             repository(url: MAVEN_REPO_RELEASE_URL) {
                 authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
