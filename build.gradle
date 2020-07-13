@@ -9,6 +9,12 @@ buildscript {
         maven {
             url { uri(localMavenRepo) }
         }
+        maven{
+            url uri("http://maven.soulapp-inc.cn/repository/maven-releases/")
+        }
+        maven{
+            url uri("http://maven.soulapp-inc.cn/repository/maven-snapshots/")
+        }
         jcenter()
         google()
     }
@@ -27,6 +33,12 @@ allprojects {
         google()
         maven {
             url { uri(localMavenRepo) }
+        }
+        maven{
+            url uri("http://maven.soulapp-inc.cn/repository/maven-releases/")
+        }
+        maven{
+            url uri("http://maven.soulapp-inc.cn/repository/maven-snapshots/")
         }
     }
 }
