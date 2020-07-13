@@ -23,4 +23,5 @@ class PluginTaskFactory(private val factory: TaskFactory) : TaskFactory by facto
         taskProvider.get().group = "component"
         return taskProvider
     }
+    
 }

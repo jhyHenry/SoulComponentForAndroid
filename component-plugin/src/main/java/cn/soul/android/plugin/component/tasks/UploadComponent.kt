@@ -15,12 +15,9 @@ import java.io.File
  * reference [MavenPlugin]
  */
 open class UploadComponent : Upload() {
-    class ConfigAction(private val scope: VariantScope,
-                       private val project: Project) :
-            TaskCreationAction<UploadComponent>() {
+    class ConfigAction(private val scope: VariantScope, private val project: Project) : TaskCreationAction<UploadComponent>() {
         override val name: String
             get() = "uploadComponent${scope.variantConfiguration.flavorName.capitalize()}"
-
 
         override val type: Class<UploadComponent>
             get() = UploadComponent::class.java

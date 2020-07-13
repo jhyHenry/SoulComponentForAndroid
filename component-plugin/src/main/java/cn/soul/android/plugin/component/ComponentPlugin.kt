@@ -30,6 +30,7 @@ import java.util.*
  * date : 2019-07-11 11:19
  */
 class ComponentPlugin : Plugin<Project> {
+
     private lateinit var mPluginExtension: ComponentExtension
     private lateinit var mProject: Project
     private lateinit var mTaskManager: TaskManager
@@ -40,15 +41,15 @@ class ComponentPlugin : Plugin<Project> {
         Log.p("apply component plugin. ")
         p.plugins.apply("maven")
         if (isRunForAar()) {
-            //作为生成aar包的情况
+            // 作为生成aar包的情况
             mProject.afterEvaluate {
                 mLibConfigExecutor?.invoke()
             }
             p.plugins.apply("com.android.library")
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
-            //注册Lib用Transform
+            // 注册Lib用Transform
             extension?.registerTransform(KhalaLibTransform(mProject))
-            //library下有某些属性不允许赋值，委托给executor，在evaluate结束后清空这些值
+            // library下有某些属性不允许赋值，委托给executor，在evaluate结束后清空这些值
             mLibConfigExecutor = {
                 extension?.apply {
                     defaultConfig.applicationId = null
@@ -64,7 +65,7 @@ class ComponentPlugin : Plugin<Project> {
             val extension = mProject.extensions.findByType(AppExtension::class.java)
             extension?.registerTransform(KhalaAppTransform(mProject))
             extension?.applicationVariants?.all {
-                //release条件下执行资源去重操作
+                // release条件下执行资源去重操作
                 if (it.buildType.name != "release") {
                     return@all
                 }
@@ -97,8 +98,8 @@ class ComponentPlugin : Plugin<Project> {
         val gradle = mProject.gradle
         val taskNames = gradle.startParameter.taskNames
 
+        // TODO ? 这里添加这个目的是？
         val needAddDependencies = needAddComponentDependencies(taskNames)
-
         mPluginExtension.dependencies.appendDependencies(mProject, needAddDependencies)
         mPluginExtension.dependencies.appendInterfaceApis(mProject, needAddDependencies)
     }
@@ -112,6 +113,8 @@ class ComponentPlugin : Plugin<Project> {
      */
     private fun isRunForAar(): Boolean {
         val gradle = mProject.gradle
+        // mProject.toString() => project ':app'
+        Log.p("isRunForAar" + gradle.startParameter.taskNames)
         val taskNames = gradle.startParameter.taskNames
         if (taskNames.size == 1) {
             if (mProject.name == "app") {
@@ -153,29 +156,31 @@ class ComponentPlugin : Plugin<Project> {
 
     private fun createTasks() {
         Log.p(msg = "create tasks.")
-        //为每一个variant创建对应的task（除了test）
+        // 为每一个variant创建对应的task（除了test）
         if (isRunForAar()) {
             val libPlugin = mProject.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
                 val variantType = it.variantData.type
                 if (variantType.isTestComponent) {
-                    //continue , do not create task for test variant
+                    // continue , do not create task for test variant
                     return@forEach
                 }
 
                 val taskContainer = PluginTaskContainer()
                 mTaskManager.pluginTaskContainer = taskContainer
 
+                // 改文件名和引用文件名
                 mTaskManager.createPrefixResourcesTask(it)
-
                 mTaskManager.createGenerateSymbolTask(it)
 
+                // manifest
                 mTaskManager.createRefineManifestTask(it)
 
+                // 开发阶段引用 jar 包
                 mTaskManager.createGenInterfaceArtifactTask(it)
 
-                //这里创建上传任务，结合maven仓库插件简化上传流程
+                // 这里创建上传任务，结合maven仓库插件简化上传流程
                 val gradle = mProject.gradle
                 val taskNames = gradle.startParameter.taskNames
                 val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
@@ -184,8 +189,7 @@ class ComponentPlugin : Plugin<Project> {
                 } else {
                     mTaskManager.createLocalTask(it)
                 }
-
-                //插件中直接处理proguard，不需要外部添加
+                // 插件中直接处理proguard，不需要外部添加
                 mTaskManager.applyProguard(mProject, it)
             }
         } else {

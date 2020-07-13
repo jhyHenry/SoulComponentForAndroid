@@ -10,8 +10,10 @@ import java.io.File
 
 /**
  * Created by nebula on 2019-08-15
+ * 组件化资源前缀隔离
  */
 open class PrefixResources : AndroidVariantTask() {
+
     var packagedResFolder: File? = null
     var prefix: String = ""
 
@@ -28,13 +30,9 @@ open class PrefixResources : AndroidVariantTask() {
         Log.i("prefix resources cost: ${System.currentTimeMillis() - startTime}ms")
     }
 
-    class ConfigAction(private val scope: VariantScope,
-                       private val packagedResFolder: File,
-                       private val prefix: String) :
-            VariantTaskCreationAction<PrefixResources>(scope) {
+    class ConfigAction(private val scope: VariantScope, private val packagedResFolder: File, private val prefix: String) : VariantTaskCreationAction<PrefixResources>(scope) {
         override val type: Class<PrefixResources>
             get() = PrefixResources::class.java
-
 
         override val name: String
             get() = scope.getTaskName("prefix", "Resources")
@@ -46,4 +44,5 @@ open class PrefixResources : AndroidVariantTask() {
             task.prefix = prefix
         }
     }
+
 }

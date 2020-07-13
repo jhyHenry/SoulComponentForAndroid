@@ -9,8 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
-import cn.soul.android.component.annotation.Router;
-
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -40,24 +38,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 
-        Router router = Router.getInstance();
-        if (router.getService(ReadBookService.class.getSimpleName()) != null) {
-            ReadBookService service = (ReadBookService) router.getService(ReadBookService.class.getSimpleName());
-            fragment = service.getReadBookFragment();
-            ft = getSupportFragmentManager().beginTransaction();
-            ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
-        }
+//        Router router = Router.getInstance();
+//        if (router.getService(ReadBookService.class.getSimpleName()) != null) {
+//            ReadBookService service = (ReadBookService) router.getService(ReadBookService.class.getSimpleName());
+//            fragment = service.getReadBookFragment();
+//            ft = getSupportFragmentManager().beginTransaction();
+//            ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
+//        }
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.install_share:
-                Router.registerComponent("com.soul.share.applike.ShareApplike");
-                break;
-            case R.id.uninstall_share:
-                Router.unregisterComponent("com.soul.share.applike.ShareApplike");
-                break;
+//            case R.id.install_share:
+//                Router.registerComponent("com.soul.share.applike.ShareApplike");
+//                break;
+//            case R.id.uninstall_share:
+//                Router.unregisterComponent("com.soul.share.applike.ShareApplike");
+//                break;
         }
     }
 

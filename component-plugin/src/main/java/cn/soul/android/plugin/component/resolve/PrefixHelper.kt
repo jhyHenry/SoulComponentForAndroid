@@ -18,6 +18,7 @@ import kotlin.collections.HashSet
  * date : 2019-09-06 14:06
  */
 class PrefixHelper {
+
     companion object {
         val instance: PrefixHelper by lazy {
             PrefixHelper()
@@ -40,7 +41,7 @@ class PrefixHelper {
             "xml"
     )
 
-    //需要被处理的资源类型，这里枚举出来。styleable和attr没有增加前缀处理，是因为其本身的特殊性，推荐这里还是依赖代码规范处理
+    // 需要被处理的资源类型，这里枚举出来。styleable和attr没有增加前缀处理，是因为其本身的特殊性，推荐这里还是依赖代码规范处理
     private val accessTypeSet = hashSetOf(
             "style",
 //            "styleable",
@@ -56,15 +57,14 @@ class PrefixHelper {
             "array"
     )
 
-    //有些资源类型 xml中和R中不一样，这里做转换
-    private val attributeNameTypeMap = hashMapOf(
-            "string-array" to "array")
+    // 有些资源类型 xml中和R中不一样，这里做转换
+    private val attributeNameTypeMap = hashMapOf("string-array" to "array")
 
     private val componentResMap = hashMapOf<String, HashSet<String>>()
     private val reader: SAXReader = SAXReader()
     var prefix = ""
 
-    //第一遍遍历所有资源，确定需要处理的资源范围
+    // 第一遍遍历所有资源，确定需要处理的资源范围
     fun initWithPackagedRes(prefix: String, dir: File) {
         this.prefix = prefix
         componentResMap.clear()
@@ -74,8 +74,7 @@ class PrefixHelper {
         }
         dir.walk().filter { it.isFile && it.name != "values.xml" }
                 .forEach {
-
-                    //obtain res type, split name because of Android resources dimens. eg:<resources_name>-<config_qualifier>
+                    // obtain res type, split name because of Android resources dimens. eg:<resources_name>-<config_qualifier>
                     val type = it.parentFile.name.split('-')[0]
                     componentResMap.computeIfAbsent(type) {
                         hashSetOf()
@@ -86,7 +85,7 @@ class PrefixHelper {
         val root = document.rootElement
         root.elementIterator().forEach {
             var type = it.name
-            //handle special type. eg:[string-array]
+            // handle special type. eg:[string-array]
             if (attributeNameTypeMap.containsKey(type)) {
                 type = attributeNameTypeMap[type]
             }
@@ -94,9 +93,7 @@ class PrefixHelper {
                 return@forEach
             }
             val attribute = it.attribute("name")
-            componentResMap.computeIfAbsent(type) {
-                hashSetOf()
-            }.add(attribute.value)
+            componentResMap.computeIfAbsent(type) { hashSetOf() }.add(attribute.value)
         }
         componentResMap.forEach {
             Log.d("${it.key}:")

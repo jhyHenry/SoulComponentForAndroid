@@ -28,8 +28,8 @@ import java.util.*
  *
  * date : 2019-07-11 14:22
  */
-class TaskManager(private val project: Project,
-                  private val extension: ComponentExtension) {
+class TaskManager(private val project: Project, private val extension: ComponentExtension) {
+
     private var taskFactory: TaskFactory = PluginTaskFactory(TaskFactoryImpl(project.tasks))
     var pluginTaskContainer: PluginTaskContainer? = null
 
@@ -38,8 +38,7 @@ class TaskManager(private val project: Project,
         if (processTask !is ProcessLibraryManifest) {
             return
         }
-        val manifestOutput = processTask.manifestOutputFile.get().asFile
-                ?: return
+        val manifestOutput = processTask.manifestOutputFile.get().asFile ?: return
         val task = taskFactory.register(RefineManifest.ConfigAction(scope, manifestOutput))
         scope.taskContainer.bundleLibraryTask?.get()?.dependsOn(task)
     }
