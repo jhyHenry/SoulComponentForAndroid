@@ -10,6 +10,7 @@ import org.gradle.api.Project
  * date : 2019-10-14 22:35
  */
 class KhalaAppTransform(private val project: Project) : BaseActuatorSetTransform() {
+
     override fun getTransformActuatorSet(): Set<TransformActuator> {
         return ImmutableSet.of(
                 RouterCompileActuator(project, false)
@@ -38,4 +39,5 @@ class KhalaAppTransform(private val project: Project) : BaseActuatorSetTransform
     override fun getName(): String {
         return "khalaApp"
     }
+
 }

@@ -13,6 +13,7 @@ import java.io.File
  * date : 2019-11-18 18:09
  */
 abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
+
     private var actuatorSet: Set<TransformActuator> = emptySet()
 
     override fun preTraversal(transformInvocation: TransformInvocation) {
@@ -51,6 +52,9 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
 //        classPool.removeClassPath(classPath)
     }
 
+    /**
+     * 输入文件访问处理
+     */
     override fun onInputFileVisited(ctClass: CtClass, outputDir: File): Boolean {
         var modify = false
         actuatorSet.forEach {
@@ -91,4 +95,5 @@ abstract class BaseActuatorSetTransform : BaseTraversalTransform() {
                 .toString().replace('/', '.')
         return InjectHelper.instance.getClassPool()[className]
     }
+
 }

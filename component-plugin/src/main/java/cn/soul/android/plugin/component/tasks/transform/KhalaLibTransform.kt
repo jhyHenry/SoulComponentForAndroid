@@ -14,6 +14,7 @@ import org.gradle.api.Project
  */
 class KhalaLibTransform(private val project: Project) : BaseActuatorSetTransform() {
 
+    // transfrom 转换队列
     override fun getTransformActuatorSet(): Set<TransformActuator> {
         return ImmutableSet.of(
                 PrefixRActuator(project, true),
@@ -38,4 +39,5 @@ class KhalaLibTransform(private val project: Project) : BaseActuatorSetTransform
     override fun getScopes(): MutableSet<in QualifiedContent.Scope> {
         return TransformManager.PROJECT_ONLY
     }
+
 }

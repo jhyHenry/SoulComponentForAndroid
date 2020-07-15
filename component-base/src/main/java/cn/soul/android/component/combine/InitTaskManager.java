@@ -1,5 +1,7 @@
 package cn.soul.android.component.combine;
 
+import android.text.TextUtils;
+
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 
@@ -53,7 +55,7 @@ public class InitTaskManager {
         List<InitTask> tasks = gatherTasks();
         if (tasks != null) {
             for (InitTask task : tasks) {
-                if (task.getName() == null || task.getName().equals("")) {
+                if (TextUtils.isEmpty(task.getName())) {
                     continue;
                 }
                 mTasks.put(task.getName(), task);
@@ -62,6 +64,10 @@ public class InitTaskManager {
         return resolveTasksDependency();
     }
 
+    /**
+     * 收集任务
+     * @return
+     */
     private List<InitTask> gatherTasks() {
         try {
             Class<?> clazz = Class.forName(Constants.INIT_TASK_GEN_FILE_PACKAGE + Constants.INIT_TASK_COLLECTOR_IMPL_NAME);

@@ -25,8 +25,8 @@ import cn.soul.android.component.template.IRouterLazyLoader;
  * date : 2019-09-11 15:34
  */
 public class Trustee {
-    private static volatile Trustee sInstance;
 
+    private static volatile Trustee sInstance;
     private SparseArray<RouterTable> mRouterMapByGroup;
     private IRouterLazyLoader mLazyLoader;
     private Map<String, IComponentService> mServiceInstanceContainer;
@@ -183,4 +183,5 @@ public class Trustee {
             return node;
         }
     }
+
 }

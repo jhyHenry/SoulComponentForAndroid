@@ -1,5 +1,7 @@
 package cn.soul.android.plugin.component.utils
 
+import java.io.Console
+
 /**
  * level :
  * 1.error info
