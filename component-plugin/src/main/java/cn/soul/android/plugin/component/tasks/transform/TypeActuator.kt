@@ -19,6 +19,5 @@ abstract class TypeActuator(protected val isComponent: Boolean) : TransformActua
         }
     }
 
-    abstract fun onJarEntryVisited(zipEntry: ZipEntry,
-                                   jarFile: File)
+    abstract fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File)
 }

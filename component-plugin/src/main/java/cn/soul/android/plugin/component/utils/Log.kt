@@ -1,7 +1,5 @@
 package cn.soul.android.plugin.component.utils
 
-import java.io.Console
-
 /**
  * level :
  * 1.error info
@@ -63,15 +61,25 @@ object Log {
     }
 
     private fun doNormalLog(level: Int, tag: String = defaultTag, msg: String) {
+        val stackTraceElements = Throwable().stackTrace
+        val stackTraceElement = stackTraceElements[3]
+        val className = stackTraceElement.className
+        val fileName = stackTraceElement.fileName
+        val methodName = stackTraceElement.methodName
+        val lineNumber = stackTraceElement.lineNumber
         if (level <= this.level) {
-            println("$tag: $msg")
+            println("[$className.$methodName]($fileName/$lineNumber)\n" + "$tag: $msg")
         }
     }
 
     private fun doErrorLog(level: Int, tag: String = defaultTag, msg: String) {
-        if (level <= level) {
-            System.err.println("$tag $msg")
-        }
+        val stackTraceElements = Throwable().stackTrace
+        val stackTraceElement = stackTraceElements[3]
+        val className = stackTraceElement.className
+        val fileName = stackTraceElement.fileName
+        val methodName = stackTraceElement.methodName
+        val lineNumber = stackTraceElement.lineNumber
+        System.err.println("[$className.$methodName]($fileName/$lineNumber)\n" + "$tag: $msg")
     }
 
 }

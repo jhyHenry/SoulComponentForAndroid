@@ -40,7 +40,11 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
         }
 
         preTransform(transformInvocation)
+
+
         super.transform(transformInvocation)
+
+
         postTransform(transformInvocation)
         timeCost = System.currentTimeMillis() - current
         Log.p("${if (transformInvocation.isIncremental) "incremental " else ""}transform time cost: ${timeCost}ms")
@@ -52,9 +56,6 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
         }
     }
 
-    /**
-     * 目录转化
-     */
     override fun onDirTransform(inputDir: File, outputDir: File) {
         val srcPath = inputDir.absolutePath
         val destPath = outputDir.absolutePath

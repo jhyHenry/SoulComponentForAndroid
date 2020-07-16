@@ -57,6 +57,7 @@ object IncrementalHelper {
      * 将先前储存的数据根据md5后的文件名(field名）还原至被[Persistent]注解的field
      * @param target 目标类
      * @param outputDir 储存目标文件夹
+     * 遍历 Actuator 字段
      */
     fun loadPersistentField(target: Any, outputDir: File) {
         target.javaClass.declaredFields.forEach {

@@ -49,7 +49,7 @@ class ComponentPlugin : Plugin<Project> {
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
             // 注册Lib用Transform
             extension?.registerTransform(KhalaLibTransform(mProject))
-            // library下有某些属性不允许赋值，委托给executor，在evaluate结束后清空这些值
+            // library 下有某些属性不允许赋值，委托给executor，在evaluate结束后清空这些值
             mLibConfigExecutor = {
                 extension?.apply {
                     defaultConfig.applicationId = null
@@ -98,7 +98,6 @@ class ComponentPlugin : Plugin<Project> {
         val gradle = mProject.gradle
         val taskNames = gradle.startParameter.taskNames
 
-        // TODO ? 这里添加这个目的是？
         val needAddDependencies = needAddComponentDependencies(taskNames)
         mPluginExtension.dependencies.appendDependencies(mProject, needAddDependencies)
         mPluginExtension.dependencies.appendInterfaceApis(mProject, needAddDependencies)

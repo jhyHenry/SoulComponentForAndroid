@@ -3,7 +3,6 @@ package cn.soul.android.plugin.component.extesion
 import org.gradle.api.Project
 import java.io.File
 
-
 /**
  * Created by nebula on 2019-07-21
  */

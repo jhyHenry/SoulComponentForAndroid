@@ -60,15 +60,17 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                     onDirTransform(dirInput.file, outputDir)
                     return@dirInput
                 }
-                onIncrementalDirInput(outputDir, dirInput)
+                onIncrementalDirTransform(outputDir, dirInput)
             }
         }
     }
 
-    /**
-     * 热更目录输入
-     */
-    private fun onIncrementalDirInput(outputDir: File, dirInput: DirectoryInput) {
+    // 目录转换处理 class -> dex
+    open fun onDirTransform(inputDir: File, outputDir: File) {
+        FileUtils.copyDirectory(inputDir, outputDir)
+    }
+
+    private fun onIncrementalDirTransform(outputDir: File, dirInput: DirectoryInput) {
         val srcPath = dirInput.file.absolutePath
         val destPath = outputDir.absolutePath
         val executorList = mutableListOf<() -> Unit>()
@@ -105,11 +107,6 @@ abstract class BaseIncrementalTransform : BaseTransform() {
     // 热更Jar转换处理
     open fun onIncrementalJarTransform(status: Status, jarInput: JarInput, destFile: File) {
         FileUtils.copyFile(jarInput.file, destFile)
-    }
-
-    // 目录转换处理 class -> dex
-    open fun onDirTransform(inputDir: File, outputDir: File) {
-        FileUtils.copyDirectory(inputDir, outputDir)
     }
 
     // 单文件转换处理 class -> dex

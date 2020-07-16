@@ -102,10 +102,11 @@ class RouterCompileActuator(private val project: Project,
     }
 
     override fun preTransform(transformInvocation: TransformInvocation) {
+        Log.d("RouterCompileActuator", "preTransform")
         if (!transformInvocation.isIncremental) {
             return
         }
-        //initial incremental info, in here khala will load pre-build's status
+        // initial incremental info, in here khala will load pre-build's status
         IncrementalHelper.loadPersistentField(this, transformInvocation.persistenceOutputDir())
         if (nodeSetByGroup.isNotEmpty()) {
             val removedClass = arrayListOf<String>()
@@ -157,16 +158,17 @@ class RouterCompileActuator(private val project: Project,
     private val genClassSet = arrayListOf<String>()
     override fun onJarVisited(status: Status, jarInput: JarInput) {
         genClassSet.clear()
-        //这里处理直接引用的一方lib
+        // 这里处理直接引用的一方lib
         if (jarInput.scopes.size == 1 && jarInput.scopes.contains(QualifiedContent.Scope.SUB_PROJECTS)) {
             val libJar = jarInput.file
             InjectHelper.instance.appendClassPath(libJar.absolutePath)
             ZipHelper.traversalZip(libJar) {
+                Log.d(it.name)
                 if (!it.name.endsWith(".class")) {
                     return@traversalZip
                 }
                 val className = ZipHelper.entryNameToClassName(it.name)
-                //这里状态要是CHANGED的，因为jar的状态是整个jar包的，里面的类单独状态不确定
+                // 这里状态要是CHANGED的，因为jar的状态是整个jar包的，里面的类单独状态不确定
                 val ctClass = InjectHelper.instance.getClassPool()[className]
                 onIncrementalClassVisited(Status.CHANGED, ctClass)
                 ctClass.detach()
@@ -204,6 +206,7 @@ class RouterCompileActuator(private val project: Project,
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {
+        Log.d("RouterCompileActuator", "postTransform")
         IncrementalHelper.savePersistentField(this, transformInvocation.persistenceOutputDir())
         val dest = transformInvocation.outputProvider.getContentLocation(
                 "routerGen",
@@ -225,7 +228,7 @@ class RouterCompileActuator(private val project: Project,
                 genRouterProviderImpl(dest, it.key, it.value)
             }
         }
-        //pair first: super interface's class full name, second: node path
+        // pair first: super interface's class full name, second: node path
         val componentServiceAlias = ServiceNodeAlias()
         nodeSetByGroup.forEach {
             it.value.forEach { nodeInfo ->
@@ -252,7 +255,7 @@ class RouterCompileActuator(private val project: Project,
     }
 
     /**
-     *
+     * 判断 router 插入逻辑
      * @return if return true, this class need writeFile()
      */
     private fun insertInjectImplement(nodeInfo: NodeInfo): Boolean {
@@ -281,9 +284,11 @@ class RouterCompileActuator(private val project: Project,
         if (injectInfoList.size > 0) {
             val isFragment = nodeInfo.type == NodeType.FRAGMENT
             try {
+                // 找到自动执行 Inject 解析的方法
                 val method = ctClass.getDeclaredMethod("autoSynthetic\$FieldInjectSoulComponent")
                 method.setBody(produceInjectMethod(isFragment, injectInfoList))
             } catch (e: Exception) {
+                // 添加 autoSynthetic$FieldInjectSoulComponent
                 ctClass.addInterface(classPool[Constants.INJECTABLE_CLASSNAME])
                 ctClass.addMethod(genAutoSyntheticInjectMethod(isFragment, injectInfoList, ctClass))
             }
@@ -291,10 +296,12 @@ class RouterCompileActuator(private val project: Project,
         return injectInfoList.size > 0
     }
 
+    // 如果没有实现 autoSynthetic$FieldInjectSoulComponent() 方法，自动创建一个方法。
     private fun genAutoSyntheticInjectMethod(isFragment: Boolean, infoList: ArrayList<InjectInfo>, ctClass: CtClass): CtMethod {
         return CtMethod.make("public void autoSynthetic\$FieldInjectSoulComponent()${produceInjectMethod(isFragment, infoList)}", ctClass)
     }
 
+    // 实现获取 route 具体字段
     private fun produceInjectMethod(isFragment: Boolean, infoList: ArrayList<InjectInfo>): String {
         val stringBuilder = StringBuilder("{")
         if (infoList.size > 0) {
@@ -313,6 +320,7 @@ class RouterCompileActuator(private val project: Project,
         return stringBuilder.toString()
     }
 
+    // 强转判断
     private fun getPrefixStatement(injectInfo: InjectInfo): String {
         val type = injectInfo.type
         val classType = injectInfo.classType
@@ -322,6 +330,7 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
+    // 取值判断
     private fun getExtraStatement(isFragment: Boolean, injectInfo: InjectInfo): String {
         val type = injectInfo.type
         val annotationName = injectInfo.annotationName
@@ -549,11 +558,11 @@ class RouterCompileActuator(private val project: Project,
                 ?: throw GradleException("can not find ComponentExtension, please check your build.gradle file")
     }
 
-
     /**
-     * save information of nodeInfo split by group, these data will used of generate RouterNodeProviderImpl
+     * 保存按组拆分的nodeInfo信息，这些数据将用于生成RouterNodeProviderImpl
      */
     private class NodeInfoSetGroupSplit {
+
         private val nodeSetByGroup = mutableMapOf<String, HashSet<NodeInfo>>()
 
         fun putNode(nodeInfo: NodeInfo) {
