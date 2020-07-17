@@ -12,7 +12,7 @@ import java.io.File
 var componentExtension: ComponentExtension? = null
 
 fun Project.componentExtension(): ComponentExtension {
-    //这里componentExtension不能缓存，每次获取新的，否则在build.gradle修改配置拿不到新的
+    // 这里componentExtension不能缓存，每次获取新的，否则在build.gradle修改配置拿不到新的
     componentExtension = extensions.getByType(ComponentExtension::class.java)
     return componentExtension!!
 }

@@ -18,19 +18,24 @@ import java.io.File
 import java.util.zip.ZipEntry
 
 /**
+ *
+ * R 资源动态添加前缀
+ *
  * @author panxinghai
  *
  * date : 2019-11-19 11:05
  */
-class PrefixRActuator(private val project: Project,
-                      isComponent: Boolean) : TypeActuator(isComponent) {
+class PrefixRActuator(private val project: Project, isComponent: Boolean) : TypeActuator(isComponent) {
+
     private var applicationId = ""
     private var prefix: String? = null
 
+    // 处理遍历
     override fun preTraversal(transformInvocation: TransformInvocation) {
         prefix = PrefixHelper.instance.prefix
     }
 
+    // 转换，通过 javassist 动态修改 R 文件资源 ID 前缀
     override fun preTransform(transformInvocation: TransformInvocation) {
         val p = project
         val variantName = transformInvocation.context.variantName
@@ -45,13 +50,18 @@ class PrefixRActuator(private val project: Project,
             if (it.fullVariantName != variantName) {
                 return@forEach
             }
+            // 获取到 R.jar
             val provider = it.artifacts.getFinalProduct<FileSystemLocation>(InternalArtifactType.COMPILE_ONLY_NOT_NAMESPACED_R_CLASS_JAR)
             InjectHelper.instance.appendClassPath(provider.get().asFile.absolutePath)
         }
+        // 处理 R.class 添加前缀
         val rCtClass = InjectHelper.instance.getClassPool()["$applicationId.R"]
         prefixCustomCtClassField(rCtClass)
     }
 
+    /**
+     * 判断是否要直接写入 or 修改重写
+     */
     override fun onClassVisited(ctClass: CtClass): Boolean {
         return onIncrementalClassVisited(Status.ADDED, ctClass)
     }
@@ -69,17 +79,20 @@ class PrefixRActuator(private val project: Project,
     override fun postTransform(transformInvocation: TransformInvocation) {
     }
 
+    /**
+     * R.class 资源添加前缀字段
+     */
     private fun prefixCustomCtClassField(ctClass: CtClass) {
         Log.d("prefix R.class field access. which class is: ${ctClass.name}")
         val classInfo = arrayListOf<Pair<String, MutableList<String>>>()
         ctClass.nestedClasses.forEach {
             val pair = Pair(it.name, arrayListOf<String>())
-
             it.fields.forEach { ctField ->
+                // 如果类被写入不可修复，设置为可修改状态
                 if (it.isFrozen) {
                     it.defrost()
                 }
-                //eg:it.simpleName = "R$id"
+                // eg:it.simpleName = "R$id" 动态添加前缀
                 if (PrefixHelper.instance.isRefNeedPrefix(it.simpleName.substring(2), ctField.name)) {
                     pair.second.add("public static ${ctField.type.name} $prefix${ctField.name};")
                 } else {
@@ -101,26 +114,31 @@ class PrefixRActuator(private val project: Project,
         }
     }
 
+    /**
+     * res 资源增加前缀
+     */
     private fun prefixRClassFieldAccess(ctClass: CtClass, applicationId: String): Boolean {
         if (prefix == null) {
             return false
         }
         if (isRFile(ctClass.simpleName)) {
-            //skip R.class's field access prefix
+            // 跳过 R.class's 类型的访问前缀
             return false
         }
+        // 强制制为可修改状态
         if (ctClass.isFrozen) {
             ctClass.defrost()
         }
         var modify = false
+        // 遍历修改字段
         ctClass.instrument(object : ExprEditor() {
-            override fun edit(f: FieldAccess?) {
-                if (f == null) {
+            override fun edit(fa: FieldAccess?) {
+                if (fa == null) {
                     return
                 }
-                if (f.isReader && needPrefix(f.className, f.fieldName, applicationId)) {
-                    Log.d("{\$_ = ${f.className}.$prefix${f.fieldName};}")
-                    f.replace("{\$_ = ${f.className}.$prefix${f.fieldName};}")
+                if (fa.isReader && needPrefix(fa.className, fa.fieldName, applicationId)) {
+                    Log.d("{\$_ = ${fa.className}.$prefix${fa.fieldName};}")
+                    fa.replace("{\$_ = ${fa.className}.$prefix${fa.fieldName};}")
                     modify = true
                 }
             }
@@ -128,8 +146,14 @@ class PrefixRActuator(private val project: Project,
         return modify
     }
 
+    /**
+     * 判断资源 R 文件
+     */
     private fun isRFile(name: String): Boolean = name == "R" || name.startsWith("R$")
 
+    /**
+     * 判断是否需要增加前缀
+     */
     private fun needPrefix(fullName: String, ref: String, applicationId: String): Boolean {
         if (!isCustomRFile(fullName, applicationId)) {
             return false
@@ -142,6 +166,9 @@ class PrefixRActuator(private val project: Project,
         return PrefixHelper.instance.isRefNeedPrefix(rName, ref)
     }
 
+    /**
+     * 自定义 R 文件
+     */
     private fun isCustomRFile(name: String, applicationId: String) = name.startsWith("$applicationId.R")
 
 }

@@ -9,22 +9,32 @@ import javassist.CtClass
 import java.io.File
 
 /**
+ *
+ * Base 遍历转换
+ *
  * @author panxinghai
  *
  * date : 2019-09-09 18:06
  */
 abstract class BaseTraversalTransform : BaseIncrementalTransform() {
+
     private var timeCost = 0L
+
     override fun transform(transformInvocation: TransformInvocation?) {
         val current = System.currentTimeMillis()
         val inputs = transformInvocation?.inputs ?: return
 
         preTraversal(transformInvocation)
         inputs.forEach { input ->
+            // [component]: khalaApp:/Users/walid/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar
+            // [component]: khalaApp:/Users/walid/Desktop/dev/soul/android/DDComponentForAndroid/sharecomponent/build/intermediates/merged_java_res/debug/out.jar
             input.directoryInputs.forEach { dirInput ->
+                Log.d(name + ":" + dirInput.file.absolutePath)
                 InjectHelper.instance.appendClassPath(dirInput.file.absolutePath)
             }
+            // [component]: khalaApp:/Users/walid/Desktop/dev/soul/android/DDComponentForAndroid/sharecomponent/build/intermediates/javac/debug/classes
             input.jarInputs.forEach {
+                Log.d(name + ":" + it.file.absolutePath)
                 InjectHelper.instance.appendClassPath(it.file.absolutePath)
             }
         }
@@ -42,10 +52,13 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
         }
     }
 
+    /**
+     * 目录转化
+     */
     override fun onDirTransform(inputDir: File, outputDir: File) {
         val srcPath = inputDir.absolutePath
         val destPath = outputDir.absolutePath
-
+        // 递归处理所有文件
         InjectHelper.instance.processFiles(inputDir)
                 .nameFilter { file -> file.name.endsWith(".class") }
                 .forEach { ctClass, file ->
@@ -60,6 +73,9 @@ abstract class BaseTraversalTransform : BaseIncrementalTransform() {
                 }
     }
 
+    /**
+     * 热更 Jar 转换处理
+     */
     override fun onIncrementalJarTransform(status: Status, jarInput: JarInput, destFile: File) {
         if (!onJarVisited(status, jarInput)) {
             super.onIncrementalJarTransform(Status.ADDED, jarInput, destFile)

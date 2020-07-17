@@ -32,7 +32,6 @@ abstract public class ComponentApplication extends Application
         };
     }
 
-
     public void setHostApplication(Application application) {
         mHost = application;
     }

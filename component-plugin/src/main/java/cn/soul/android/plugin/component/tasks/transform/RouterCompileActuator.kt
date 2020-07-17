@@ -35,6 +35,8 @@ import java.util.zip.ZipEntry
 /**
  * All router relative code is in here.This class help inject code for Router navigate.
  * This actuator support compile Activity, Fragment, IComponentService Node now.
+ * 所有路由器相关代码都在这里。这个类帮助注入用于路由器导航的代码。
+ * 这个执行器现在支持编译Activity, Fragment, IComponentService节点。
  * @author panxinghai
  *
  * date : 2019-11-18 18:44
@@ -60,7 +62,7 @@ class RouterCompileActuator(private val project: Project,
         if (isComponent) {
             val variantName = transformInvocation.context.variantName
             val libPlugin = project.plugins.getPlugin(LibraryPlugin::class.java) as LibraryPlugin
-            //cannot got jar file input in library Transform, so got them by variantManager
+            // cannot got jar file input in library Transform, so got them by variantManager
             libPlugin.variantManager.variantScopes.forEach {
                 if (it.fullVariantName != variantName) {
                     return@forEach
@@ -83,15 +85,17 @@ class RouterCompileActuator(private val project: Project,
             if (!checkDuplicate) {
                 return
             }
-            //check path duplicate
+            // check path duplicate
             duplicateChecker = DuplicateChecker()
             val extension = project.extensions.getByName("android") as BaseExtension
             val jarPathList = arrayListOf<URL>()
             transformInvocation.inputs.forEach { input ->
                 input.jarInputs.forEach {
+                    Log.d("RouterCompileActuator", "file://${it.file.absolutePath}")
                     jarPathList.add(URL("file://${it.file.absolutePath}"))
                 }
             }
+            Log.d("RouterCompileActuator", "file://" + File(extension.sdkDirectory, "platforms/${extension.compileSdkVersion}/android.jar").absolutePath)
             jarPathList.add(URL("file://" + File(extension.sdkDirectory, "platforms/${extension.compileSdkVersion}/android.jar").absolutePath))
             baseClassLoader = URLClassLoader(jarPathList.toArray(arrayOf()), this::class.java.classLoader)
         }
@@ -183,8 +187,7 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
-    override fun onJarEntryVisited(zipEntry: ZipEntry,
-                                   jarFile: File) {
+    override fun onJarEntryVisited(zipEntry: ZipEntry, jarFile: File) {
         if (isComponent) {
             return
         }
@@ -818,6 +821,9 @@ class RouterCompileActuator(private val project: Project,
         }
     }
 
+    /**
+     * 重复检查
+     */
     private class DuplicateChecker {
         data class NodeCheckInfo(val path: String, val className: String) {
             override fun equals(other: Any?): Boolean {
@@ -851,4 +857,5 @@ class RouterCompileActuator(private val project: Project,
             }
         }
     }
+
 }

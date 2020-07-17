@@ -28,6 +28,8 @@ interface TransformActuator {
     /**
      * @return if true, this ctClass was be modified, actuator will write it to file, otherwise actuator
      * will directly copy source file to destination directory.
+     * 如果为真，此ctClass被修改，执行器将把它写入文件，否则执行器将执行写入文件
+     * 将直接复制源文件到目标目录。
      */
     fun onClassVisited(ctClass: CtClass): Boolean
 

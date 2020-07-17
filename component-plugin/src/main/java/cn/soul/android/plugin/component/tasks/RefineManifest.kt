@@ -21,6 +21,7 @@ import java.io.FileWriter
  * date : 2019-07-18 15:20
  */
 open class RefineManifest : AndroidVariantTask() {
+
     var manifestFile: File? = null
 
     @TaskAction
@@ -29,15 +30,15 @@ open class RefineManifest : AndroidVariantTask() {
         val document = reader.read(manifestFile)
         val root = document.rootElement
 
-        //remove versionCode and versionName attribute in <manifest>
+        // remove versionCode and versionName attribute in <manifest>
         root.remove(root.attribute(AndroidXmlHelper.getAndroidQName("versionCode")))
         root.remove(root.attribute(AndroidXmlHelper.getAndroidQName("versionName")))
 
-        //remove uses-sdk tag
+        // remove uses-sdk tag
         root.remove(root.element("uses-sdk"))
 
         val applicationElement = root.element(AndroidXmlHelper.TAG_APPLICATION)
-        //remove application all attributes
+        // remove application all attributes
         val attributeNameList = mutableListOf<QName>()
         var applicationName = ""
         applicationElement.attributes().forEach {
@@ -51,7 +52,7 @@ open class RefineManifest : AndroidVariantTask() {
             applicationElement.remove(applicationElement.attribute(it))
         }
 
-        //remove action and category that equals MAIN/LAUNCHER in <intent-filter>
+        // remove action and category that equals MAIN/LAUNCHER in <intent-filter>
         applicationElement.elementIterator(AndroidXmlHelper.TAG_ACTIVITY).forEach { activityElement ->
             activityElement.elementIterator("intent-filter").forEach { element ->
                 element.elementIterator("action").forEach {
@@ -84,24 +85,20 @@ open class RefineManifest : AndroidVariantTask() {
 
     }
 
-    class ConfigAction(private val scope: VariantScope,
-                       private val manifestFile: File) :
-            VariantTaskCreationAction<RefineManifest>(scope) {
+    class ConfigAction(private val scope: VariantScope, private val manifestFile: File) : VariantTaskCreationAction<RefineManifest>(scope) {
         override val name: String
             get() = scope.getTaskName("Refine", "Manifest")
-
 
         override val type: Class<RefineManifest>
             get() = RefineManifest::class.java
 
-
         override fun configure(task: RefineManifest) {
             task.manifestFile = manifestFile
             task.variantName = scope.fullVariantName
-
 //            scope.taskContainer.pluginRefineManifest = task
 //            task.dependsOn(scope.taskContainer.pluginPrefixResources)
             task.dependsOn(scope.taskContainer.processManifestTask)
         }
     }
+
 }

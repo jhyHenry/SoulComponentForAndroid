@@ -15,32 +15,37 @@ import java.io.File
  * date : 2020-01-13 13:54
  */
 abstract class BaseIncrementalTransform : BaseTransform() {
+
     override fun transform(transformInvocation: TransformInvocation?) {
         if (transformInvocation == null) {
             return
         }
-        val isIncremental = transformInvocation.isIncremental
+        // 输出 provider 用于创建输出文件
         val outputProvider = transformInvocation.outputProvider
+        // 是否热更
+        val isIncremental = transformInvocation.isIncremental
         if (!isIncremental) {
             Log.p("is not incremental")
             outputProvider.deleteAll()
         }
+        // Jar Or Dir
         transformInvocation.inputs.forEach {
             it.jarInputs.forEach { jarInput ->
                 val dest = getOutputJar(outputProvider, jarInput)
+                // khalaApp: jar => NOTCHANGED:/Users/walid/Desktop/dev/soul/android/DDComponentForAndroid/readercomponent/build/intermediates/merged_java_res/debug/out.jar
+                Log.p(name, "jar => ${jarInput.status.name}:" + jarInput.file.absolutePath)
                 when (jarInput.status) {
                     Status.ADDED, Status.CHANGED -> {
-                        Log.p("jar ${jarInput.status.name}:" + jarInput.file.absolutePath)
                         onIncrementalJarTransform(jarInput.status, jarInput, dest)
                     }
                     Status.REMOVED -> {
-                        //it seemed transform will full build when remove jar file, so ignore this status
-                        Log.p("jar removed:" + jarInput.file.absolutePath)
+                        // it seemed transform will full build when remove jar file, so ignore this status
                         if (dest.exists()) {
                             FileUtils.forceDelete(dest)
                         }
                     }
                     else -> {
+                        // TODO ?
                         if (!isIncremental) {
                             onIncrementalJarTransform(Status.ADDED, jarInput, dest)
                         }
@@ -48,6 +53,8 @@ abstract class BaseIncrementalTransform : BaseTransform() {
                 }
             }
             it.directoryInputs.forEach dirInput@{ dirInput ->
+                // khalaApp: dir => /Users/walid/Desktop/dev/soul/android/DDComponentForAndroid/readercomponent/build/intermediates/javac/debug/classes
+                Log.p(name, "dir => " + dirInput.file.absolutePath)
                 val outputDir = getOutputDir(outputProvider, dirInput)
                 if (!isIncremental) {
                     onDirTransform(dirInput.file, outputDir)
@@ -58,6 +65,9 @@ abstract class BaseIncrementalTransform : BaseTransform() {
         }
     }
 
+    /**
+     * 热更目录输入
+     */
     private fun onIncrementalDirInput(outputDir: File, dirInput: DirectoryInput) {
         val srcPath = dirInput.file.absolutePath
         val destPath = outputDir.absolutePath
@@ -70,13 +80,13 @@ abstract class BaseIncrementalTransform : BaseTransform() {
             val destFile = File(destClassFilePath)
             when (status) {
                 Status.ADDED, Status.CHANGED -> {
-//                    Log.test("dir ${status.name}:${file.absolutePath}")
+                    Log.d("dir ${status.name}:${file.absolutePath}")
                     executorList.add {
                         onSingleFileTransform(status, file, outputDir, destFile)
                     }
                 }
                 Status.REMOVED -> {
-//                    Log.test("dir removed:${file.absolutePath}")
+                    Log.d("dir removed:${file.absolutePath}")
                     onRemovedFileTransform(outputDir, destFile)
                     if (destFile.exists()) {
                         FileUtils.forceDelete(destFile)
@@ -92,14 +102,17 @@ abstract class BaseIncrementalTransform : BaseTransform() {
         }
     }
 
+    // 热更Jar转换处理
     open fun onIncrementalJarTransform(status: Status, jarInput: JarInput, destFile: File) {
         FileUtils.copyFile(jarInput.file, destFile)
     }
 
+    // 目录转换处理 class -> dex
     open fun onDirTransform(inputDir: File, outputDir: File) {
         FileUtils.copyDirectory(inputDir, outputDir)
     }
 
+    // 单文件转换处理 class -> dex
     open fun onSingleFileTransform(status: Status, inputFile: File, outputDir: File, destFile: File) {
         FileUtils.copyFile(inputFile, destFile)
     }
@@ -107,4 +120,5 @@ abstract class BaseIncrementalTransform : BaseTransform() {
     open fun onRemovedFileTransform(outputDir: File, destFile: File) {
 
     }
+
 }

@@ -22,6 +22,7 @@ import cn.soul.android.component.Khala;
  * date : 2019-10-15 15:45
  */
 public class KhalaApplication extends Application {
+
     private List<ComponentApplication> mComponentApplications;
     private List<InitTask> mInitTasks;
 

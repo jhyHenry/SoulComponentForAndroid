@@ -11,6 +11,7 @@ import java.io.File
  * Created by nebula on 2019-07-20
  */
 class InjectHelper private constructor() {
+
     private var mClassPool: ClassPool? = null
 
     companion object {
@@ -51,6 +52,9 @@ class InjectHelper private constructor() {
         return ActionContainer(bufferList, packageIndex)
     }
 
+    /**
+     * 递归遍历文件
+     */
     private fun traversalFiles(file: File, bufferList: MutableList<File>) {
         if (file.isDirectory) {
             file.listFiles()?.forEach {
@@ -60,10 +64,10 @@ class InjectHelper private constructor() {
         bufferList.add(file)
     }
 
-    inner class ActionContainer(
-            private val list: MutableList<File>,
-            private val packageIndex: Int
-    ) {
+    /**
+     * 编译器文件处理容器 ctClass & file
+     */
+    inner class ActionContainer(private val list: MutableList<File>, private val packageIndex: Int) {
         private var mNameFilterAction: ((File) -> Boolean)? = null
         private var mClassFilterAction: ((CtClass) -> Boolean)? = null
 
@@ -85,6 +89,7 @@ class InjectHelper private constructor() {
                         || (mNameFilterAction != null && mNameFilterAction?.invoke(it)!!)) {
                     val classPool = this@InjectHelper.getClassPool()
                     val pathLength = it.absolutePath.length
+                    // 去除 .class 6个字符串
                     val className = it.absolutePath.subSequence(packageIndex, pathLength - 6)
                             .toString().replace('/', '.')
                     val ctClass = classPool[className]
@@ -96,4 +101,5 @@ class InjectHelper private constructor() {
             }
         }
     }
+
 }
