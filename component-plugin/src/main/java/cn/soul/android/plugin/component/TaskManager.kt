@@ -3,6 +3,7 @@ package cn.soul.android.plugin.component
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.utils.Descriptor
+import cn.soul.android.plugin.component.utils.Log
 import com.android.SdkConstants
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.BuildArtifactsHolder
@@ -131,6 +132,9 @@ class TaskManager(private val project: Project, private val extension: Component
         task.get().dependsOn(scope.taskContainer.processManifestTask)
     }
 
+    /**
+     * 上传组件
+     */
     fun createUploadTask(scope: VariantScope) {
         if (scope.variantConfiguration.buildType.name != "release") {
             return
@@ -152,6 +156,9 @@ class TaskManager(private val project: Project, private val extension: Component
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
     }
 
+    /**
+     * 依赖本地组件
+     */
     fun createLocalTask(scope: VariantScope) {
         if (scope.variantConfiguration.buildType.name != "release") {
             return

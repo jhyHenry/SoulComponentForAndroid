@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import org.gradle.api.Project
@@ -27,6 +28,7 @@ open class LocalComponent : Upload() {
             get() = LocalComponent::class.java
 
         override fun configure(task: LocalComponent) {
+            Log.d(name)
             val config = this.project.configurations.getByName("archives")
             createUploadTask(task, config.uploadTaskName, config, project)
             val uploadArchives = project.tasks.withType(Upload::class.java).findByName("uploadArchives")
@@ -42,6 +44,7 @@ open class LocalComponent : Upload() {
                     artifactId = project.name
                 }
             }
+            Log.d(uploadArchives.toString())
         }
 
         private fun createUploadTask(upload: Upload, name: String, configuration: Configuration, project: Project) {

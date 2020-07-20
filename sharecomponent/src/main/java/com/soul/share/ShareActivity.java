@@ -1,14 +1,13 @@
 package com.soul.share;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import org.jetbrains.annotations.Nullable;
-
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import cn.soul.android.component.annotation.Router;
+
 import cn.soul.android.component.annotation.Inject;
+import cn.soul.android.component.annotation.Router;
 
 /**
  * Created by mrzhang on 2017/6/20.
@@ -42,4 +41,5 @@ public class ShareActivity extends AppCompatActivity {
             tvShareBook.setText(bookName);
         }
     }
+
 }

@@ -37,14 +37,15 @@ class ComponentPlugin : Plugin<Project> {
 
     private var mLibConfigExecutor: (() -> Unit)? = null
     override fun apply(p: Project) {
+        Log.p("apply component plugin =>" + p.name)
         mProject = p
-        Log.p("apply component plugin. ")
         p.plugins.apply("maven")
-        if (isRunForAar()) {
+        if (isRunForAar(p) || isLibrary(p)) {
             // 作为生成aar包的情况
             mProject.afterEvaluate {
                 mLibConfigExecutor?.invoke()
             }
+            Log.p("p.plugins.apply(\"com.android.library\") =>" + p.name)
             p.plugins.apply("com.android.library")
             val extension = mProject.extensions.findByType(BaseExtension::class.java)
             // 注册Lib用Transform
@@ -61,6 +62,7 @@ class ComponentPlugin : Plugin<Project> {
                 }
             }
         } else {
+            Log.p("p.plugins.apply(\"com.android.application\") =>" + p.name)
             p.plugins.apply("com.android.application")
             val extension = mProject.extensions.findByType(AppExtension::class.java)
             extension?.registerTransform(KhalaAppTransform(mProject))
@@ -104,28 +106,36 @@ class ComponentPlugin : Plugin<Project> {
     }
 
     /**
+     * 本地调试时判断有用
+     */
+    private fun isLibrary(p: Project): Boolean {
+        return p.name != "app" && p.gradle.startParameter.taskNames.size == 1 && !p.gradle.startParameter.taskNames[0].startsWith(":${p.name}")
+    }
+
+    /**
      * 判断本次执行流程的类型。特定情况下才会执行aar包的生成。
      * 情况如下：
      * 1.仅执行了一个task
      * 2.执行的task指定module为当前module 如 ./gradlew app:uploadComponent 指定的目标为app
      * 3.执行task为commonLocalComponent，这种情况会依次生成所有依赖该插件的module的aar包
      */
-    private fun isRunForAar(): Boolean {
-        val gradle = mProject.gradle
+    private fun isRunForAar(p: Project): Boolean {
+        val gradle = p.gradle
         // mProject.toString() => project ':app'
         Log.p("isRunForAar" + gradle.startParameter.taskNames)
         val taskNames = gradle.startParameter.taskNames
         if (taskNames.size == 1) {
-            if (mProject.name == "app") {
-                //special module didn't use as library, it will change to white list
+            // 添加参数
+            if (p.name == "app") {
+                // special module didn't use as library, it will change to white list
                 return false
             }
             if (taskNames[0] == "commonLocalComponent") {
-                //for all module load
+                // for all module load
                 return true
             }
             val module = Descriptor.getTaskModuleName(taskNames[0])
-            if (module != mProject.name) {
+            if (module != p.name) {
                 return false
             }
             val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
@@ -141,7 +151,7 @@ class ComponentPlugin : Plugin<Project> {
      * 判断是否需要进行module的依赖，仅在最终构建结果是apk或aab（google play用）时进行依赖
      */
     private fun needAddComponentDependencies(taskNames: List<String>): Boolean {
-        if (isRunForAar()) {
+        if (isRunForAar(p = mProject)) {
             return false
         }
         taskNames.forEach {
@@ -156,7 +166,7 @@ class ComponentPlugin : Plugin<Project> {
     private fun createTasks() {
         Log.p(msg = "create tasks.")
         // 为每一个variant创建对应的task（除了test）
-        if (isRunForAar()) {
+        if (isRunForAar(p = mProject) || isLibrary(p = mProject)) {
             val libPlugin = mProject.plugins.getPlugin(LibraryPlugin::class.java) as BasePlugin<*>
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
@@ -184,6 +194,8 @@ class ComponentPlugin : Plugin<Project> {
                 val gradle = mProject.gradle
                 val taskNames = gradle.startParameter.taskNames
                 val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
+                Log.d("taskName = $taskName")
+                // 上传 task
                 if (taskName.startsWith("uploadComponent")) {
                     mTaskManager.createUploadTask(it)
                 } else {
@@ -305,4 +317,5 @@ class ComponentPlugin : Plugin<Project> {
         val jsonObject = jsonArray.getJSONObject(0)
         return jsonObject.getString("path")
     }
+
 }

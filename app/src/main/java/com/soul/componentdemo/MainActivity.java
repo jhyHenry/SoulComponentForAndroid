@@ -6,16 +6,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.soul.share.ShareBean;
-import com.soul.share.service.ShareService;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import com.soul.share.ShareBean;
+import com.soul.share.service.ShareService;
+
 import cn.soul.android.component.SoulRouter;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
     Fragment fragment;
     FragmentTransaction ft;
@@ -33,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         installReadBookBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SoulRouter.instance().route("/share/ShareActivity").withSerializable("shareBean",shareBean).navigate(MainActivity.this);
+                SoulRouter.instance().route("/share/ShareActivity").withSerializable("shareBean", shareBean).navigate(MainActivity.this);
             }
         });
 
@@ -41,8 +42,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 ShareService shareService = SoulRouter.instance().service(ShareService.class);
-                if (shareService != null){
-                    Toast.makeText(MainActivity.this,shareService.getShareName(),Toast.LENGTH_SHORT).show();
+                if (shareService != null) {
+                    Toast.makeText(MainActivity.this, shareService.getShareName(), Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -68,22 +69,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-//            case R.id.install_share:
-//                Router.registerComponent("com.soul.share.applike.ShareApplike");
-//                break;
-//            case R.id.uninstall_share:
-//                Router.unregisterComponent("com.soul.share.applike.ShareApplike");
-//                break;
-        }
-    }
-
-    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (data != null) {
 //            ToastManager.show(BaseApplication.getAppContext(), data.getStringExtra("result"));
         }
     }
+
 }
