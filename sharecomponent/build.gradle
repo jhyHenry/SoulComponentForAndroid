@@ -1,5 +1,28 @@
 apply plugin: 'cn.soul.component'
 
+uploadArchives {
+    repositories.mavenDeployer {
+        pom.project {
+            version = "1.0.0-SNAPSHOT"
+            groupId 'cn.soulcpnt.android.exm'
+            packaging TYPE
+            description 'share'
+        }
+
+        if (pom.version.contains("SNAPSHOT")){
+            print '-----------------------SNAPSHOT-------------------------------'
+            repository(url: MAVEN_REPO_SNAPSHOT_URL) {
+                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+            }
+        } else {
+            print '-----------------------release--------------------------------'
+            repository(url: MAVEN_REPO_RELEASE_URL) {
+                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+            }
+        }
+    }
+}
+
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
@@ -43,4 +66,6 @@ dependencies {
     annotationProcessor 'com.luojilab.ddcomponent:router-anno-compiler:1.0.0'
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation project(path: ':component-base')
 }

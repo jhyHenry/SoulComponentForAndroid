@@ -1,6 +1,13 @@
 //apply plugin: 'com.android.application'
 apply plugin: 'cn.soul.component'
 
+component {
+    logLevel = 3
+    dependencies {
+        interfaceApi "cn.soulcpnt.android.exm:sharecomponent:1.0.0-SNAPSHOT"
+    }
+}
+
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
