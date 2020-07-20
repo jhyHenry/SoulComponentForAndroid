@@ -33,8 +33,8 @@ import java.util.*
 import java.util.zip.ZipEntry
 
 /**
- * All router relative code is in here.This class help inject code for Router navigate.
- * This actuator support compile Activity, Fragment, IComponentService Node now.
+ *
+ * 路由表生成，处理@Inject注解
  * 所有路由器相关代码都在这里。这个类帮助注入用于路由器导航的代码。
  * 这个执行器现在支持编译Activity, Fragment, IComponentService节点。
  * @author panxinghai
@@ -489,6 +489,7 @@ class RouterCompileActuator(private val project: Project,
         return sb.toString()
     }
 
+    // TODO 后面要查看下生成的代码
     private fun genRouterLazyLoaderImpl(dir: File,
                                         groupMap: MutableMap<String, ArrayList<String>>,
                                         aliasInfoList: ServiceNodeAlias,

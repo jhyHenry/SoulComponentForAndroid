@@ -20,6 +20,7 @@ import java.util.zip.ZipEntry
 /**
  *
  * R 资源动态添加前缀
+ * 对资源访问的代码添加前缀（R.string.test → R.string.a_test）
  *
  * @author panxinghai
  *

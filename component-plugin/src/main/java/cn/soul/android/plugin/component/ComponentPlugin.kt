@@ -171,6 +171,7 @@ class ComponentPlugin : Plugin<Project> {
 
                 // 改文件名和引用文件名
                 mTaskManager.createPrefixResourcesTask(it)
+                // 重新生成R文件
                 mTaskManager.createGenerateSymbolTask(it)
 
                 // manifest
@@ -195,8 +196,7 @@ class ComponentPlugin : Plugin<Project> {
             val appPlugin = mProject.plugins.getPlugin(AppPlugin::class.java) as BasePlugin<*>
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
-                //                mTaskManager.createReplaceManifestTask(it)
-
+                // mTaskManager.createReplaceManifestTask(it)
                 mTaskManager.applyProguard(mProject, it)
             }
         }

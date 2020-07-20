@@ -173,6 +173,9 @@ class TaskManager(private val project: Project, private val extension: Component
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
     }
 
+    /**
+     * 混淆类
+     */
     fun applyProguard(project: Project, scope: VariantScope) {
         val proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${scope.fullVariantName.capitalize()}")
         if (proguardTask is TransformTask) {
