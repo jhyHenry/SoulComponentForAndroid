@@ -104,8 +104,8 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
     }
 
     /**
-     * retrieve all reference Class of ComponentService's subClass, then put them into refSet
-     * @param ctClass class need retrieve reference
+     * 检索ComponentService子类的所有引用类，然后将它们放入refSet中
+     * 类需要检索引用
      */
     private fun retrieveRefClass(ctClass: CtClass) {
         val classPool = InjectHelper.instance.getClassPool()
@@ -172,7 +172,7 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
             if (isSuitableRef(it, ctClass)) {
                 val refClass = InjectHelper.instance.getClassPool().getOrNull(it) ?: return@forEach
                 if (refClass.isPrimitive) {
-                    //primitive type needn't add
+                    // primitive type needn't add
                     return@forEach
                 }
                 refSet.add(it)
