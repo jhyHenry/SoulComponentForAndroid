@@ -8,6 +8,7 @@ import java.io.File
  * Created by nebula on 2019-07-21
  */
 open class Dependencies {
+
     private val dependenciesCollection = mutableListOf<File>()
     private val dependencies = mutableListOf<String>()
     private val interfaceApis = mutableListOf<String>()
@@ -17,13 +18,15 @@ open class Dependencies {
         dependencies.add(path)
     }
 
-    fun interfaceApi(groupId: String, name: String, version: String, local: Boolean) {
+    fun interfaceApi(mavenUrl: String) {
+        interfaceApis.add(mavenUrl)
+    }
 
+    fun interfaceApi(mavenUrl: String, local: Boolean) {
         if (local) {
-            localInterfaceApis.add("${groupId}:${name}:${version}")
-//            localInterfaceApis.add(name)
+            localInterfaceApis.add(mavenUrl)
         } else {
-            interfaceApis.add("${groupId}:${name}:${version}")
+            interfaceApis.add(mavenUrl)
         }
     }
 

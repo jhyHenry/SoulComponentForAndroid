@@ -10,10 +10,10 @@ import cn.soul.android.component.util.CollectionHelper;
  * date : 2019-11-15 16:20
  */
 public enum NodeType {
-    ACTIVITY(CollectionHelper.setOf("android.app.Activity")),
-    FRAGMENT(CollectionHelper.setOf("androidx.fragment.app.Fragment",
+    ACTIVITY(CollectionHelper.setOf("android.app.Activity", "androidx.appcompat.app.AppCompatActivity")),
+    FRAGMENT(CollectionHelper.setOf(
             "android.app.Fragment",
-            "android.support.v4.app.Fragment")),
+            "android.support.v4.app.Fragment", "androidx.fragment.app.Fragment")),
     COMPONENT_SERVICE(CollectionHelper.setOf("cn.soul.android.component.IComponentService")),
     UNSPECIFIED(CollectionHelper.setOf(""));
 

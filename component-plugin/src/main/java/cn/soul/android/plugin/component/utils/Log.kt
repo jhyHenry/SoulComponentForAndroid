@@ -68,7 +68,8 @@ object Log {
         val methodName = stackTraceElement.methodName
         val lineNumber = stackTraceElement.lineNumber
         if (level <= this.level) {
-            println("[$className.$methodName]($fileName/$lineNumber)\n" + "$tag: $msg")
+            // [$className.$methodName]
+            println("($fileName/$lineNumber)\n" + "$tag: $msg")
         }
     }
 

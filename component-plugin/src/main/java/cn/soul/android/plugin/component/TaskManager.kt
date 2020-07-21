@@ -117,6 +117,7 @@ class TaskManager(private val project: Project, private val extension: Component
             return
         }
         val flavor = getFlavor()
+        Log.d("flavor:${flavor}")
         if (flavor != null) {
             if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
                 project.artifacts.add("archives", File(task.get().destDir, "interface.jar"))
@@ -180,9 +181,35 @@ class TaskManager(private val project: Project, private val extension: Component
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
     }
 
-    /**
-     * 混淆类
-     */
+    // 生成本地依赖
+    fun createLocalCompileTask(scope: VariantScope) {
+        if (scope.variantConfiguration.buildType.name != "debug") {
+            return
+        }
+
+        if (project.gradle.startParameter.taskNames.size == 0) {
+            return
+        }
+        val flavor = getFlavor()
+        if (flavor != null) {
+            if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
+                VariantHelper.setupArchivesConfig(project, scope.variantDependencies.runtimeClasspath)
+                project.artifacts.add("archives", scope.taskContainer.bundleLibraryTask!!)
+            }
+        }
+        val task = taskFactory.register(LocalComponent.ConfigAction(scope, project))
+        pluginTaskContainer?.uploadTask = task.get()
+        task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
+        task.get().dependsOn(pluginTaskContainer?.genInterface!!)
+
+//        val destDir: File? = File("../repo")
+//        val destFile = File(destDir, "${project.name}-interface.jar")
+//        destDir?.mkdirs()
+//        destFile.createNewFile()
+//        project.tasks.findByPath("copytask").
+    }
+
+    // 混淆
     fun applyProguard(project: Project, scope: VariantScope) {
         val proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${scope.fullVariantName.capitalize()}")
         if (proguardTask is TransformTask) {

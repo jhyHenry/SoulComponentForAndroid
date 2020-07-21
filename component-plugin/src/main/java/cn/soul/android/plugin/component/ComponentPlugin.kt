@@ -40,6 +40,7 @@ class ComponentPlugin : Plugin<Project> {
         Log.p("apply component plugin =>" + p.name)
         mProject = p
         p.plugins.apply("maven")
+
         if (isRunForAar(p) || isLibrary(p)) {
             // 作为生成aar包的情况
             mProject.afterEvaluate {
@@ -109,7 +110,16 @@ class ComponentPlugin : Plugin<Project> {
      * 本地调试时判断有用
      */
     private fun isLibrary(p: Project): Boolean {
-        return p.name != "app" && p.gradle.startParameter.taskNames.size == 1 && !p.gradle.startParameter.taskNames[0].startsWith(":${p.name}")
+        if (p.name == "app") {
+            return false
+        }
+        if (p.gradle.startParameter.taskNames.size == 0) {
+            return true
+        }
+        val taskName = Descriptor.getTaskNameWithoutModule(p.gradle.startParameter.taskNames[0])
+        return p.gradle.startParameter.taskNames.size == 1
+                && Descriptor.getTaskModuleName(p.gradle.startParameter.taskNames[0]) != p.name
+                && (taskName.startsWith("assemble") || taskName.startsWith("install") || taskName.startsWith("bundle"))
     }
 
     /**
@@ -179,10 +189,12 @@ class ComponentPlugin : Plugin<Project> {
                 val taskContainer = PluginTaskContainer()
                 mTaskManager.pluginTaskContainer = taskContainer
 
-                // 改文件名和引用文件名
-                mTaskManager.createPrefixResourcesTask(it)
-                // 重新生成R文件
-                mTaskManager.createGenerateSymbolTask(it)
+                if (!isLibrary(p = mProject)) {
+                    // 改 R 文件名
+                    mTaskManager.createPrefixResourcesTask(it)
+                    // 重新生成 R 文件
+                    mTaskManager.createGenerateSymbolTask(it)
+                }
 
                 // manifest
                 mTaskManager.createRefineManifestTask(it)
@@ -193,13 +205,19 @@ class ComponentPlugin : Plugin<Project> {
                 // 这里创建上传任务，结合maven仓库插件简化上传流程
                 val gradle = mProject.gradle
                 val taskNames = gradle.startParameter.taskNames
-                val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
-                Log.d("taskName = $taskName")
-                // 上传 task
-                if (taskName.startsWith("uploadComponent")) {
-                    mTaskManager.createUploadTask(it)
-                } else {
-                    mTaskManager.createLocalTask(it)
+                if (taskNames.size != 0) {
+                    val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
+                    Log.d("taskName = $taskName")
+                    // 上传 task
+                    if (taskName.startsWith("uploadComponent")) {
+                        mTaskManager.createUploadTask(it)
+                    } else if (taskName.startsWith("localComponent")) {
+                        mTaskManager.createLocalTask(it)
+                    } else if (taskName.startsWith("localCompile")) {
+                        // 本地依赖
+                    } else {
+                        mTaskManager.createLocalTask(it)
+                    }
                 }
                 // 插件中直接处理proguard，不需要外部添加
                 mTaskManager.applyProguard(mProject, it)

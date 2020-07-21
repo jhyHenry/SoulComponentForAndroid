@@ -80,6 +80,7 @@ class PrefixHelper {
                         hashSetOf()
                     }.add(it.name.split('.')[0])
                     it.renameTo(File(it.parentFile, prefix + it.name))
+                    Log.d(it.parentFile.absolutePath + prefix + it.name)
                 }
         val document = reader.read(File(dir, "values/values.xml"))
         val root = document.rootElement

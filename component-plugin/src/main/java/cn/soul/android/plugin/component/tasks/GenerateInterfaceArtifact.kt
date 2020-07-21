@@ -3,6 +3,7 @@ package cn.soul.android.plugin.component.tasks
 import cn.soul.android.component.IComponentService
 import cn.soul.android.component.annotation.ClassExposed
 import cn.soul.android.plugin.component.utils.InjectHelper
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
@@ -61,6 +62,8 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
         val destFile = File(destDir, "interface.jar")
         destDir?.mkdirs()
         destFile.createNewFile()
+
+        Log.d("interface.jar path：${destFile.absolutePath}")
 
         ZipOutputStream(FileOutputStream(destFile)).use { zos ->
             refSet.forEach { ref ->
@@ -253,4 +256,5 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
                     scope.variantConfiguration.dirName)
         }
     }
+
 }

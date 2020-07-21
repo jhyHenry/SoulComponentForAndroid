@@ -2,6 +2,8 @@ package com.soul.share.service;
 
 import android.content.Context;
 
+import androidx.fragment.app.Fragment;
+
 import cn.soul.android.component.annotation.Router;
 
 /**
@@ -13,6 +15,15 @@ import cn.soul.android.component.annotation.Router;
 public class ShareServiceImpl implements ShareService {
     @Override
     public String getShareName() {
+        return getTest1();
+    }
+
+    @Override
+    public Fragment getFragment() {
+        return new com.soul.share.service.Fragment();
+    }
+
+    public String getTest1() {
         return "ShareServiceImpl test";
     }
 

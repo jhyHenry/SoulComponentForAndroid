@@ -1,5 +1,7 @@
 package com.soul.share.service;
 
+import androidx.fragment.app.Fragment;
+
 import cn.soul.android.component.IComponentService;
 
 /**
@@ -9,4 +11,6 @@ import cn.soul.android.component.IComponentService;
  */
 public interface ShareService extends IComponentService {
     String getShareName();
+
+    Fragment getFragment();
 }
