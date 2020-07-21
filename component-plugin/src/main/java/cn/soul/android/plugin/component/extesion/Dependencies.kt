@@ -53,8 +53,9 @@ open class Dependencies {
 
         // 组件本地依赖
         localInterfaceApis.forEach {
-            Log.d("compileOnly:${it}")
-            project.dependencies.add("compileOnly", "$it@jar")
+            Log.d("compileOnly:${it}${project.rootDir}")
+            project.dependencies.add("compileOnly", project.project.fileTree("${project.rootDir}/repo/build").include("*.jar"))
+//            project.dependencies.add("compileOnly", "$it@jar")
             if (addRuntimeDependencies) {
                 project.dependencies.add("compile", project.project(":${it.split(":")[1]}"))
             }
