@@ -24,7 +24,7 @@ public class ShareServiceImpl implements ShareService {
     }
 
     public String getTest1() {
-        return "ShareServiceImpl test";
+        return "ShareServiceImpl";
     }
 
     @Override

@@ -4,7 +4,7 @@ apply plugin: 'cn.soul.component'
 component {
     logLevel = 5
     dependencies {
-        interfaceApi "cn.soulcpnt.android.exm:sharecomponent:1.0.0-SNAPSHOT", true
+        interfaceApi "cn.soulcpnt.android.exm:sharecomponent:1.2.0-SNAPSHOT", true
     }
 }
 

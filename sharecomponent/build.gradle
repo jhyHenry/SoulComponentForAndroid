@@ -4,7 +4,7 @@ apply plugin: 'cn.soul.component'
 uploadArchives {
     repositories.mavenDeployer {
         pom.project {
-            version = "1.0.0-SNAPSHOT"
+            version = "1.2.0-SNAPSHOT"
             groupId 'cn.soulcpnt.android.exm'
             packaging TYPE
             description 'share'

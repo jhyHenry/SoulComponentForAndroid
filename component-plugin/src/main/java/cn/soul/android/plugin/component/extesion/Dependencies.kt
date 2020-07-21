@@ -23,6 +23,7 @@ open class Dependencies {
     }
 
     fun interfaceApi(mavenUrl: String, local: Boolean) {
+        Log.d("local:${local}")
         if (local) {
             localInterfaceApis.add(mavenUrl)
         } else {

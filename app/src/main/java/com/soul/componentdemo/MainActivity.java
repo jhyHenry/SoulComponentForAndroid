@@ -2,11 +2,18 @@ package com.soul.componentdemo;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import com.soul.share.ShareBean;
+import com.soul.share.service.ShareService;
+
+import cn.soul.android.component.SoulRouter;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -23,23 +30,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         installReadBookBtn = findViewById(R.id.install_share);
         test_share = findViewById(R.id.test_share);
-//        final ShareBean shareBean = new ShareBean("test");
-//        installReadBookBtn.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                SoulRouter.instance().route("/share/ShareActivity").withSerializable("shareBean", shareBean).navigate(MainActivity.this);
-//            }
-//        });
-//
-//        test_share.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                ShareService shareService = SoulRouter.instance().service(ShareService.class);
-//                if (shareService != null) {
-//                    Toast.makeText(MainActivity.this, shareService.getShareName(), Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//        });
+        final ShareBean shareBean = new ShareBean("test");
+        installReadBookBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SoulRouter.instance().route("/share/ShareActivity").withSerializable("shareBean", shareBean).navigate(MainActivity.this);
+            }
+        });
+
+        test_share.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ShareService shareService = SoulRouter.instance().service(ShareService.class);
+                if (shareService != null) {
+                    Toast.makeText(MainActivity.this, shareService.getShareName(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         showFragment();
     }
@@ -51,12 +58,14 @@ public class MainActivity extends AppCompatActivity {
             fragment = null;
         }
 
-//        ShareService shareService = SoulRouter.instance().service(ShareService.class);
-//        if (shareService != null) {
-//            fragment = shareService.getFragment();
-//            ft = getSupportFragmentManager().beginTransaction();
-//            ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
-//        }
+
+        ShareService shareService = SoulRouter.instance().service(ShareService.class);
+
+        if (shareService != null) {
+            fragment = shareService.getFragment();
+            ft = getSupportFragmentManager().beginTransaction();
+            ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
+        }
 
 //        Router router = Router.getInstance();
 //        if (router.getService(ReadBookService.class.getSimpleName()) != null) {

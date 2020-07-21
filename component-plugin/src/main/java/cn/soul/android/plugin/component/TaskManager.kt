@@ -110,10 +110,7 @@ class TaskManager(private val project: Project, private val extension: Component
         val task = taskFactory.register(GenerateInterfaceArtifact.ConfigAction(scope, javaOutput, kotlinOutput))
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         pluginTaskContainer?.genInterface = task.get()
-        if (scope.variantConfiguration.buildType.name != "release") {
-            return
-        }
-        if (project.gradle.startParameter.taskNames.size == 0) {
+        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
             return
         }
         val flavor = getFlavor()
@@ -137,11 +134,7 @@ class TaskManager(private val project: Project, private val extension: Component
      * 上传组件
      */
     fun createUploadTask(scope: VariantScope) {
-        if (scope.variantConfiguration.buildType.name != "release") {
-            return
-        }
-
-        if (project.gradle.startParameter.taskNames.size == 0) {
+        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
             return
         }
         val flavor = getFlavor()
@@ -161,11 +154,7 @@ class TaskManager(private val project: Project, private val extension: Component
      * 依赖本地组件
      */
     fun createLocalTask(scope: VariantScope) {
-        if (scope.variantConfiguration.buildType.name != "release") {
-            return
-        }
-
-        if (project.gradle.startParameter.taskNames.size == 0) {
+        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
             return
         }
         val flavor = getFlavor()
@@ -176,6 +165,7 @@ class TaskManager(private val project: Project, private val extension: Component
             }
         }
         val task = taskFactory.register(LocalComponent.ConfigAction(scope, project))
+        Log.d("register -> LocalComponent")
         pluginTaskContainer?.uploadTask = task.get()
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
@@ -183,11 +173,7 @@ class TaskManager(private val project: Project, private val extension: Component
 
     // 生成本地依赖
     fun createLocalCompileTask(scope: VariantScope) {
-        if (scope.variantConfiguration.buildType.name != "debug") {
-            return
-        }
-
-        if (project.gradle.startParameter.taskNames.size == 0) {
+        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
             return
         }
         val flavor = getFlavor()
@@ -197,6 +183,8 @@ class TaskManager(private val project: Project, private val extension: Component
                 project.artifacts.add("archives", scope.taskContainer.bundleLibraryTask!!)
             }
         }
+
+        // 修改目录
         val task = taskFactory.register(LocalComponent.ConfigAction(scope, project))
         pluginTaskContainer?.uploadTask = task.get()
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
@@ -206,7 +194,6 @@ class TaskManager(private val project: Project, private val extension: Component
 //        val destFile = File(destDir, "${project.name}-interface.jar")
 //        destDir?.mkdirs()
 //        destFile.createNewFile()
-//        project.tasks.findByPath("copytask").
     }
 
     // 混淆

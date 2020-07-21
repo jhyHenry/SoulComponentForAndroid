@@ -110,11 +110,8 @@ class ComponentPlugin : Plugin<Project> {
      * 本地调试时判断有用
      */
     private fun isLibrary(p: Project): Boolean {
-        if (p.name == "app") {
+        if (p.name == "app" || p.gradle.startParameter.taskNames.size == 0) {
             return false
-        }
-        if (p.gradle.startParameter.taskNames.size == 0) {
-            return true
         }
         val taskName = Descriptor.getTaskNameWithoutModule(p.gradle.startParameter.taskNames[0])
         return p.gradle.startParameter.taskNames.size == 1
@@ -189,6 +186,7 @@ class ComponentPlugin : Plugin<Project> {
                 val taskContainer = PluginTaskContainer()
                 mTaskManager.pluginTaskContainer = taskContainer
 
+                // TODO 本地调试资源冲突 abc_anim
                 if (!isLibrary(p = mProject)) {
                     // 改 R 文件名
                     mTaskManager.createPrefixResourcesTask(it)
@@ -209,14 +207,24 @@ class ComponentPlugin : Plugin<Project> {
                     val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
                     Log.d("taskName = $taskName")
                     // 上传 task
-                    if (taskName.startsWith("uploadComponent")) {
-                        mTaskManager.createUploadTask(it)
-                    } else if (taskName.startsWith("localComponent")) {
-                        mTaskManager.createLocalTask(it)
-                    } else if (taskName.startsWith("localCompile")) {
-                        // 本地依赖
-                    } else {
-                        mTaskManager.createLocalTask(it)
+                    when {
+                        taskName.startsWith("uploadComponent") -> {
+                            // 上传远程 maven
+                            mTaskManager.createUploadTask(it)
+                        }
+                        taskName.startsWith("localComponent") -> {
+                            // 上传本地 maven
+                            mTaskManager.createLocalTask(it)
+                        }
+                        taskName.startsWith("localCompile") -> {
+                            Log.d("localCompile")
+                            // 本地依赖
+                            mTaskManager.createLocalCompileTask(it)
+                        }
+                        else -> {
+                            // 上传本地 maven
+                            mTaskManager.createLocalTask(it)
+                        }
                     }
                 }
                 // 插件中直接处理proguard，不需要外部添加
