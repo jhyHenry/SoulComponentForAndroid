@@ -58,8 +58,8 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
             InjectHelper.instance.appendClassPath(it.absolutePath)
             extractClass(it)
         }
-        destDir?.deleteRecursively()
-        val destFile = File(destDir, "interface.jar")
+//        destDir?.deleteRecursively()
+        val destFile = File(destDir, "${project.name}.jar")
         destDir?.mkdirs()
         destFile.createNewFile()
 
@@ -250,10 +250,11 @@ open class GenerateInterfaceArtifact : AndroidVariantTask() {
             task.variantName = scope.fullVariantName
             task.javaSourceDir = javaOutput
             task.kotlinSourceDir = kotlinOutput
-            task.destDir = FileUtils.join(
-                    scope.globalScope.intermediatesDir,
-                    "gen-interface-artifact",
-                    scope.variantConfiguration.dirName)
+            task.destDir = File("${scope.globalScope.intermediatesDir.parentFile.parentFile.parent}/repo/build")
+//            task.destDir = FileUtils.join(
+//                    scope.globalScope.intermediatesDir,
+//                    "gen-interface-artifact",
+//                    scope.variantConfiguration.dirName)
         }
     }
 

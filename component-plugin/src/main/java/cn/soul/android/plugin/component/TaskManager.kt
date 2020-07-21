@@ -114,10 +114,10 @@ class TaskManager(private val project: Project, private val extension: Component
             return
         }
         val flavor = getFlavor()
-        Log.d("flavor:${flavor}")
+        // return ""
         if (flavor != null) {
             if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
-                project.artifacts.add("archives", File(task.get().destDir, "interface.jar"))
+                project.artifacts.add("archives", File(task.get().destDir, "${project.name}.jar"))
             }
         }
     }
@@ -165,7 +165,6 @@ class TaskManager(private val project: Project, private val extension: Component
             }
         }
         val task = taskFactory.register(LocalComponent.ConfigAction(scope, project))
-        Log.d("register -> LocalComponent")
         pluginTaskContainer?.uploadTask = task.get()
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
@@ -176,24 +175,10 @@ class TaskManager(private val project: Project, private val extension: Component
         if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
             return
         }
-        val flavor = getFlavor()
-        if (flavor != null) {
-            if (flavor.toLowerCase(Locale.getDefault()) == scope.variantConfiguration.flavorName) {
-                VariantHelper.setupArchivesConfig(project, scope.variantDependencies.runtimeClasspath)
-                project.artifacts.add("archives", scope.taskContainer.bundleLibraryTask!!)
-            }
-        }
-
-        // 修改目录
-        val task = taskFactory.register(LocalComponent.ConfigAction(scope, project))
+        val task = taskFactory.register(LocalCompile.ConfigAction(project))
         pluginTaskContainer?.uploadTask = task.get()
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
-
-//        val destDir: File? = File("../repo")
-//        val destFile = File(destDir, "${project.name}-interface.jar")
-//        destDir?.mkdirs()
-//        destFile.createNewFile()
     }
 
     // 混淆
@@ -211,6 +196,7 @@ class TaskManager(private val project: Project, private val extension: Component
     private fun getFlavor(): String? {
         val uploadTaskPrefix = "uploadComponent"
         val localTaskPrefix = "localComponent"
+        val localCompile = "localCompile"
         val commonTaskPrefix = "commonLocalComponent"
 
         val startTaskName = Descriptor.getTaskNameWithoutModule(project.gradle.startParameter.taskNames[0])
@@ -223,6 +209,9 @@ class TaskManager(private val project: Project, private val extension: Component
         }
         if (startTaskName.startsWith(uploadTaskPrefix)) {
             return startTaskName.substring(uploadTaskPrefix.length)
+        }
+        if (startTaskName.startsWith(localCompile)) {
+            return startTaskName.substring(localCompile.length)
         }
         return null
     }

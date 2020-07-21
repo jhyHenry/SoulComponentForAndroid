@@ -148,6 +148,7 @@ class ComponentPlugin : Plugin<Project> {
             val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
             return taskName.startsWith("uploadComponent") ||
                     taskName.startsWith("localComponent") ||
+                    taskName.startsWith("localCompile") ||
                     taskName.toLowerCase(Locale.getDefault()).startsWith("bundle") &&
                     taskName.toLowerCase(Locale.getDefault()).endsWith("aar")
         }
@@ -223,7 +224,7 @@ class ComponentPlugin : Plugin<Project> {
                         }
                         else -> {
                             // 上传本地 maven
-                            mTaskManager.createLocalTask(it)
+//                            mTaskManager.createLocalTask(it)
                         }
                     }
                 }
