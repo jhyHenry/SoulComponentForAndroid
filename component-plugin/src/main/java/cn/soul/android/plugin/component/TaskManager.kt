@@ -3,7 +3,6 @@ package cn.soul.android.plugin.component
 import cn.soul.android.plugin.component.extesion.ComponentExtension
 import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.utils.Descriptor
-import cn.soul.android.plugin.component.utils.Log
 import com.android.SdkConstants
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.BuildArtifactsHolder
@@ -168,6 +167,12 @@ class TaskManager(private val project: Project, private val extension: Component
         pluginTaskContainer?.uploadTask = task.get()
         task.get().dependsOn(scope.taskContainer.bundleLibraryTask)
         task.get().dependsOn(pluginTaskContainer?.genInterface!!)
+
+//        val taskAssemble: Task? = project.tasks.findByName("build")
+//        Log.d("tasksbuild")
+//        taskAssemble?.name?.let { Log.d(it) }
+//        taskAssemble?.dependsOn(scope.taskContainer.bundleLibraryTask)
+//        taskAssemble?.dependsOn(pluginTaskContainer?.genInterface!!)
     }
 
     // 生成本地依赖

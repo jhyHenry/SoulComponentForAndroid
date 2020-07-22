@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
+import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.artifact.BuildableArtifact
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.ExistingBuildElements
@@ -72,6 +73,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
     @get:Internal
     lateinit var packageForRSupplier: Supplier<String>
         private set
+
     @Suppress("MemberVisibilityCanBePrivate")
     @get:Input
     val packageForR
@@ -85,6 +87,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
     @get:Internal
     lateinit var applicationIdSupplier: Supplier<String>
         private set
+
     @get:Input
     val applicationId
         get() = applicationIdSupplier.get()
@@ -198,6 +201,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
                 task.proguardOutputFile = variantScope.processAndroidResourcesProguardOutputFile
             }
 
+            Log.d("originalApplicationId:${variantScope.variantConfiguration.originalApplicationId}")
             task.packageForRSupplier = TaskInputHelper.memoize {
                 Strings.nullToEmpty(variantScope.variantConfiguration.originalApplicationId)
             }

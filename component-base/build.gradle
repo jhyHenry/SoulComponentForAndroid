@@ -32,8 +32,6 @@ android.libraryVariants.all { variant ->
     artifacts.add('archives', task)
 }
 
-parseLocalProperties()
-
 uploadArchives {
     def local = LOCAL == "1"
     repositories.mavenDeployer {
@@ -47,7 +45,7 @@ uploadArchives {
         pom.project {
             groupId 'cn.soul.android.module'
             artifactId 'component'
-            version '1.1.6'
+            version '1.2.0'
             packaging TYPE
             description DESCRIPTION
         }

@@ -42,22 +42,45 @@ open class Dependencies {
 
     internal fun appendInterfaceApis(project: Project, addRuntimeDependencies: Boolean) {
         Log.d("appendInterfaceApis$localInterfaceApis")
+        Log.d("debugComponent:" + project.rootProject.properties["debugComponent"].toString())
+
+        val debugComponents = project.rootProject.properties["debugComponent"].toString().split(",")
+
         // 组件远程依赖
         interfaceApis.forEach {
-            Log.d("compileOnly:${it}")
-            project.dependencies.add("compileOnly", "$it@jar")
+            val compName = it.split(":")[1]
+            val contains: Boolean = debugComponents.contains(compName)
+            // 判断本地依赖
+            if (contains) {
+                project.dependencies.add("compileOnly", project.fileTree("${project.rootDir}/repo/build").include("*.jar"))
+            } else {
+                project.dependencies.add("compileOnly", "$it@jar")
+            }
+
             if (addRuntimeDependencies) {
-                project.dependencies.add("implementation", "$it@aar")
+                if (contains) {
+                    val fileExists = File("${project.rootDir}/${compName}/build/outputs/aar/${compName}-debug.aar").exists()
+                    Log.d("${project.rootDir}/${compName}/build/outputs/aar/*-debug.aar fileExists${fileExists}")
+//                    if (fileExists) {
+                    project.dependencies.add("compile", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("*-debug.aar"))
+//                    } else {
+//                        project.dependencies.add("implementation", project.project(":${compName}"))
+//                    }
+                } else {
+                    project.dependencies.add("implementation", "$it@aar")
+                }
             }
         }
 
         // 组件本地依赖
         localInterfaceApis.forEach {
-            Log.d("compileOnly:${it}${project.rootDir}")
-            project.dependencies.add("compileOnly", project.project.fileTree("${project.rootDir}/repo/build").include("*.jar"))
-//            project.dependencies.add("compileOnly", "$it@jar")
+            project.dependencies.add("compileOnly", project.fileTree("${project.rootDir}/repo/build").include("*.jar"))
             if (addRuntimeDependencies) {
-                project.dependencies.add("compile", project.project(":${it.split(":")[1]}"))
+                val arr = it.split(":")
+                val compName: String
+                compName = if (arr.size > 1) arr[1] else it
+//                project.dependencies.add("implementation", project.(":${compName}"))
+                project.dependencies.add("implementation", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("*-debug.aar"))
             }
         }
     }

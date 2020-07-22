@@ -2,4 +2,3 @@ include ':component-plugin',
         ':component-base',
         ':sharecomponent',
         ':app'
-

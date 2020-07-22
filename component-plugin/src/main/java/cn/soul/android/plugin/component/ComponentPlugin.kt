@@ -116,7 +116,7 @@ class ComponentPlugin : Plugin<Project> {
         val taskName = Descriptor.getTaskNameWithoutModule(p.gradle.startParameter.taskNames[0])
         return p.gradle.startParameter.taskNames.size == 1
                 && Descriptor.getTaskModuleName(p.gradle.startParameter.taskNames[0]) != p.name
-                && (taskName.startsWith("assemble") || taskName.startsWith("install") || taskName.startsWith("bundle"))
+                && (taskName.startsWith("assemble"))
     }
 
     /**
@@ -187,13 +187,11 @@ class ComponentPlugin : Plugin<Project> {
                 val taskContainer = PluginTaskContainer()
                 mTaskManager.pluginTaskContainer = taskContainer
 
+                // 改 R 文件名
+                mTaskManager.createPrefixResourcesTask(it)
                 // TODO 本地调试资源冲突 abc_anim
-                if (!isLibrary(p = mProject)) {
-                    // 改 R 文件名
-                    mTaskManager.createPrefixResourcesTask(it)
-                    // 重新生成 R 文件
-                    mTaskManager.createGenerateSymbolTask(it)
-                }
+                // 重新生成 R 文件
+                mTaskManager.createGenerateSymbolTask(it)
 
                 // manifest
                 mTaskManager.createRefineManifestTask(it)
@@ -206,6 +204,7 @@ class ComponentPlugin : Plugin<Project> {
                 val taskNames = gradle.startParameter.taskNames
                 if (taskNames.size != 0) {
                     val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
+                    val taskModule = Descriptor.getTaskModuleName(taskNames[0])
                     Log.d("taskName = $taskName")
                     // 上传 task
                     when {
@@ -218,7 +217,6 @@ class ComponentPlugin : Plugin<Project> {
                             mTaskManager.createLocalTask(it)
                         }
                         taskName.startsWith("localCompile") -> {
-                            Log.d("localCompile")
                             // 本地依赖
                             mTaskManager.createLocalCompileTask(it)
                         }
@@ -236,6 +234,22 @@ class ComponentPlugin : Plugin<Project> {
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
                 // mTaskManager.createReplaceManifestTask(it)
+
+//                val variantType = it.variantData.type
+//                if (variantType.isTestComponent) {
+//                    // continue , do not create task for test variant
+//                    return@forEach
+//                }
+//
+//                val taskContainer = PluginTaskContainer()
+//                mTaskManager.pluginTaskContainer = taskContainer
+//
+//                // 改 R 文件名
+//                mTaskManager.createPrefixResourcesTask(it)
+//                // TODO 本地调试资源冲突 abc_anim
+//                // 重新生成 R 文件
+//                mTaskManager.createGenerateSymbolTask(it)
+
                 mTaskManager.applyProguard(mProject, it)
             }
         }

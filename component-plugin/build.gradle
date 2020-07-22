@@ -11,7 +11,7 @@ dependencies {
     implementation 'org.javassist:javassist:3.26.0-GA'
     implementation 'org.dom4j:dom4j:2.1.1'
 //    implementation project(":component-base")
-    implementation 'cn.soul.android.module:component:1.1.6@jar'
+    implementation 'cn.soul.android.module:component:1.2.0@jar'
     implementation 'net.sf.json-lib:json-lib:2.4:jdk13'
     implementation localGroovy()
     //gradle sdk
@@ -19,8 +19,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version" //gradle sdk
     implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"//gradle plugin
 }
-
-parseLocalProperties()
 
 uploadArchives {
     def local = LOCAL == "1"
@@ -35,7 +33,7 @@ uploadArchives {
         pom.project {
             groupId 'cn.soul.android.plugin'
             artifactId 'component-plugin'
-            version '1.1.85'
+            version '1.2.0'
             packaging TYPE
             description DESCRIPTION
         }

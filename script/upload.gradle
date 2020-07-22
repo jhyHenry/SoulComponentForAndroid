@@ -4,21 +4,25 @@ def repo = 'file://' + new File(System.getProperty('user.home'), '.m2/repository
 //println('file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath)
 //println(getProjectDir().absolutePath)
 
-ext {
-    parseLocalProperties = this.&parseLocalProperties
-    def localMavenRepo = repo
-    ext.localMavenRepo = localMavenRepo
-}
-
-def parseLocalProperties() {
-    def file = rootProject.file('local.properties')
-    if (file.exists()) {
-
-        def inputStream = rootProject.file('local.properties').newDataInputStream();
-        def properties = new Properties()
-        properties.load(inputStream)
-        properties.propertyNames().each {
-            ext.set(it, properties.getProperty(it))
-        }
+def file = rootProject.file('local.properties')
+if (file.exists()) {
+    def inputStream = rootProject.file('local.properties').newDataInputStream();
+    def properties = new Properties()
+    properties.load(inputStream)
+    properties.propertyNames().each {
+        println('local.properties：' + properties.getProperty(it))
+        ext.set(it, properties.getProperty(it))
     }
 }
+def localMavenRepo = repo
+ext.set("localMavenRepo", localMavenRepo)
+
+//ext {
+//    parseLocalProperties = this.&parseLocalProperties
+//    def localMavenRepo = repo
+//    ext.localMavenRepo = localMavenRepo
+//}
+
+//def parseLocalProperties() {
+//
+//}

@@ -21,13 +21,13 @@ open class LocalCompile : DefaultTask() {
     }
 
     class ConfigAction(val project: Project)
-        : TaskCreationAction<CommonLocalComponent>() {
+        : TaskCreationAction<LocalCompile>() {
         override val name: String
             get() = "localCompile"
-        override val type: Class<CommonLocalComponent>
-            get() = CommonLocalComponent::class.java
+        override val type: Class<LocalCompile>
+            get() = LocalCompile::class.java
 
-        override fun configure(task: CommonLocalComponent) {
+        override fun configure(task: LocalCompile) {
 
         }
     }

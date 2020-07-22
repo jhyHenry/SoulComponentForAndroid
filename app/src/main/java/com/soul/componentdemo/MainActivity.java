@@ -18,8 +18,8 @@ import cn.soul.android.component.SoulRouter;
 
 public class MainActivity extends AppCompatActivity {
 
-    static Fragment fragment;
-    static FragmentTransaction ft;
+    Fragment fragment;
+    FragmentTransaction ft;
 
     Button installReadBookBtn;
     Button test_share;
@@ -63,8 +63,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (shareService != null) {
             fragment = shareService.getFragment();
-            ft = getSupportFragmentManager().beginTransaction();
-            ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
+            if (fragment != null) {
+                ft = getSupportFragmentManager().beginTransaction();
+                ft.add(R.id.tab_content, fragment).commitAllowingStateLoss();
+            }
         }
 
 //        Router router = Router.getInstance();
