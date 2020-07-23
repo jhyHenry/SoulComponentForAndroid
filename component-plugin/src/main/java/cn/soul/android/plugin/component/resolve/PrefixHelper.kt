@@ -85,13 +85,13 @@ class PrefixHelper {
                     it.renameTo(File(it.parentFile, prefix + it.name))
                     Log.d(it.parentFile.absolutePath + prefix + it.name)
                 }
-        val documents: Array<Document> = arrayOf(reader.read(File(dir, "values/values.xml")))
+        val documents: Array<Document> = Array(2) { reader.read(File(dir, "values/values.xml")) }
         if (File(dir, "values-zh-rTW/values-zh-rTW.xml").exists()) {
-            documents[documents.size] = reader.read(File(dir, "values-zh-rTW/values-zh-rTW.xml"))
+            documents[documents.size - 1] = reader.read(File(dir, "values-zh-rTW/values-zh-rTW.xml"))
         }
 
         documents.forEach {
-            val root = it.rootElement
+            val root = it.rootElement ?: return@forEach
             root.elementIterator().forEach {
                 var type = it.name
                 // handle special type. eg:[string-array]
@@ -145,11 +145,20 @@ class PrefixHelper {
             return
         }
         element.elementIterator().forEach {
+
+            // 特殊类型转换 string-array array
+            if (attributeNameTypeMap.containsKey(it.name)) {
+                it.name = attributeNameTypeMap[it.name]
+            }
+
             if (!accessTypeSet.contains(it.name)) {
+                Log.d("wrong values attribute: ${it.name}, skip prefix.")
                 return@forEach
             }
+
             val attribute = it.attribute("name")
             attribute.value = prefix + attribute.value
+            Log.d("prefix values attribute: ${attribute.value}")
             if (it.text.startsWith('@')) {
                 it.text = prefixElementText(it.text)
             }
@@ -212,8 +221,8 @@ class PrefixHelper {
         val content = symbolTableWithPackageName!!.readText().split("\n")
         componentResMap.forEach { out ->
             out.value.forEach {
-                val attr = "${out.key} ${prefix}${it}"
-//                Log.d(attr)
+                val attr = "${out.key} ${prefix}${it}".replace(".", "_")
+                Log.d(attr)
                 if (!content.contains(attr)) throw RGenerateException(attr)
             }
         }

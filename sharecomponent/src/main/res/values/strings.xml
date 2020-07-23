@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">关注成功</string>
+
+
+    <string-array name="avatar_planetb">
+        <item>avatar-1558935098314-07062</item>
+        <item>avatar-1555989818231-04951</item>
+        <item>avatar-1556088359742-03561</item>
+        <item>avatar-1557388508720-04601</item>
+        <item>avatar-1556005475505-00650</item>
+    </string-array>
+
 </resources>
