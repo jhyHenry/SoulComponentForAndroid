@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.resolve
 
+import cn.soul.android.plugin.component.exception.RGenerateException
 import cn.soul.android.plugin.component.utils.Log
 import org.dom4j.Document
 import org.dom4j.Element
@@ -61,9 +62,10 @@ class PrefixHelper {
     // 有些资源类型 xml中和R中不一样，这里做转换
     private val attributeNameTypeMap = hashMapOf("string-array" to "array")
 
-    private val componentResMap = hashMapOf<String, HashSet<String>>()
     private val reader: SAXReader = SAXReader()
+    val componentResMap = hashMapOf<String, HashSet<String>>()
     var prefix = ""
+    var symbolTableWithPackageName: File? = null
 
     // 第一遍遍历所有资源，确定需要处理的资源范围
     fun initWithPackagedRes(prefix: String, dir: File) {
@@ -190,6 +192,25 @@ class PrefixHelper {
         }
         root.elementIterator().forEach {
             elementTraversal(it, callback)
+        }
+    }
+
+    fun checkRValid() {
+        if (symbolTableWithPackageName == null) throw RGenerateException("symbolTableWithPackageName == null")
+        // 文件生成失败抛异常
+//        if (symbolTableWithPackageName!!.exists()) {
+//            Log.d(symbolTableWithPackageName.toString())
+//            throw RGenerateException(symbolTableWithPackageName.toString())
+//        }
+
+        // 文件生成失败抛异常
+        val content = symbolTableWithPackageName!!.readText().split("\n")
+        componentResMap.forEach { out ->
+            out.value.forEach {
+                val attr = "${out.key} ${prefix}${it}"
+//                Log.d(attr)
+                if (!content.contains(attr)) throw RGenerateException(attr)
+            }
         }
     }
 

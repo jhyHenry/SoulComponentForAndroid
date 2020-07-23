@@ -78,6 +78,7 @@ class PrefixRActuator(private val project: Project, isComponent: Boolean) : Type
     }
 
     override fun postTransform(transformInvocation: TransformInvocation) {
+        PrefixHelper.instance.checkRValid()
     }
 
     /**

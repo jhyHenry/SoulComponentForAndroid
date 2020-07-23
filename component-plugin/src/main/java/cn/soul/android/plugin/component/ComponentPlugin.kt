@@ -186,6 +186,9 @@ class ComponentPlugin : Plugin<Project> {
             val variantManager = libPlugin.variantManager
             variantManager.variantScopes.forEach {
                 val variantType = it.variantData.type
+                val gradle = mProject.gradle
+                val taskNames = gradle.startParameter.taskNames
+
                 if (variantType.isTestComponent) {
                     // continue , do not create task for test variant
                     return@forEach
@@ -206,9 +209,6 @@ class ComponentPlugin : Plugin<Project> {
                 // 开发阶段引用 jar 包
                 mTaskManager.createGenInterfaceArtifactTask(it)
 
-                // 这里创建上传任务，结合maven仓库插件简化上传流程
-                val gradle = mProject.gradle
-                val taskNames = gradle.startParameter.taskNames
                 if (taskNames.size != 0) {
                     val taskName = Descriptor.getTaskNameWithoutModule(taskNames[0])
                     val taskModule = Descriptor.getTaskModuleName(taskNames[0])
@@ -241,22 +241,6 @@ class ComponentPlugin : Plugin<Project> {
             val variantManager = appPlugin.variantManager
             variantManager.variantScopes.forEach {
                 // mTaskManager.createReplaceManifestTask(it)
-
-//                val variantType = it.variantData.type
-//                if (variantType.isTestComponent) {
-//                    // continue , do not create task for test variant
-//                    return@forEach
-//                }
-//
-//                val taskContainer = PluginTaskContainer()
-//                mTaskManager.pluginTaskContainer = taskContainer
-//
-//                // 改 R 文件名
-//                mTaskManager.createPrefixResourcesTask(it)
-//                // TODO 本地调试资源冲突 abc_anim
-//                // 重新生成 R 文件
-//                mTaskManager.createGenerateSymbolTask(it)
-
                 mTaskManager.applyProguard(mProject, it)
             }
         }

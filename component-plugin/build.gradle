@@ -33,7 +33,7 @@ uploadArchives {
         pom.project {
             groupId 'cn.soul.android.plugin'
             artifactId 'component-plugin'
-            version '1.2.3'
+            version '1.2.4'
             packaging TYPE
             description DESCRIPTION
         }

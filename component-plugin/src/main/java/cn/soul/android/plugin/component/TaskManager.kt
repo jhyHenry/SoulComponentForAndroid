@@ -1,8 +1,11 @@
 package cn.soul.android.plugin.component
 
+import cn.soul.android.plugin.component.exception.RGenerateException
 import cn.soul.android.plugin.component.extesion.ComponentExtension
+import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.tasks.*
 import cn.soul.android.plugin.component.utils.Descriptor
+import cn.soul.android.plugin.component.utils.Log
 import com.android.SdkConstants
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.scope.BuildArtifactsHolder
@@ -61,6 +64,11 @@ class TaskManager(private val project: Project, private val extension: Component
     }
 
     fun createGenerateSymbolTask(scope: VariantScope) {
+
+        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
+            return
+        }
+
         val dir = File(scope.globalScope.intermediatesDir,
                 "symbols/" + scope.variantData.variantConfiguration.dirName)
         val symbol = File(dir, SdkConstants.FN_RESOURCE_TEXT)
@@ -70,10 +78,15 @@ class TaskManager(private val project: Project, private val extension: Component
                 "symbol-table-with-package",
                 scope.variantConfiguration.dirName,
                 "package-aware-r.txt")
+
+        val externalDir = File(scope.globalScope.intermediatesDir, "Khala-PrefixRFile")
+        // 存储合成R文件
+        PrefixHelper.instance.symbolTableWithPackageName = symbolTableWithPackageName
+
         val task = taskFactory.register(GenerateSymbol.CreationAction(scope,
                 symbol,
                 symbolTableWithPackageName,
-                File(scope.globalScope.intermediatesDir, "Khala-PrefixRFile")))
+                externalDir))
         scope.artifacts.createBuildableArtifact(
                 InternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME,
                 BuildArtifactsHolder.OperationType.TRANSFORM,
@@ -190,7 +203,7 @@ class TaskManager(private val project: Project, private val extension: Component
 
     // 混淆
     fun applyProguard(project: Project, scope: VariantScope) {
-        if (scope.variantConfiguration.buildType.name != "release") {
+        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
             return
         }
         val proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${scope.fullVariantName.capitalize()}")

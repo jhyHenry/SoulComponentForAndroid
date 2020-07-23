@@ -1,5 +1,7 @@
 package cn.soul.android.plugin.component.tasks
 
+import cn.soul.android.plugin.component.exception.RGenerateException
+import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.api.artifact.BuildableArtifact
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -103,6 +105,10 @@ open class GenerateSymbol : ProcessAndroidResources() {
 
     @Throws(IOException::class)
     override fun doFullTaskAction() {
+
+        // 删除旧文件
+        symbolsWithPackageNameOutputFile.deleteOnExit()
+
         val manifest = Iterables.getOnlyElement(
                 ExistingBuildElements.from(InternalArtifactType.MERGED_MANIFESTS, manifestFiles))
                 .outputFile
@@ -129,6 +135,7 @@ open class GenerateSymbol : ProcessAndroidResources() {
                 textSymbolOutputFile.toPath(),
                 manifest.toPath(),
                 symbolsWithPackageNameOutputFile.toPath())
+        PrefixHelper.instance.checkRValid()
     }
 
     private fun getAndroidAttrSymbols(androidJar: File) =

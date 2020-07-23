@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.tasks
 
+import cn.soul.android.plugin.component.exception.RGenerateException
 import cn.soul.android.plugin.component.resolve.PrefixHelper
 import cn.soul.android.plugin.component.utils.Log
 import com.android.build.gradle.internal.scope.VariantScope
