@@ -32,24 +32,24 @@ android.libraryVariants.all { variant ->
     artifacts.add('archives', task)
 }
 
-uploadArchives {
-    def local = LOCAL == "1"
-    repositories.mavenDeployer {
-        if (local) {
-            repository(url: uri(localMavenRepo))
-        } else {
-            repository(url: MAVEN_REPO_RELEASE_URL) {
-                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
-            }
-        }
-        pom.project {
-            groupId 'cn.soul.android.module'
-            artifactId 'component'
-            version '1.2.0'
-            packaging TYPE
-            description DESCRIPTION
-        }
-    }
-}
+//uploadArchives {
+//    def local = LOCAL == "1"
+//    repositories.mavenDeployer {
+//        if (local) {
+//            repository(url: uri(localMavenRepo))
+//        } else {
+//            repository(url: MAVEN_REPO_RELEASE_URL) {
+//                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+//            }
+//        }
+//        pom.project {
+//            groupId 'cn.soul.android.module'
+//            artifactId 'component'
+//            version '1.2.0'
+//            packaging TYPE
+//            description DESCRIPTION
+//        }
+//    }
+//}
 
 // ./gradlew assembleDebug -Dorg.gradle.daemon=false -Dorg.gradle.debug=true

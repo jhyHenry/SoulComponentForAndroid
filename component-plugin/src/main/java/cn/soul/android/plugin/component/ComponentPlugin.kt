@@ -110,13 +110,20 @@ class ComponentPlugin : Plugin<Project> {
      * 本地调试时判断有用
      */
     private fun isLibrary(p: Project): Boolean {
-        if (p.name == "app" || p.gradle.startParameter.taskNames.size == 0) {
-            return false
-        }
-        val taskName = Descriptor.getTaskNameWithoutModule(p.gradle.startParameter.taskNames[0])
-        return p.gradle.startParameter.taskNames.size == 1
-                && Descriptor.getTaskModuleName(p.gradle.startParameter.taskNames[0]) != p.name
-                && (taskName.startsWith("assemble"))
+        var mainComponent = p.rootProject.properties["mainComponent"].toString()
+        if (mainComponent == "" || mainComponent == "null") mainComponent = "app"
+        Log.d("mainComponent${mainComponent}")
+        return p.name != mainComponent
+//
+//        Log.d("debugComponent:" + project.rootProject.properties["debugComponent"].toString())
+//
+//        if (p.name == "app" || p.gradle.startParameter.taskNames.size == 0) {
+//            return false
+//        }
+//        val taskName = Descriptor.getTaskNameWithoutModule(p.gradle.startParameter.taskNames[0])
+//        return p.gradle.startParameter.taskNames.size == 1
+//                && Descriptor.getTaskModuleName(p.gradle.startParameter.taskNames[0]) != p.name
+//                && (taskName.startsWith("assemble"))
     }
 
     /**

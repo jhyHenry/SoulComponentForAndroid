@@ -59,12 +59,12 @@ open class Dependencies {
 
             if (addRuntimeDependencies) {
                 if (contains) {
-                    val fileExists = File("${project.rootDir}/${compName}/build/outputs/aar/${compName}-debug.aar").exists()
+                    val fileExists = File("${project.rootDir}/${compName}/build/outputs/aar/${compName}-release.aar").exists()
                     Log.d("${project.rootDir}/${compName}/build/outputs/aar/*-debug.aar fileExists${fileExists}")
 //                    if (fileExists) {
-                    project.dependencies.add("compile", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("*-debug.aar"))
+                    project.dependencies.add("compile", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("*-release.aar"))
 //                    } else {
-//                        project.dependencies.add("implementation", project.project(":${compName}"))
+//                    project.dependencies.add("implementation", project.project(":${compName}"))
 //                    }
                 } else {
                     project.dependencies.add("implementation", "$it@aar")
@@ -80,7 +80,7 @@ open class Dependencies {
                 val compName: String
                 compName = if (arr.size > 1) arr[1] else it
 //                project.dependencies.add("implementation", project.(":${compName}"))
-                project.dependencies.add("implementation", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("*-debug.aar"))
+                project.dependencies.add("implementation", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("*-release.aar"))
             }
         }
     }

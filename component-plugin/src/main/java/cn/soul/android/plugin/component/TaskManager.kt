@@ -133,7 +133,8 @@ class TaskManager(private val project: Project, private val extension: Component
      * 上传组件
      */
     fun createUploadTask(scope: VariantScope) {
-        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
+        // scope.variantConfiguration.buildType.name != "release" ||
+        if (project.gradle.startParameter.taskNames.size == 0) {
             return
         }
         val flavor = getFlavor()
@@ -153,7 +154,8 @@ class TaskManager(private val project: Project, private val extension: Component
      * 依赖本地组件
      */
     fun createLocalTask(scope: VariantScope) {
-        if (scope.variantConfiguration.buildType.name != "release" || project.gradle.startParameter.taskNames.size == 0) {
+        // scope.variantConfiguration.buildType.name != "release" ||
+        if (project.gradle.startParameter.taskNames.size == 0) {
             return
         }
         val flavor = getFlavor()
@@ -188,6 +190,9 @@ class TaskManager(private val project: Project, private val extension: Component
 
     // 混淆
     fun applyProguard(project: Project, scope: VariantScope) {
+        if (scope.variantConfiguration.buildType.name != "release") {
+            return
+        }
         val proguardTask = project.tasks.findByName("transformClassesAndResourcesWithProguardFor${scope.fullVariantName.capitalize()}")
         if (proguardTask is TransformTask) {
             val transform = proguardTask.transform

@@ -35,7 +35,7 @@ public class ShareActivity extends AppCompatActivity {
         tvAuthor = findViewById(R.id.share_tv_author);
         tvCounty = findViewById(R.id.share_tv_county);
 
-        tvShareTitle.setText("Book1234567890");
+        tvShareTitle.setText("Book");
 
         if (bookName != null) {
             tvShareBook.setText(bookName);
