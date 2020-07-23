@@ -1,6 +1,7 @@
 package cn.soul.android.plugin.component.resolve
 
 import cn.soul.android.plugin.component.utils.Log
+import org.dom4j.Document
 import org.dom4j.Element
 import org.dom4j.io.SAXReader
 import org.dom4j.io.XMLWriter
@@ -72,7 +73,7 @@ class PrefixHelper {
         require(dir.parent != "packaged_res") {
             "error dir, prefixHelper must receive packaged_res/\$variantName dir."
         }
-        dir.walk().filter { it.isFile && it.name != "values.xml" }
+        dir.walk().filter { it.isFile && !(it.name.startsWith("values") && it.name.endsWith(".xml")) }
                 .forEach {
                     // obtain res type, split name because of Android resources dimens. eg:<resources_name>-<config_qualifier>
                     val type = it.parentFile.name.split('-')[0]
@@ -82,19 +83,21 @@ class PrefixHelper {
                     it.renameTo(File(it.parentFile, prefix + it.name))
                     Log.d(it.parentFile.absolutePath + prefix + it.name)
                 }
-        val document = reader.read(File(dir, "values/values.xml"))
-        val root = document.rootElement
-        root.elementIterator().forEach {
-            var type = it.name
-            // handle special type. eg:[string-array]
-            if (attributeNameTypeMap.containsKey(type)) {
-                type = attributeNameTypeMap[type]
+        val documents: Array<Document> = arrayOf(reader.read(File(dir, "values/values.xml")), reader.read(File(dir, "values-zh-rTW/values-zh-rTW.xml")))
+        documents.forEach {
+            val root = it.rootElement
+            root.elementIterator().forEach {
+                var type = it.name
+                // handle special type. eg:[string-array]
+                if (attributeNameTypeMap.containsKey(type)) {
+                    type = attributeNameTypeMap[type]
+                }
+                if (!accessTypeSet.contains(type)) {
+                    return@forEach
+                }
+                val attribute = it.attribute("name")
+                componentResMap.computeIfAbsent(type) { hashSetOf() }.add(attribute.value)
             }
-            if (!accessTypeSet.contains(type)) {
-                return@forEach
-            }
-            val attribute = it.attribute("name")
-            componentResMap.computeIfAbsent(type) { hashSetOf() }.add(attribute.value)
         }
         componentResMap.forEach {
             Log.d("${it.key}:")

@@ -27,6 +27,7 @@ open class PrefixResources : AndroidVariantTask() {
                     PrefixHelper.instance.prefixResourceFile(it)
                 }
         PrefixHelper.instance.prefixValues(File(folder, "values/values.xml"))
+        PrefixHelper.instance.prefixValues(File(folder, "values-zh-rTW/values-zh-rTW.xml"))
         Log.i("prefix resources cost: ${System.currentTimeMillis() - startTime}ms")
     }
 
