@@ -85,7 +85,11 @@ class PrefixHelper {
                     it.renameTo(File(it.parentFile, prefix + it.name))
                     Log.d(it.parentFile.absolutePath + prefix + it.name)
                 }
-        val documents: Array<Document> = arrayOf(reader.read(File(dir, "values/values.xml")), reader.read(File(dir, "values-zh-rTW/values-zh-rTW.xml")))
+        val documents: Array<Document> = arrayOf(reader.read(File(dir, "values/values.xml")))
+        if (File(dir, "values-zh-rTW/values-zh-rTW.xml").exists()) {
+            documents[documents.size] = reader.read(File(dir, "values-zh-rTW/values-zh-rTW.xml"))
+        }
+
         documents.forEach {
             val root = it.rootElement
             root.elementIterator().forEach {
@@ -133,6 +137,7 @@ class PrefixHelper {
     }
 
     fun prefixValues(file: File) {
+        if (!file.exists()) return
         val document = reader.read(file)
         val element = document.rootElement
         if (element.name != "resources") {
