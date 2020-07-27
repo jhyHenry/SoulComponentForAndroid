@@ -1,28 +1,28 @@
 //apply plugin: 'com.android.application'
 apply plugin: 'cn.soul.component'
 
-uploadArchives {
-    repositories.mavenDeployer {
-        pom.project {
-            version = "1.2.0-SNAPSHOT"
-            groupId 'cn.soulcpnt.android.exm'
-            packaging TYPE
-            description 'share'
-        }
-
-        if (pom.version.contains("SNAPSHOT")) {
-            print '-----------------------SNAPSHOT-------------------------------'
-            repository(url: MAVEN_REPO_SNAPSHOT_URL) {
-                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
-            }
-        } else {
-            print '-----------------------release--------------------------------'
-            repository(url: MAVEN_REPO_RELEASE_URL) {
-                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
-            }
-        }
-    }
-}
+//uploadArchives {
+//    repositories.mavenDeployer {
+//        pom.project {
+//            version = "1.2.1-SNAPSHOT"
+//            groupId 'cn.soulcpnt.android.exm'
+//            packaging TYPE
+//            description 'share'
+//        }
+//
+//        if (pom.version.contains("SNAPSHOT")) {
+//            print '-----------------------SNAPSHOT-------------------------------'
+//            repository(url: MAVEN_REPO_SNAPSHOT_URL) {
+//                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+//            }
+//        } else {
+//            print '-----------------------release--------------------------------'
+//            repository(url: MAVEN_REPO_RELEASE_URL) {
+//                authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+//            }
+//        }
+//    }
+//}
 
 android {
     compileSdkVersion 28
@@ -50,8 +50,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility "1.8"
+        targetCompatibility "1.8"
     }
 
     resourcePrefix "share_"
@@ -73,7 +73,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
-    implementation 'cn.soul.android.module:component:1.2.0@jar'
+    implementation 'cn.soul.android.module:component:1.2.1@jar'
     implementation 'androidx.fragment:fragment:1.2.5'
     implementation 'androidx.appcompat:appcompat:1.1.0'
 }

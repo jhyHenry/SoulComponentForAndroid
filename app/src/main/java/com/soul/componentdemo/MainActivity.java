@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+//        Toast.makeText(this, getResources().getStringArray(R.array.avatar_planetb)[0], 2000).show();
         installReadBookBtn = findViewById(R.id.install_share);
         test_share = findViewById(R.id.test_share);
         final ShareBean shareBean = new ShareBean("test");

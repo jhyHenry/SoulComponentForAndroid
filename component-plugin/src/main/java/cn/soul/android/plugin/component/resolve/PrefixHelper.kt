@@ -159,7 +159,7 @@ class PrefixHelper {
             val attribute = it.attribute("name")
             attribute.value = prefix + attribute.value
             Log.d("prefix values attribute: ${attribute.value}")
-            if (it.text.startsWith('@')) {
+             if (it.text.startsWith('@')) {
                 it.text = prefixElementText(it.text)
             }
         }

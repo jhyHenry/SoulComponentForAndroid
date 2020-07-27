@@ -4,6 +4,7 @@ import com.google.common.io.LittleEndianDataOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataOutput
 import java.io.IOException
+import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
@@ -35,14 +36,16 @@ class StringPoolChunk(header: ChunkHeader) : BaseChunk(header) {
         strings.addAll(readStrings(buff, offset + stringStart, stringCount))
         styles.clear()
         styles.addAll(readStyles(buff, offset + styleStart, styleCount))
-        buff.position(offset + header.size)
+
+        val baseBuffer: Buffer = buff
+        baseBuffer.position(offset + header.size)
     }
 
-    fun getString(index: Int):String {
+    fun getString(index: Int): String {
         return strings[index]
     }
 
-    fun setString(index: Int, str:String) {
+    fun setString(index: Int, str: String) {
         strings[index] = str
     }
 

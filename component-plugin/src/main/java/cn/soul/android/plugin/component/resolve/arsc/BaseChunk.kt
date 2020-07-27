@@ -1,5 +1,6 @@
 package cn.soul.android.plugin.component.resolve.arsc
 
+import java.nio.Buffer
 import java.nio.ByteBuffer
 
 abstract class BaseChunk(var header: ChunkHeader) : SerializableResource {
@@ -43,7 +44,8 @@ abstract class BaseChunk(var header: ChunkHeader) : SerializableResource {
     }
 
     fun initContent(buff: ByteBuffer) {
-        offset = buff.position() - ChunkHeader.headerSize()
+        val baseBuff: Buffer = buff
+        offset = baseBuff.position() - ChunkHeader.headerSize()
         init(buff)
     }
 
@@ -58,7 +60,7 @@ abstract class BaseChunk(var header: ChunkHeader) : SerializableResource {
 
     open fun headerSize() = header.headerSize
 
-    open fun totalSize():Int {
+    open fun totalSize(): Int {
         return 0
     }
 

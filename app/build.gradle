@@ -4,7 +4,7 @@ apply plugin: 'cn.soul.component'
 component {
     logLevel = 5
     dependencies {
-        interfaceApi "cn.soulcpnt.android.exm:sharecomponent:1.2.0-SNAPSHOT"
+        interfaceApi "cn.soulcpnt.android.exm:sharecomponent:1.2.1-SNAPSHOT"
     }
 }
 
@@ -44,6 +44,11 @@ android {
         abortOnError false
     }
 
+    compileOptions {
+        targetCompatibility = "1.8"
+        sourceCompatibility = "1.8"
+    }
+
     configurations.all {
         resolutionStrategy {
         }
@@ -52,7 +57,7 @@ android {
 
 dependencies {
 //    implementation 'org.javassist:javassist:3.26.0-GA'
-    implementation 'cn.soul.android.module:component:1.2.0@jar'
+    implementation 'cn.soul.android.module:component:1.2.1@jar'
     implementation('androidx.fragment:fragment:1.2.5') {
         exclude group: 'androidx.fragment', module: 'fragment'
     }
