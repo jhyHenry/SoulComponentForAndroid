@@ -11,7 +11,7 @@ import java.io.File
 
 /**
  * Created by nebula on 2019-08-15
- * 组件化资源前缀隔离
+ * xml 文件统一增加前缀 layout、xml等
  */
 open class PrefixResources : AndroidVariantTask() {
 
@@ -23,7 +23,7 @@ open class PrefixResources : AndroidVariantTask() {
         val folder = packagedResFolder ?: return
         val startTime = System.currentTimeMillis()
         PrefixHelper.instance.initWithPackagedRes(prefix, folder)
-        folder.walk().filter { it.isFile && it.name != "values.xml" }
+        folder.walk().filter { it.isFile && it.name != "values.xml" && it.name != "values-zh-rTW.xml" }
                 .forEach {
                     PrefixHelper.instance.prefixResourceFile(it)
                 }

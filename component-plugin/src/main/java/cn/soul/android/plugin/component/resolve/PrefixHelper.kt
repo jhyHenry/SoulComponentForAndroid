@@ -140,11 +140,24 @@ class PrefixHelper {
         if (!file.exists()) return
         val document = reader.read(file)
         val element = document.rootElement
+
         if (element.name != "resources") {
             Log.e("wrong values file: ${file.absolutePath}, skip prefix.")
             return
         }
+
+        // 遍历外循环
         element.elementIterator().forEach {
+
+            // 遍历内循环
+            it.elementIterator().forEach { init ->
+                if (init != null) {
+                    if (init.text.startsWith('@')) {
+                        init.text = prefixElementText(init.data.toString())
+                        Log.d("attribute ${init.name}  ${init.text}")
+                    }
+                }
+            }
 
             // 特殊类型转换 string-array array
             if (attributeNameTypeMap.containsKey(it.name)) {
@@ -158,10 +171,11 @@ class PrefixHelper {
 
             val attribute = it.attribute("name")
             attribute.value = prefix + attribute.value
-            Log.d("prefix values attribute: ${attribute.value}")
-             if (it.text.startsWith('@')) {
+            Log.d("prefix values attribute: ${attribute.value} ${it.text}")
+            if (it.text.startsWith('@')) {
                 it.text = prefixElementText(it.text)
             }
+
         }
         writeFile(file, element)
     }

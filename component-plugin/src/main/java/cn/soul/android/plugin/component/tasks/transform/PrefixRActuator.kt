@@ -95,7 +95,9 @@ class PrefixRActuator(private val project: Project, isComponent: Boolean) : Type
                     it.defrost()
                 }
                 // eg:it.simpleName = "R$id" 动态添加前缀
+//
                 if (PrefixHelper.instance.isRefNeedPrefix(it.simpleName.substring(2), ctField.name)) {
+                    Log.d("ctField.name:$prefix${ctField.name}")
                     pair.second.add("public static ${ctField.type.name} $prefix${ctField.name};")
                 } else {
                     pair.second.add("public static ${ctField.type.name} ${ctField.name};")
