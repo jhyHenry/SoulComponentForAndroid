@@ -1,4 +1,3 @@
 include ':component-plugin',
-        ':component-base',
-        ':sharecomponent',
-        ':app'
+        ':component-base'
+include ':test', ':sharecomponent', ':app'

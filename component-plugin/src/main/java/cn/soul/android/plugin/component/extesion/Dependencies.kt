@@ -41,10 +41,12 @@ open class Dependencies {
     }
 
     internal fun appendInterfaceApis(project: Project, addRuntimeDependencies: Boolean) {
-        Log.d("appendInterfaceApis$localInterfaceApis")
+        Log.d("interfaceApis${interfaceApis}")
         Log.d("debugComponent:" + project.rootProject.properties["debugComponent"].toString())
 
         val debugComponents = project.rootProject.properties["debugComponent"].toString().split(",")
+        var mainComponent = project.rootProject.properties["mainComponent"].toString()
+        if (mainComponent == "" || mainComponent == "null") mainComponent = "app"
 
         // 组件远程依赖
         interfaceApis.forEach {
@@ -59,14 +61,19 @@ open class Dependencies {
 
             if (addRuntimeDependencies) {
                 if (contains) {
-                    val fileExists = File("${project.rootDir}/${compName}/build/outputs/aar/${compName}-release.aar").exists()
-                    Log.d("${project.rootDir}/${compName}/build/outputs/aar/*-debug.aar fileExists${fileExists}")
+
+                    // 必须是主 module 运行时 才添加
+                    if (mainComponent == project.name) {
+                        val fileExists = File("${project.rootDir}/${compName}/build/outputs/aar/${compName}-release.aar").exists()
+                        Log.d("${project.rootDir}/${compName}/build/outputs/aar/${compName}-release.aar")
 //                    if (fileExists) {
-                    project.dependencies.add("compile", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("*-release.aar"))
+                        project.dependencies.add("compile", project.fileTree("${project.rootDir}/${compName}/build/outputs/aar/").include("${compName}-release.aar"))
 //                    } else {
 //                    project.dependencies.add("implementation", project.project(":${compName}"))
 //                    }
+                    }
                 } else {
+                    Log.d("implementation${it}@aar")
                     project.dependencies.add("implementation", "$it@aar")
                 }
             }
